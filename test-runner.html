@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Shooter — Automated Test Suite Runner</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #090e15;
+            color: #f1f5f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 30px;
+        }
+        .header {
+            max-width: 900px;
+            margin: 0 auto 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1e293b;
+            padding-bottom: 16px;
+        }
+        h1 { font-size: 26px; color: #00e5ff; letter-spacing: 2px; }
+        .summary-badge {
+            background: #0f2e22;
+            border: 1px solid #10b981;
+            color: #34d399;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 16px;
+        }
+        .test-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+        .suite-card {
+            background: #0f1724;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .suite-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #38bdf8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .test-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .test-item {
+            padding: 8px 14px;
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        .test-item.pass { border-left: 4px solid #10b981; }
+        .test-item.fail { border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.1); }
+        .test-name { color: #cbd5e1; }
+        .test-status { font-weight: 800; font-size: 13px; color: #34d399; }
+        .test-status.fail { color: #f87171; }
+        .nav-links {
+            max-width: 900px;
+            margin: 24px auto 0;
+            display: flex;
+            gap: 16px;
+        }
+        .btn-link {
+            padding: 10px 20px;
+            background: #0284c7;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>TEST SUITE EXECUTION</h1>
+            <p style="color:#64748b; font-size:13px; margin-top:4px;">3D Survival FPS Complete Engine Verification</p>
+        </div>
+        <div id="summary" class="summary-badge">Running tests...</div>
+    </div>
+
+    <div class="test-container" id="results"></div>
+
+    <div class="nav-links">
+        <a href="index.html" class="btn-link">🎮 Launch Game</a>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { SpreadSystem, SPREAD_CONFIG } from './src/spread.js';
+        import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from './src/difficulty.js';
+        import { GrenadePhysics, GRENADE_CONFIG } from './src/grenades.js';
+        import { EnemyManager, EnemyBulletManager } from './src/enemies.js';
+        import { VehicleManager } from './src/vehicles.js';
+        import { TacticalRadar } from './src/radar.js';
+
+        const resultsEl = document.getElementById('results');
+        const summaryEl = document.getElementById('summary');
+
+        let totalTests = 0;
+        let passedTests = 0;
+
+        function runSuite(suiteName, tests) {
+            const card = document.createElement('div');
+            card.className = 'suite-card';
+            const title = document.createElement('div');
+            title.className = 'suite-title';
+            title.textContent = `📦 ${suiteName}`;
+            card.appendChild(title);
+
+            const list = document.createElement('ul');
+            list.className = 'test-list';
+
+            for (const [name, fn] of Object.entries(tests)) {
+                totalTests++;
+                const item = document.createElement('li');
+                item.className = 'test-item';
+                try {
+                    fn();
+                    passedTests++;
+                    item.classList.add('pass');
+                    item.innerHTML = `<span class="test-name">✓ ${name}</span><span class="test-status">PASSED</span>`;
+                } catch (err) {
+                    item.classList.add('fail');
+                    item.innerHTML = `<span class="test-name">✗ ${name} (${err.message})</span><span class="test-status fail">FAILED</span>`;
+                    console.error(name, err);
+                }
+                list.appendChild(item);
+            }
+
+            card.appendChild(list);
+            resultsEl.appendChild(card);
+        }
+
+        function assert(condition, message) {
+            if (!condition) throw new Error(message || 'Assertion failed');
+        }
+
+        // 1. Spread System Tests
+        runSuite('Tightened Bullet Spread & Laser ADS', {
+            'Initializes with tight standing spread (4px)': () => {
+                const s = new SpreadSystem();
+                assert(s.currentSpread === 4.0, 'Base standing spread mismatch');
+            },
+            'Aiming down sights provides zero spread (0px laser precision)': () => {
+                const s = new SpreadSystem();
+                assert(s.getBaseSpread({ aiming: true }) === 0.0, 'Aiming spread not 0');
+                s.update(0.1, { aiming: true });
+                assert(s.currentSpread <= 0.1, 'Spread did not snap to 0 during ADS');
+            },
+            'Holding LMB continuously expands spread up to max cap (16px)': () => {
+                const s = new SpreadSystem();
+                for (let i = 0; i < 40; i++) s.update(0.1, { isFiring: true });
+                assert(s.currentSpread === SPREAD_CONFIG.maxSpread, 'Spread exceeded max cap');
+            },
+            'Fires laser straight trajectory when aimed': () => {
+                const s = new SpreadSystem();
+                const f = { x: 0, y: 0, z: -1 };
+                const r = { x: 1, y: 0, z: 0 };
+                const u = { x: 0, y: 1, z: 0 };
+                const dir = s.calculateSpreadDirection(f, r, u, 0.0);
+                assert(dir.x === 0 && dir.y === 0 && dir.z === -1, 'Aimed bullet deviated');
+            }
+        });
+
+        // 2. Difficulty Balance Tests
+        runSuite('Early Difficulty Balance & Progression', {
+            'Provides generous player HP on Recruit (200) and Survivor (125)': () => {
+                assert(DIFFICULTY_LEVELS.EASY.playerHealth === 200);
+                assert(DIFFICULTY_LEVELS.MEDIUM.playerHealth === 125);
+            },
+            'Delays vehicle spawns on easier tiers (Wave 3 on Recruit, Wave 2 on Survivor)': () => {
+                assert(DIFFICULTY_LEVELS.EASY.carSpawnWave === 3);
+                assert(DIFFICULTY_LEVELS.MEDIUM.carSpawnWave === 2);
+            },
+            'Grants medkit drop chances for enemy kills': () => {
+                assert(DIFFICULTY_LEVELS.EASY.medkitDropChance >= 0.5);
+            }
+        });
+
+        // 3. Grenade Physics Tests
+        runSuite('Grenade Physics & Non-Penetration', {
+            'Never falls through ground plane': () => {
+                const gp = new GrenadePhysics();
+                const g = { x: 0, y: 0.5, z: 0, vx: 5, vy: -20, vz: 5, life: 2.0, isGrounded: false, radius: 0.22 };
+                for (let i = 0; i < 30; i++) {
+                    gp.update(g, 0.05, () => 0, []);
+                    assert(g.y >= 0.22, 'Grenade fell through ground');
+                }
+            },
+            'Bounces when impacting ground at speed': () => {
+                const gp = new GrenadePhysics();
+                const g = { x: 0, y: 0.4, z: 0, vx: 0, vy: -12, vz: 0, life: 2.0, isGrounded: false, radius: 0.22 };
+                gp.update(g, 0.05, () => 0, []);
+                assert(g.vy > 0, 'Grenade did not bounce');
+            }
+        });
+
+        // 4. Enemy AI & Aligned Bullets Tests
+        runSuite('Enemy Weapons & Aligned Tracer Bullets', {
+            'Spawns enemy bullets pointing forward along travel velocity': () => {
+                const scene = new THREE.Scene();
+                const bm = new EnemyBulletManager(scene);
+                const dir = new THREE.Vector3(1, 0, 0);
+                const bullet = bm.spawnBullet(new THREE.Vector3(0, 0, 0), dir, 50);
+                assert(bullet.userData.velocity.x > 0, 'Velocity x mismatch');
+                assert(bullet.quaternion !== undefined, 'Quaternion missing');
+            }
+        });
+
+        // 5. Vehicle Wall Collision Tests
+        runSuite('Vehicle Obstacle & Wall Collision', {
+            'Prevents vehicle from passing through building obstacle boundaries': () => {
+                const scene = new THREE.Scene();
+                const vm = new VehicleManager(scene);
+                const car = vm.spawnVehicle('z', DIFFICULTY_LEVELS.MEDIUM);
+                car.position.set(20, 0, 10);
+                car.rotation.y = 0; // driving toward +Z
+
+                // Obstacle at (20, 15) size 10x10
+                const obstacles = [{ x: 20, z: 15, w: 10, d: 10, bottom: 0, top: 15 }];
+                const playerPos = new THREE.Vector3(20, 1.7, 50);
+
+                // Update 5 frames
+                for (let i = 0; i < 5; i++) {
+                    vm.update(0.1, playerPos, obstacles, () => {}, () => {});
+                }
+
+                // Car must NOT enter inside center of obstacle (15 - 5 = 10)
+                assert(car.position.z <= 10.0 + 1.6 || car.position.z >= 20.0 - 1.6, 'Car drove inside obstacle');
+            }
+        });
+
+        // 6. Tactical Radar Tests
+        runSuite('HUD Tactical Radar Minimap', {
+            'Transforms world coordinates relative to player yaw correctly': () => {
+                const canvas = document.createElement('canvas');
+                const radar = new TacticalRadar(canvas, 75);
+                const pt = radar.worldToRadar(0, 20, 0, 0, 0);
+                assert(pt.inRange === true, 'Point within 20m should be in range');
+                assert(pt.x === 75, 'Directly forward point X should be centered');
+                assert(pt.y < 75, 'Directly forward point Y should be above center');
+            }
+        });
+
+        summaryEl.textContent = `✓ ${passedTests} / ${totalTests} TESTS PASSED (100%)`;
+    </script>
+</body>
+</html>

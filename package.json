@@ -1,0 +1,19 @@
+{
+  "name": "3d-shooter",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "three": "^0.179.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.2",
+    "vitest": "^2.0.5"
+  }
+}
