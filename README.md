@@ -53,7 +53,7 @@ A fast-paced, procedural **3D Tactical First-Person Shooter** built with **Three
 ## 🚀 Getting Started & Local Development
 
 ### Prerequisites
-* [Node.js](https://nodejs.org/) (v18 or higher recommended)
+* [Node.js](https://nodejs.org/) (v24 or higher recommended)
 * `npm` (bundled with Node.js)
 
 ### Installation & Launch

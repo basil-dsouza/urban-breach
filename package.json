@@ -1,8 +1,12 @@
 {
-  "name": "3d-shooter",
+  "name": "urban-breach",
   "private": true,
   "version": "1.0.0",
+  "description": "Tactical 3D First-Person Shooter in Three.js and Vite",
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

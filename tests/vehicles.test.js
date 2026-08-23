@@ -17,7 +17,7 @@ describe('VehicleManager — Active Combat Pursuit & Ramming AI', () => {
     it('should spawn vehicle near player with difficulty stats', () => {
         const scene = new THREE.Scene();
         const manager = new VehicleManager(scene);
-        const diff = DIFFICULTY_LEVELS.VETERAN;
+        const diff = DIFFICULTY_LEVELS.HARD;
         const playerPos = new THREE.Vector3(0, 1.7, 0);
         const car = manager.spawnVehicle(playerPos, diff);
 

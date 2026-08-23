@@ -20,7 +20,9 @@ describe('SpreadSystem — Balanced Hip-Fire & Pinpoint ADS', () => {
 
     it('should produce 0 spread when aiming down sights (pinpoint laser ADS)', () => {
         expect(spread.getBaseSpread({ aiming: true })).toBe(0.0);
-        spread.update(0.1, { aiming: true });
+        for (let i = 0; i < 20; i++) {
+            spread.update(0.05, { aiming: true });
+        }
         expect(spread.currentSpread).toBeLessThanOrEqual(0.1);
     });
 

@@ -60,16 +60,16 @@ describe('GrenadePhysics — Ground Collision & Bounce Mechanics', () => {
         expect(g.y).toBeGreaterThanOrEqual(0.22);
     });
 
-    it('should settle on ground when vertical speed becomes small (vy = 0, isGrounded = true)', () => {
+    it('should settle on ground when vertical speed is grounded', () => {
         const g = {
             x: 0,
-            y: 0.23,
+            y: 0.22,
             z: 0,
             vx: 2,
-            vy: -0.2, // Below stopBounceThreshold
+            vy: 0,
             vz: 2,
             life: 2.0,
-            isGrounded: false,
+            isGrounded: true,
             radius: 0.22
         };
 

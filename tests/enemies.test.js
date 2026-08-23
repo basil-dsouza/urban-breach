@@ -90,7 +90,7 @@ describe('EnemyManager & Lifelike Humanoid Modeling', () => {
         const scene = new THREE.Scene();
         const bulletManager = new EnemyBulletManager(scene);
 
-        const spawnPos = new THREE.Vector3(0, 1.5, 5);
+        const spawnPos = new THREE.Vector3(0, 1.5, 10);
         const targetDir = new THREE.Vector3(0, 0, -1);
         const bullet = bulletManager.spawnBullet(spawnPos, targetDir, 50);
 
@@ -99,11 +99,13 @@ describe('EnemyManager & Lifelike Humanoid Modeling', () => {
         let playerHitDamage = 0;
         const playerPos = new THREE.Vector3(0, 1.7, 0);
 
+        // Move bullet 5m forward (z = 5m)
         bulletManager.update(0.1, playerPos, (dmg) => {
             playerHitDamage = dmg;
         });
         expect(bulletManager.bullets.length).toBe(1);
 
+        // Move bullet remaining 5m forward (z = 0m, impacts player)
         bulletManager.update(0.1, playerPos, (dmg) => {
             playerHitDamage = dmg;
         });
