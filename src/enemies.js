@@ -2,6 +2,74 @@ import * as THREE from 'three';
 import { soundEngine } from './audio.js';
 
 /**
+ * Solid Obstacle Raycast & Line-of-Sight Detection
+ */
+export function lineIntersectsBox(p1, p2, box) {
+    const minX = box.x - box.w / 2;
+    const maxX = box.x + box.w / 2;
+    const minY = box.bottom !== undefined ? box.bottom : 0;
+    const maxY = box.top !== undefined ? box.top : (box.h || 20);
+    const minZ = box.z - box.d / 2;
+    const maxZ = box.z + box.d / 2;
+
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const dz = p2.z - p1.z;
+
+    let tmin = 0;
+    let tmax = 1;
+
+    // X slab
+    if (Math.abs(dx) > 1e-6) {
+        let t1 = (minX - p1.x) / dx;
+        let t2 = (maxX - p1.x) / dx;
+        if (t1 > t2) [t1, t2] = [t2, t1];
+        tmin = Math.max(tmin, t1);
+        tmax = Math.min(tmax, t2);
+        if (tmin > tmax) return false;
+    } else {
+        if (p1.x < minX || p1.x > maxX) return false;
+    }
+
+    // Y slab
+    if (Math.abs(dy) > 1e-6) {
+        let t1 = (minY - p1.y) / dy;
+        let t2 = (maxY - p1.y) / dy;
+        if (t1 > t2) [t1, t2] = [t2, t1];
+        tmin = Math.max(tmin, t1);
+        tmax = Math.min(tmax, t2);
+        if (tmin > tmax) return false;
+    } else {
+        if (p1.y < minY || p1.y > maxY) return false;
+    }
+
+    // Z slab
+    if (Math.abs(dz) > 1e-6) {
+        let t1 = (minZ - p1.z) / dz;
+        let t2 = (maxZ - p1.z) / dz;
+        if (t1 > t2) [t1, t2] = [t2, t1];
+        tmin = Math.max(tmin, t1);
+        tmax = Math.min(tmax, t2);
+        if (tmin > tmax) return false;
+    } else {
+        if (p1.z < minZ || p1.z > maxZ) return false;
+    }
+
+    return tmin <= tmax && tmax >= 0 && tmin <= 1;
+}
+
+export function hasLineOfSight(p1, p2, obstacles = []) {
+    if (!obstacles || obstacles.length === 0) return true;
+    for (let i = 0; i < obstacles.length; i++) {
+        const obs = obstacles[i];
+        if (lineIntersectsBox(p1, p2, obs)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * Humanoid Enemy System with Lifelike Human Faces, Two-Handed Weapon Grips & Natural Locomotion
  */
 
@@ -42,9 +110,10 @@ export class EnemyBulletManager {
         return bullet;
     }
 
-    update(delta, playerPos, onPlayerHit) {
+    update(delta, playerPos, onPlayerHit, obstacles = []) {
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
+            const oldPos = bullet.position.clone();
 
             bullet.position.add(
                 bullet.userData.velocity.clone().multiplyScalar(delta)
@@ -59,6 +128,23 @@ export class EnemyBulletManager {
                 if (typeof onPlayerHit === 'function') {
                     onPlayerHit(bullet.userData.damage || 6);
                 }
+                this.scene.remove(bullet);
+                this.bullets.splice(i, 1);
+                continue;
+            }
+
+            // Check collision with building walls / solid obstacles
+            let hitObstacle = false;
+            if (obstacles && obstacles.length > 0) {
+                for (let k = 0; k < obstacles.length; k++) {
+                    if (lineIntersectsBox(oldPos, bullet.position, obstacles[k])) {
+                        hitObstacle = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hitObstacle) {
                 this.scene.remove(bullet);
                 this.bullets.splice(i, 1);
                 continue;
@@ -595,9 +681,9 @@ export class EnemyManager {
         return enemy;
     }
 
-    update(delta, playerPos, getGroundHeight, onPlayerDamaged, isPlayerHidden = false) {
-        // 1. Update Enemy Bullets
-        this.bulletManager.update(delta, playerPos, onPlayerDamaged);
+    update(delta, playerPos, getGroundHeight, onPlayerDamaged, isPlayerHidden = false, obstacles = [], ladders = []) {
+        // 1. Update Enemy Bullets with Solid Obstacle Collision Checks
+        this.bulletManager.update(delta, playerPos, onPlayerDamaged, obstacles);
 
         // 2. Medkits Bobbing & Rotation
         for (const med of this.medkits) {
@@ -605,7 +691,7 @@ export class EnemyManager {
             med.rotation.y += delta * 1.5;
         }
 
-        // 3. Humanoid AI & Natural Skeletal Locomotion
+        // 3. Humanoid AI & Skeletal Locomotion with Ladder Climbing & LOS Detection
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             if (!enemy.parent) {
@@ -616,69 +702,178 @@ export class EnemyManager {
             const dx = playerPos.x - enemy.position.x;
             const dz = playerPos.z - enemy.position.z;
             const distToPlayer = Math.hypot(dx, dz);
+            const dyToPlayer = playerPos.y - enemy.position.y;
 
             const isGunner = enemy.userData.archetype === 'gunner';
 
-            // Bush Stealth Detection
+            // Eye position & Line-of-Sight check against buildings/obstacles
+            const enemyEyePos = enemy.position.clone();
+            enemyEyePos.y += 1.6;
+            const playerChestPos = playerPos.clone();
+            playerChestPos.y -= 0.5;
+
+            const hasLOS = hasLineOfSight(enemyEyePos, playerChestPos, obstacles);
+
+            // Bush Stealth Detection & Building Occlusion
             const detectionRange = isPlayerHidden ? (isGunner ? 5.0 : 4.0) : 75.0;
-            const canSeePlayer = distToPlayer <= detectionRange;
+            const inDetectionRange = distToPlayer <= detectionRange;
+            const canSeePlayer = inDetectionRange && hasLOS;
 
-            // Smooth Facing Rotation towards player
-            const targetFacingYaw = Math.atan2(dx, dz);
-            let diffAngle = targetFacingYaw - enemy.rotation.y;
-            while (diffAngle < -Math.PI) diffAngle += Math.PI * 2;
-            while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
-            enemy.rotation.y += diffAngle * Math.min(delta * 6.0, 1.0);
-
-            // Movement AI
-            let isMoving = false;
-            let moveSpeed = enemy.userData.speed;
-
-            if (canSeePlayer) {
-                let shouldMove = true;
-                if (isGunner && distToPlayer < 24 && distToPlayer > 8) {
-                    shouldMove = false; // Gunner holds firing range
-                }
-
-                if (shouldMove && distToPlayer > 1.2) {
-                    isMoving = true;
-                    let dirX = dx / distToPlayer;
-                    let dirZ = dz / distToPlayer;
-
-                    // Knife Rusher Tactical Weave when approaching from a distance
-                    if (!isGunner && distToPlayer > 3.5) {
-                        const perpX = -dirZ;
-                        const perpZ = dirX;
-                        const weave = Math.sin(enemy.userData.time * 2.8) * 0.45;
-                        dirX += perpX * weave;
-                        dirZ += perpZ * weave;
-                        const len = Math.hypot(dirX, dirZ) || 1;
-                        dirX /= len;
-                        dirZ /= len;
+            // Target ladder search if player is vertically separated (e.g. on roof or below)
+            let activeLadder = null;
+            if (ladders && ladders.length > 0) {
+                if (dyToPlayer > 2.0) {
+                    // Player is above: find nearest ladder leading up towards player's height
+                    let bestDist = Infinity;
+                    for (const lad of ladders) {
+                        if (lad.top >= playerPos.y - 2.5) {
+                            const dLad = Math.hypot(enemy.position.x - lad.x, enemy.position.z - lad.z);
+                            if (dLad < bestDist && dLad < 90) {
+                                bestDist = dLad;
+                                activeLadder = lad;
+                            }
+                        }
                     }
-
-                    enemy.position.x += dirX * moveSpeed * delta;
-                    enemy.position.z += dirZ * moveSpeed * delta;
+                } else if (dyToPlayer < -3.0 && enemy.position.y > 3.0) {
+                    // Player is below, enemy is on roof: find nearest ladder leading down
+                    let bestDist = Infinity;
+                    for (const lad of ladders) {
+                        const dLad = Math.hypot(enemy.position.x - lad.x, enemy.position.z - lad.z);
+                        if (dLad < bestDist && dLad < 40) {
+                            bestDist = dLad;
+                            activeLadder = lad;
+                        }
+                    }
                 }
             }
 
-            // Natural Humanoid Locomotion Cycles
-            enemy.userData.time += delta * (isMoving ? 6.5 : 1.8);
-            const stride = Math.sin(enemy.userData.time);
-            const strideCos = Math.cos(enemy.userData.time);
+            let isClimbing = false;
+            let isMoving = false;
+            let moveSpeed = enemy.userData.speed;
 
-            if (isMoving) {
+            // Handle Ladder Climbing State
+            if (enemy.userData.onLadder && enemy.userData.climbLadder) {
+                const lad = enemy.userData.climbLadder;
+                isClimbing = true;
+                const isClimbingUp = dyToPlayer >= -0.5;
+
+                // Snap (x, z) smoothly to ladder
+                enemy.position.x = THREE.MathUtils.lerp(enemy.position.x, lad.x, delta * 12);
+                enemy.position.z = THREE.MathUtils.lerp(enemy.position.z, lad.z, delta * 12);
+
+                if (isClimbingUp) {
+                    enemy.position.y += 4.5 * delta;
+                    if (enemy.position.y >= lad.buildingHeight) {
+                        // Reached the roof! Step off ladder onto rooftop
+                        enemy.userData.onLadder = false;
+                        enemy.userData.climbLadder = null;
+                        const forwardX = Math.sin(enemy.rotation.y);
+                        const forwardZ = Math.cos(enemy.rotation.y);
+                        enemy.position.x += forwardX * 1.5;
+                        enemy.position.z += forwardZ * 1.5;
+                    }
+                } else {
+                    enemy.position.y -= 5.0 * delta;
+                    const gY = typeof getGroundHeight === 'function' ? getGroundHeight(enemy.position.x, enemy.position.z) : 0;
+                    if (enemy.position.y <= gY + 0.3) {
+                        // Reached the ground!
+                        enemy.userData.onLadder = false;
+                        enemy.userData.climbLadder = null;
+                        enemy.position.y = gY;
+                    }
+                }
+            } else if (activeLadder) {
+                // Navigate towards ladder
+                const distToLadder = Math.hypot(enemy.position.x - activeLadder.x, enemy.position.z - activeLadder.z);
+                if (distToLadder <= 1.3) {
+                    // Mount ladder
+                    enemy.userData.onLadder = true;
+                    enemy.userData.climbLadder = activeLadder;
+                    isClimbing = true;
+                    const isClimbingUp = dyToPlayer >= -0.5;
+                    enemy.position.y += (isClimbingUp ? 4.5 : -5.0) * delta;
+                } else {
+                    // Walk to ladder base / entry
+                    isMoving = true;
+                    const ladDirX = (activeLadder.x - enemy.position.x) / distToLadder;
+                    const ladDirZ = (activeLadder.z - enemy.position.z) / distToLadder;
+
+                    const targetFacingYaw = Math.atan2(ladDirX, ladDirZ);
+                    let diffAngle = targetFacingYaw - enemy.rotation.y;
+                    while (diffAngle < -Math.PI) diffAngle += Math.PI * 2;
+                    while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
+                    enemy.rotation.y += diffAngle * Math.min(delta * 8.0, 1.0);
+
+                    enemy.position.x += ladDirX * moveSpeed * delta;
+                    enemy.position.z += ladDirZ * moveSpeed * delta;
+                }
+            } else {
+                // Normal Ground / Roof Pursuit & Aiming
+                const targetFacingYaw = Math.atan2(dx, dz);
+                let diffAngle = targetFacingYaw - enemy.rotation.y;
+                while (diffAngle < -Math.PI) diffAngle += Math.PI * 2;
+                while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
+                enemy.rotation.y += diffAngle * Math.min(delta * 6.0, 1.0);
+
+                if (inDetectionRange) {
+                    let shouldMove = true;
+                    if (isGunner && distToPlayer < 24 && distToPlayer > 8 && canSeePlayer) {
+                        shouldMove = false; // Gunner holds firing position if having clear LOS
+                    }
+
+                    if (shouldMove && distToPlayer > 1.2) {
+                        isMoving = true;
+                        let dirX = dx / distToPlayer;
+                        let dirZ = dz / distToPlayer;
+
+                        // Knife Rusher Tactical Weave when approaching from a distance
+                        if (!isGunner && distToPlayer > 3.5 && canSeePlayer) {
+                            const perpX = -dirZ;
+                            const perpZ = dirX;
+                            const weave = Math.sin(enemy.userData.time * 2.8) * 0.45;
+                            dirX += perpX * weave;
+                            dirZ += perpZ * weave;
+                            const len = Math.hypot(dirX, dirZ) || 1;
+                            dirX /= len;
+                            dirZ /= len;
+                        }
+
+                        enemy.position.x += dirX * moveSpeed * delta;
+                        enemy.position.z += dirZ * moveSpeed * delta;
+                    }
+                }
+            }
+
+            // Skeletal Locomotion / Ladder Animation Cycles
+            if (isClimbing) {
+                enemy.userData.time += delta * 9.0;
+                const climbPhase = Math.sin(enemy.userData.time);
+
+                // Alternating arm climb
+                enemy.userData.armL.rotation.x = -Math.PI / 2 + climbPhase * 0.5;
+                enemy.userData.armL.rotation.y = 0.2;
+                enemy.userData.armR.rotation.x = -Math.PI / 2 - climbPhase * 0.5;
+                enemy.userData.armR.rotation.y = -0.2;
+
+                // Alternating leg rung steps
+                enemy.userData.legLThigh.rotation.x = climbPhase * 0.6;
+                enemy.userData.legLShin.rotation.x = Math.max(0, -climbPhase * 0.7);
+                enemy.userData.legRThigh.rotation.x = -climbPhase * 0.6;
+                enemy.userData.legRShin.rotation.x = Math.max(0, climbPhase * 0.7);
+
+                enemy.userData.torsoGroup.rotation.x = 0.15;
+                enemy.userData.torsoGroup.rotation.y = 0;
+            } else if (isMoving) {
+                enemy.userData.time += delta * 6.5;
+                const stride = Math.sin(enemy.userData.time);
+                const strideCos = Math.cos(enemy.userData.time);
                 const thighAngle = stride * (isGunner ? 0.38 : 0.52);
 
-                // Left Leg Cycle (Thigh forward -> Shin bends back on return)
                 enemy.userData.legLThigh.rotation.x = thighAngle;
                 enemy.userData.legLShin.rotation.x = Math.max(0, -stride * 0.65);
-
-                // Right Leg Cycle
                 enemy.userData.legRThigh.rotation.x = -thighAngle;
                 enemy.userData.legRShin.rotation.x = Math.max(0, stride * 0.65);
 
-                // Torso Natural Sway
                 const forwardLean = isGunner ? 0.05 : 0.18;
                 enemy.userData.torsoGroup.rotation.x = forwardLean;
                 enemy.userData.torsoGroup.rotation.y = -stride * 0.08;
@@ -689,7 +884,6 @@ export class EnemyManager {
                     enemy.userData.armR.rotation.x = stride * 0.45 - 0.2;
                 }
             } else {
-                // Natural Idle Stance & Breathing
                 enemy.userData.legLThigh.rotation.x = THREE.MathUtils.lerp(enemy.userData.legLThigh.rotation.x, 0, delta * 8);
                 enemy.userData.legLShin.rotation.x = THREE.MathUtils.lerp(enemy.userData.legLShin.rotation.x, 0, delta * 8);
                 enemy.userData.legRThigh.rotation.x = THREE.MathUtils.lerp(enemy.userData.legRThigh.rotation.x, 0, delta * 8);
@@ -707,16 +901,13 @@ export class EnemyManager {
                 enemy.userData.head.rotation.x = THREE.MathUtils.clamp(-pitchToPlayer, -0.4, 0.4);
             }
 
-            // Gunner Ranged Aim & Two-Handed Hold (Both arms track pitch together)
-            if (isGunner) {
+            // Gunner Ranged Aim & Two-Handed Hold (Only when not climbing)
+            if (isGunner && !isClimbing) {
                 if (canSeePlayer) {
                     const pitchToPlayer = Math.atan2(playerPos.y - (enemy.position.y + 1.4), distToPlayer);
 
-                    // Right arm holds trigger & stock aimed forward at player
                     enemy.userData.armR.rotation.x = THREE.MathUtils.lerp(enemy.userData.armR.rotation.x, -pitchToPlayer - 0.35, delta * 12);
                     enemy.userData.armR.rotation.y = -0.10;
-
-                    // Left arm supports handguard in two-handed grip
                     enemy.userData.armL.rotation.x = THREE.MathUtils.lerp(enemy.userData.armL.rotation.x, -pitchToPlayer - 0.45, delta * 12);
                     enemy.userData.armL.rotation.y = 0.50;
 
@@ -739,7 +930,6 @@ export class EnemyManager {
                             muzzleWorldPos.y += 1.4;
                         }
 
-                        // Target direction towards player camera
                         const targetDir = playerPos.clone().sub(muzzleWorldPos).normalize();
                         targetDir.x += (Math.random() - 0.5) * spreadAmount;
                         targetDir.y += (Math.random() - 0.5) * spreadAmount * 0.5;
@@ -749,7 +939,6 @@ export class EnemyManager {
                         const bullet = this.bulletManager.spawnBullet(muzzleWorldPos, targetDir);
                         bullet.userData.damage = enemy.userData.damage || 5;
 
-                        // Recoil kick
                         if (enemy.userData.rifle) {
                             enemy.userData.rifle.position.z -= 0.07;
                             setTimeout(() => {
@@ -763,14 +952,13 @@ export class EnemyManager {
                         enemy.userData.shootTimer = enemy.userData.shootInterval + (Math.random() - 0.5) * 0.4;
                     }
                 } else {
-                    // Idle two-handed carry when not seeing player
                     enemy.userData.armR.rotation.x = THREE.MathUtils.lerp(enemy.userData.armR.rotation.x, -0.35, delta * 6);
                     enemy.userData.armL.rotation.x = THREE.MathUtils.lerp(enemy.userData.armL.rotation.x, -0.45, delta * 6);
                 }
             }
 
-            // Knife Rusher Melee Attack (Smooth, deterministic state-driven animation)
-            if (!isGunner) {
+            // Knife Rusher Melee Attack (Only when not climbing and having clear LOS)
+            if (!isGunner && !isClimbing) {
                 enemy.userData.attackCooldown -= delta;
 
                 if (canSeePlayer && distToPlayer < 2.2 && enemy.userData.attackCooldown <= 0) {
@@ -792,16 +980,18 @@ export class EnemyManager {
                 }
             }
 
-            // Ground Clamping
-            const groundY = typeof getGroundHeight === 'function'
-                ? getGroundHeight(enemy.position.x, enemy.position.z)
-                : 0;
+            // Ground Clamping (Disabled during active ladder climbing)
+            if (!enemy.userData.onLadder) {
+                const groundY = typeof getGroundHeight === 'function'
+                    ? getGroundHeight(enemy.position.x, enemy.position.z)
+                    : 0;
 
-            enemy.position.y = THREE.MathUtils.lerp(
-                enemy.position.y,
-                groundY,
-                delta * 8
-            );
+                enemy.position.y = THREE.MathUtils.lerp(
+                    enemy.position.y,
+                    groundY,
+                    delta * 8
+                );
+            }
         }
     }
 

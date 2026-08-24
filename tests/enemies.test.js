@@ -113,4 +113,78 @@ describe('EnemyManager & Lifelike Humanoid Modeling', () => {
         expect(playerHitDamage).toBeGreaterThan(0);
         expect(bulletManager.bullets.length).toBe(0);
     });
+
+    it('should block line of sight and prevent shooting through solid buildings', () => {
+        const scene = new THREE.Scene();
+        const manager = new EnemyManager(scene);
+        const gunner = manager.createEnemyMesh('gunner', DIFFICULTY_LEVELS.MEDIUM);
+        gunner.position.set(0, 0, 20);
+        scene.add(gunner);
+        manager.enemies.push(gunner);
+
+        const playerPos = new THREE.Vector3(0, 1.7, 0);
+        gunner.userData.shootTimer = 0;
+
+        const obstacles = [
+            { x: 0, z: 10, w: 12, d: 8, bottom: 0, top: 15 } // Building directly between player and enemy
+        ];
+
+        // Obstructed by building: enemy cannot see player and does not fire
+        manager.update(0.016, playerPos, () => 0, () => {}, false, obstacles);
+        expect(manager.bulletManager.bullets.length).toBe(0);
+
+        // Building removed: clear line of sight, enemy fires
+        manager.update(0.016, playerPos, () => 0, () => {}, false, []);
+        expect(manager.bulletManager.bullets.length).toBe(1);
+    });
+
+    it('should destroy enemy bullets when colliding with solid building obstacles', () => {
+        const scene = new THREE.Scene();
+        const bulletManager = new EnemyBulletManager(scene);
+
+        const spawnPos = new THREE.Vector3(0, 1.5, 20);
+        const targetDir = new THREE.Vector3(0, 0, -1);
+        bulletManager.spawnBullet(spawnPos, targetDir, 60);
+
+        const obstacles = [
+            { x: 0, z: 10, w: 8, d: 8, bottom: 0, top: 10 }
+        ];
+
+        const playerPos = new THREE.Vector3(0, 1.7, 0);
+
+        // Move bullet into building obstacle
+        bulletManager.update(0.2, playerPos, () => {}, obstacles);
+
+        // Bullet should be destroyed on building collision
+        expect(bulletManager.bullets.length).toBe(0);
+    });
+
+    it('should navigate to and climb ladders when player is on a rooftop', () => {
+        const scene = new THREE.Scene();
+        const manager = new EnemyManager(scene);
+        const enemy = manager.createEnemyMesh('knife', DIFFICULTY_LEVELS.MEDIUM);
+        enemy.position.set(5, 0, 5);
+        scene.add(enemy);
+        manager.enemies.push(enemy);
+
+        // Player is elevated on rooftop at y = 14m
+        const playerPos = new THREE.Vector3(0, 14, 0);
+
+        const ladders = [
+            { x: 2, z: 2, buildingHeight: 12, height: 13.4, bottom: 0, top: 13.4 }
+        ];
+
+        // Enemy should move towards ladder base
+        manager.update(0.1, playerPos, () => 0, () => {}, false, [], ladders);
+        expect(enemy.position.x).toBeLessThan(5);
+        expect(enemy.position.z).toBeLessThan(5);
+
+        // Place enemy at ladder base
+        enemy.position.set(2.2, 0, 2.2);
+        manager.update(0.1, playerPos, () => 0, () => {}, false, [], ladders);
+
+        // Enemy should enter ladder climb mode and ascend vertically
+        expect(enemy.userData.onLadder).toBe(true);
+        expect(enemy.position.y).toBeGreaterThan(0);
+    });
 });

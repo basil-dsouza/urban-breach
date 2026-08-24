@@ -1719,10 +1719,10 @@ function animate() {
         updateGrenadeReplenish(delta);
         updateBushStealth(delta);
 
-        // Update enemies with stealth state
+        // Update enemies with stealth state, solid obstacle line-of-sight & ladder climbing
         enemyManager.update(delta, camera.position, getSimpleGround, (dmg, src) => {
             damagePlayer(dmg, src);
-        }, isPlayerHidden);
+        }, isPlayerHidden, obstacles, ladders);
 
         vehicleManager.update(delta, camera.position, obstacles, (dmg, src) => {
             damagePlayer(dmg, src);
