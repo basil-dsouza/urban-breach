@@ -22,6 +22,12 @@ export class SpreadSystem {
         this.isFiring = false;
     }
 
+    setWeaponConfig(config = {}) {
+        if (!config) return;
+        this.config = { ...SPREAD_CONFIG, ...config };
+        this.currentSpread = this.config.baseStanding;
+    }
+
     getBaseSpread({ moving = false, sprinting = false, aiming = false } = {}) {
         if (aiming) return this.config.baseAiming;
         if (sprinting && moving) return this.config.baseSprinting;

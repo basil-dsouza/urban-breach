@@ -1,8 +1,53 @@
 import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from './difficulty.js';
 import { TacticalRadar } from './radar.js';
 
+export const WEAPON_CONFIGS = {
+    AK47: {
+        id: 'AK47',
+        name: 'AK-47 TACTICAL RIFLE',
+        desc: 'Rugged Soviet 7.62x39mm assault rifle. Full-auto rapid fire with balanced tactical zoom.',
+        icon: '🔫',
+        color: '#00e5ff',
+        ammo: 30,
+        maxAmmo: 30,
+        damage: 35,
+        fireRate: 0.095,
+        reloadTime: 2.1,
+        aimFOV: 48,
+        recoilKick: 0.065,
+        spread: {
+            baseSpread: 0.016,
+            movementSpreadMultiplier: 2.4,
+            sprintSpreadMultiplier: 4.2,
+            aimSpreadMultiplier: 0.12,
+            spreadRecoverySpeed: 4.8
+        }
+    },
+    SNIPER: {
+        id: 'SNIPER',
+        name: 'BARRETT .50 CAL SNIPER',
+        desc: 'Supreme anti-materiel sniper rifle. 5x high-magnification optical zoom, instant velocity & 1-shot lethality.',
+        icon: '🎯',
+        color: '#f59e0b',
+        ammo: 10,
+        maxAmmo: 10,
+        damage: 200,
+        fireRate: 0.85,
+        reloadTime: 2.8,
+        aimFOV: 15,
+        recoilKick: 0.22,
+        spread: {
+            baseSpread: 0.035,
+            movementSpreadMultiplier: 3.0,
+            sprintSpreadMultiplier: 5.0,
+            aimSpreadMultiplier: 0.001,
+            spreadRecoverySpeed: 3.5
+        }
+    }
+};
+
 /**
- * UI Component Manager: Title, Difficulty Selection, Dynamic Crosshair, HUD, Radar, Game Over
+ * UI Component Manager: Title, Difficulty Selection, Weapon Selection, Dynamic Crosshair, HUD, Radar, Game Over
  */
 
 export class UIManager {
@@ -10,6 +55,7 @@ export class UIManager {
         this.onStartGame = onStartGame;
         this.onRestart = onRestart;
         this.selectedDifficultyKey = 'MEDIUM';
+        this.selectedWeaponKey = 'AK47';
         this.radar = null;
 
         this.initDOM();
@@ -37,14 +83,14 @@ export class UIManager {
                 <div class="ctrl-row"><span>SHIFT</span> Sprint</div>
                 <div class="ctrl-row"><span>SPACE</span> Jump / Climb Up</div>
                 <div class="ctrl-row"><span>LMB (Hold)</span> Full-Auto Shooting</div>
-                <div class="ctrl-row"><span>RMB</span> Aim Down Sights (Pinpoint Laser Accuracy)</div>
+                <div class="ctrl-row"><span>RMB</span> Aim Down Sights (Pinpoint Optical Zoom)</div>
                 <div class="ctrl-row"><span>G</span> Throw Grenade (Bounces on Ground)</div>
                 <div class="ctrl-row alert-row"><span>RADAR</span> Tracks hostiles, buildings, vehicles, and climbable ladders</div>
             </div>
         `;
         this.uiRoot.appendChild(this.titleScreen);
 
-        // 2. Difficulty Select Screen
+        // 2. Difficulty & Weapon Select Screen
         this.difficultyScreen = document.createElement('div');
         this.difficultyScreen.id = 'difficulty-screen';
         this.difficultyScreen.className = 'screen-overlay';
@@ -78,13 +124,46 @@ export class UIManager {
             `;
         }
 
+        let weaponsHTML = '';
+        for (const [key, wep] of Object.entries(WEAPON_CONFIGS)) {
+            const isSelected = key === 'AK47' ? 'selected' : '';
+            weaponsHTML += `
+                <div class="wep-card ${isSelected}" data-key="${key}" style="--accent-color:${wep.color}">
+                    <div class="diff-header">
+                        <span class="diff-name">${wep.icon} ${wep.name}</span>
+                        <span class="diff-badge" style="background:${wep.color}22; color:${wep.color}; border:1px solid ${wep.color}66">${wep.ammo} RDS</span>
+                    </div>
+                    <div class="diff-desc">${wep.desc}</div>
+                    <div class="diff-stats">
+                        <div class="diff-stat-item">
+                            <span class="stat-label">DAMAGE</span>
+                            <span class="stat-val">${wep.damage}${wep.pellets ? 'x8' : ''}</span>
+                        </div>
+                        <div class="diff-stat-item">
+                            <span class="stat-label">FIRE RATE</span>
+                            <span class="stat-val">${wep.fireRate}s</span>
+                        </div>
+                        <div class="diff-stat-item">
+                            <span class="stat-label">ZOOM</span>
+                            <span class="stat-val">${Math.round((75 / wep.aimFOV) * 10) / 10}x</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         this.difficultyScreen.innerHTML = `
             <div class="diff-title">SELECT DIFFICULTY</div>
             <div class="diff-cards-grid">
                 ${cardsHTML}
             </div>
 
-            <div class="diff-actions">
+            <div class="diff-title" style="margin-top: 20px;">SELECT PRIMARY WEAPON</div>
+            <div class="wep-cards-grid">
+                ${weaponsHTML}
+            </div>
+
+            <div class="diff-actions" style="margin-top: 18px;">
                 <button id="btn-back-title" class="btn-secondary">
                     ← BACK
                 </button>
@@ -238,12 +317,21 @@ export class UIManager {
             };
         }
 
-        const cards = this.difficultyScreen.querySelectorAll('.diff-card');
-        cards.forEach(card => {
+        const diffCards = this.difficultyScreen.querySelectorAll('.diff-card');
+        diffCards.forEach(card => {
             card.onclick = () => {
-                cards.forEach(c => c.classList.remove('selected'));
+                diffCards.forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 this.selectedDifficultyKey = card.dataset.key;
+            };
+        });
+
+        const wepCards = this.difficultyScreen.querySelectorAll('.wep-card');
+        wepCards.forEach(card => {
+            card.onclick = () => {
+                wepCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                this.selectedWeaponKey = card.dataset.key;
             };
         });
 
@@ -263,7 +351,7 @@ export class UIManager {
                 }
 
                 if (typeof this.onStartGame === 'function') {
-                    this.onStartGame(diff);
+                    this.onStartGame(diff, this.selectedWeaponKey);
                 }
             };
         }
@@ -308,7 +396,8 @@ export class UIManager {
         isReloading = false,
         grenadeCount = 3,
         maxGrenades = 5,
-        grenadeTimer = 0
+        grenadeTimer = 0,
+        weapon = null
     }) {
         const hpEl = document.getElementById('hud-hp-val');
         if (hpEl) {
@@ -318,6 +407,12 @@ export class UIManager {
             } else {
                 hpEl.style.color = '#4ade80';
             }
+        }
+
+        const wepNameEl = document.getElementById('hud-weapon-name');
+        if (wepNameEl && weapon) {
+            wepNameEl.textContent = weapon.name;
+            wepNameEl.style.color = weapon.color || '#00e5ff';
         }
 
         const waveEl = document.getElementById('hud-wave-val');

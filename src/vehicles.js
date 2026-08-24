@@ -15,128 +15,372 @@ export class VehicleManager {
     createCarMesh() {
         const car = new THREE.Group();
 
-        // Materials
-        const bodyColor = Math.random() > 0.5 ? 0x8b1e1e : 0x222d36;
+        // 1. High-Threat Tactical Materials Palette
+        const palette = [
+            0x2d3a29, // Matte Tactical Olive Drab
+            0x1e242b, // Urban Digital Charcoal
+            0x78654c, // Desert Sandstorm Tan
+            0x16181b, // Blackout Stealth Armor
+            0x421c1c  // Ops Crimson Dark
+        ];
+        const bodyColor = palette[Math.floor(Math.random() * palette.length)];
+
         const bodyMat = new THREE.MeshStandardMaterial({
             color: bodyColor,
+            metalness: 0.65,
+            roughness: 0.45
+        });
+        const armorDarkMat = new THREE.MeshStandardMaterial({
+            color: 0x14171b,
+            metalness: 0.88,
+            roughness: 0.28
+        });
+        const trimMat = new THREE.MeshStandardMaterial({
+            color: 0x0c0e10,
+            metalness: 0.35,
+            roughness: 0.85
+        });
+        const glassMat = new THREE.MeshStandardMaterial({
+            color: 0x14222f,
+            metalness: 0.6,
+            roughness: 0.12,
+            transparent: true,
+            opacity: 0.88
+        });
+        const wheelMat = new THREE.MeshStandardMaterial({
+            color: 0x121315,
+            roughness: 0.95
+        });
+        const rimMat = new THREE.MeshStandardMaterial({
+            color: 0x2b3038,
+            metalness: 0.9,
+            roughness: 0.25
+        });
+        const beadlockMat = new THREE.MeshStandardMaterial({
+            color: 0x7c8590,
+            metalness: 0.95,
+            roughness: 0.2
+        });
+        const ramMat = new THREE.MeshStandardMaterial({
+            color: 0x181a1d,
             metalness: 0.85,
             roughness: 0.35
         });
-        const trimMat = new THREE.MeshStandardMaterial({
-            color: 0x0d0f12,
-            metalness: 0.9,
-            roughness: 0.2
-        });
-        const glassMat = new THREE.MeshStandardMaterial({
-            color: 0x22384a,
-            metalness: 0.5,
-            roughness: 0.1,
-            transparent: true,
-            opacity: 0.85
-        });
-        const wheelMat = new THREE.MeshStandardMaterial({
-            color: 0x151618,
-            roughness: 0.9
-        });
-        const rimMat = new THREE.MeshStandardMaterial({
-            color: 0x889098,
-            metalness: 0.85,
-            roughness: 0.3
-        });
-        const ramMat = new THREE.MeshStandardMaterial({
-            color: 0xbf3020,
-            metalness: 0.7,
-            roughness: 0.4
-        });
-        const lightGlowMat = new THREE.MeshBasicMaterial({ color: 0xffe680 });
-        const tailGlowMat = new THREE.MeshBasicMaterial({ color: 0xff1a1a });
+        const lightGlowMat = new THREE.MeshBasicMaterial({ color: 0xfffae6 });
+        const amberGlowMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        const tailGlowMat = new THREE.MeshBasicMaterial({ color: 0xff1e1e });
+        const redJerryMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.6 });
+        const gunMat = new THREE.MeshStandardMaterial({ color: 0x15171a, metalness: 0.92, roughness: 0.22 });
 
-        // 1. Chassis / Main Body (Front is along +Z)
-        const mainBody = new THREE.Mesh(
-            new THREE.BoxGeometry(2.4, 0.85, 4.8),
+        // 2. Chassis & Lower Armored Hull
+        const mainHull = new THREE.Mesh(
+            new THREE.BoxGeometry(2.35, 0.58, 4.9),
             bodyMat
         );
-        mainBody.position.y = 0.85;
-        mainBody.castShadow = true;
-        mainBody.receiveShadow = true;
-        car.add(mainBody);
+        mainHull.position.y = 0.68;
+        mainHull.castShadow = true;
+        mainHull.receiveShadow = true;
+        car.add(mainHull);
 
-        // 2. Cabin / Roof
-        const cabin = new THREE.Mesh(
-            new THREE.BoxGeometry(2.1, 0.75, 2.4),
-            glassMat
+        // Underbody Blast Skid Plate
+        const skidPlate = new THREE.Mesh(
+            new THREE.BoxGeometry(1.95, 0.16, 4.3),
+            armorDarkMat
         );
-        cabin.position.set(0, 1.55, -0.2);
+        skidPlate.position.y = 0.35;
+        car.add(skidPlate);
+
+        // 3. Upper Armored Hull & Sloped Engine Bonnet (+Z is Front)
+        const rearHull = new THREE.Mesh(
+            new THREE.BoxGeometry(2.30, 0.56, 2.5),
+            bodyMat
+        );
+        rearHull.position.set(0, 1.18, -1.0);
+        rearHull.castShadow = true;
+        car.add(rearHull);
+
+        const hood = new THREE.Mesh(
+            new THREE.BoxGeometry(2.26, 0.46, 1.9),
+            bodyMat
+        );
+        hood.position.set(0, 1.08, 1.25);
+        hood.rotation.x = 0.08;
+        hood.castShadow = true;
+        car.add(hood);
+
+        // Twin Recessed Engine Cooling Cowl Louvers
+        for (const side of [-0.55, 0.55]) {
+            const louver = new THREE.Mesh(
+                new THREE.BoxGeometry(0.52, 0.04, 0.9),
+                armorDarkMat
+            );
+            louver.position.set(side, 1.26, 1.25);
+            louver.rotation.x = 0.08;
+            car.add(louver);
+        }
+
+        // 4. Aggressive Bolted Armored Fender Flares over Wheels
+        for (const sx of [-1.20, 1.20]) {
+            for (const sz of [-1.45, 1.45]) {
+                const flare = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.22, 0.42, 1.35),
+                    armorDarkMat
+                );
+                flare.position.set(sx, 0.90, sz);
+                flare.castShadow = true;
+                car.add(flare);
+            }
+
+            // Heavy Tubular Side Rock Sliders & Step Plates
+            const rockSlider = new THREE.Mesh(
+                new THREE.BoxGeometry(0.18, 0.10, 1.4),
+                trimMat
+            );
+            rockSlider.position.set(sx * 1.05, 0.48, 0);
+            car.add(rockSlider);
+        }
+
+        // 5. Armored Cabin with Fastback Raked A-Pillars & Vision Slits
+        const cabin = new THREE.Mesh(
+            new THREE.BoxGeometry(2.08, 0.78, 2.3),
+            bodyMat
+        );
+        cabin.position.set(0, 1.70, -0.15);
         cabin.castShadow = true;
         car.add(cabin);
 
-        const roofPlate = new THREE.Mesh(
-            new THREE.BoxGeometry(2.15, 0.08, 2.45),
-            trimMat
+        // Sloped Ballistic Windshield
+        const windshield = new THREE.Mesh(
+            new THREE.BoxGeometry(1.92, 0.54, 0.06),
+            glassMat
         );
-        roofPlate.position.set(0, 1.95, -0.2);
-        roofPlate.castShadow = true;
-        car.add(roofPlate);
+        windshield.position.set(0, 1.74, 0.98);
+        windshield.rotation.x = -0.38;
+        car.add(windshield);
 
-        // 3. Heavy Ram Bumper (Front Bullbar at +Z)
-        const ramBar = new THREE.Mesh(
-            new THREE.BoxGeometry(2.6, 0.65, 0.45),
-            ramMat
+        const centerApost = new THREE.Mesh(
+            new THREE.BoxGeometry(0.12, 0.56, 0.08),
+            armorDarkMat
         );
-        ramBar.position.set(0, 0.75, 2.55);
-        ramBar.castShadow = true;
-        car.add(ramBar);
+        centerApost.position.set(0, 1.74, 0.98);
+        centerApost.rotation.x = -0.38;
+        car.add(centerApost);
 
-        // Reinforced Spikes on Ram Bar
-        for (let i = -1.0; i <= 1.0; i += 0.65) {
-            const spike = new THREE.Mesh(
-                new THREE.ConeGeometry(0.12, 0.45, 6),
-                trimMat
+        // Side Armored Vision Ports
+        for (const side of [-1.05, 1.05]) {
+            const sideGlass = new THREE.Mesh(
+                new THREE.BoxGeometry(0.04, 0.38, 1.6),
+                glassMat
             );
-            spike.rotation.x = Math.PI / 2;
-            spike.position.set(i, 0.75, 2.82);
-            car.add(spike);
+            sideGlass.position.set(side, 1.74, -0.15);
+            car.add(sideGlass);
+
+            // Ballistic Louver Guards
+            for (let lz = -0.6; lz <= 0.6; lz += 0.4) {
+                const louver = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.06, 0.03, 0.3),
+                    armorDarkMat
+                );
+                louver.position.set(side * 1.01, 1.74, -0.15 + lz);
+                car.add(louver);
+            }
         }
 
-        // 4. Headlights (at +Z)
-        const headL = new THREE.Mesh(
-            new THREE.BoxGeometry(0.45, 0.25, 0.1),
-            lightGlowMat
+        // Armored Roof Cap
+        const roofCap = new THREE.Mesh(
+            new THREE.BoxGeometry(2.14, 0.08, 2.38),
+            armorDarkMat
         );
-        headL.position.set(-0.85, 0.9, 2.42);
-        car.add(headL);
+        roofCap.position.set(0, 2.10, -0.15);
+        roofCap.castShadow = true;
+        car.add(roofCap);
 
-        const headR = headL.clone();
-        headR.position.x = 0.85;
-        car.add(headR);
+        // 6. Tactical Roof Basket, Fuel Jerry Cans & Spare Tire
+        const roofBasket = new THREE.Mesh(
+            new THREE.BoxGeometry(1.85, 0.16, 1.3),
+            trimMat
+        );
+        roofBasket.position.set(0, 2.22, -0.65);
+        car.add(roofBasket);
 
-        // Headlight Spotlights
-        const spotLight = new THREE.SpotLight(0xfff0b3, 4.0, 45, Math.PI / 6, 0.4);
-        spotLight.position.set(0, 1.0, 2.6);
+        // Dual Military Jerry Cans
+        for (const jx of [-0.62, -0.32]) {
+            const can = new THREE.Mesh(
+                new THREE.BoxGeometry(0.20, 0.36, 0.30),
+                redJerryMat
+            );
+            can.position.set(jx, 2.32, -0.65);
+            car.add(can);
+        }
+
+        // Roof-Mounted Spare Off-Road Wheel
+        const spareTire = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.44, 0.44, 0.30, 14),
+            wheelMat
+        );
+        spareTire.position.set(0.42, 2.28, -0.65);
+        car.add(spareTire);
+
+        // 7. Heavy Combat Push-Bumper (Bullbar) & Ram Plates at +Z
+        const ramBumper = new THREE.Mesh(
+            new THREE.BoxGeometry(2.55, 0.42, 0.45),
+            ramMat
+        );
+        ramBumper.position.set(0, 0.72, 2.58);
+        ramBumper.castShadow = true;
+        car.add(ramBumper);
+
+        const pushPlate = new THREE.Mesh(
+            new THREE.BoxGeometry(2.35, 0.65, 0.15),
+            armorDarkMat
+        );
+        pushPlate.position.set(0, 0.95, 2.78);
+        pushPlate.castShadow = true;
+        car.add(pushPlate);
+
+        const radiatorGuard = new THREE.Mesh(
+            new THREE.BoxGeometry(2.2, 0.08, 0.08),
+            ramMat
+        );
+        radiatorGuard.position.set(0, 1.36, 2.72);
+        car.add(radiatorGuard);
+
+        // Bumper Struts & Recovery D-Rings
+        for (const side of [-0.85, 0.85]) {
+            const strut = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.45, 0.08),
+                ramMat
+            );
+            strut.position.set(side, 1.15, 2.72);
+            car.add(strut);
+
+            const dRing = new THREE.Mesh(
+                new THREE.TorusGeometry(0.06, 0.018, 6, 12),
+                armorDarkMat
+            );
+            dRing.position.set(side * 0.85, 0.55, 2.82);
+            car.add(dRing);
+        }
+
+        // Heavy Winch Drum
+        const winch = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.12, 0.12, 0.55, 10),
+            armorDarkMat
+        );
+        winch.rotation.z = Math.PI / 2;
+        winch.position.set(0, 0.72, 2.82);
+        car.add(winch);
+
+        // 8. Quad LED Auxiliary Fog Lights on Bullbar
+        for (let fx = -0.6; fx <= 0.6; fx += 0.4) {
+            const fogPod = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.07, 0.07, 0.06, 8),
+                amberGlowMat
+            );
+            fogPod.rotation.x = Math.PI / 2;
+            fogPod.position.set(fx, 1.36, 2.78);
+            car.add(fogPod);
+        }
+
+        // 9. Sleek Angular Headlights & Tail Lights
+        for (const side of [-0.88, 0.88]) {
+            const headlamp = new THREE.Mesh(
+                new THREE.BoxGeometry(0.46, 0.18, 0.08),
+                lightGlowMat
+            );
+            headlamp.position.set(side, 1.02, 2.46);
+            car.add(headlamp);
+
+            const marker = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.18, 0.08),
+                amberGlowMat
+            );
+            marker.position.set(side + (side > 0 ? 0.28 : -0.28), 1.02, 2.46);
+            car.add(marker);
+        }
+
+        // Forward Projecting Headlight Spotlight
+        const spotLight = new THREE.SpotLight(0xfffae6, 4.5, 55, Math.PI / 5, 0.4);
+        spotLight.position.set(0, 1.1, 2.7);
         const spotTarget = new THREE.Object3D();
-        spotTarget.position.set(0, 0.5, 30);
+        spotTarget.position.set(0, 0.5, 35);
         car.add(spotTarget);
         spotLight.target = spotTarget;
         car.add(spotLight);
 
-        // 5. Taillights (at -Z)
-        const tailL = new THREE.Mesh(
-            new THREE.BoxGeometry(0.45, 0.2, 0.08),
+        // Full-Width Rear LED Tail Light Bar at -Z
+        const tailBar = new THREE.Mesh(
+            new THREE.BoxGeometry(2.05, 0.14, 0.06),
             tailGlowMat
         );
-        tailL.position.set(-0.85, 0.9, -2.42);
-        car.add(tailL);
+        tailBar.position.set(0, 1.08, -2.48);
+        car.add(tailBar);
 
-        const tailR = tailL.clone();
-        tailR.position.x = 0.85;
-        car.add(tailR);
+        // 10. Heavy Mounted Twin-Barrel .50 HMG Roof Turret
+        const turretRing = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.62, 0.68, 0.18, 16),
+            armorDarkMat
+        );
+        turretRing.position.set(0, 2.16, 0.35);
+        car.add(turretRing);
 
-        // 6. Wheels
+        // Angular Armored Gun Shield
+        const gunShield = new THREE.Mesh(
+            new THREE.BoxGeometry(0.88, 0.68, 0.10),
+            armorDarkMat
+        );
+        gunShield.position.set(0, 2.58, 0.62);
+        gunShield.castShadow = true;
+        car.add(gunShield);
+
+        const opticSlit = new THREE.Mesh(
+            new THREE.BoxGeometry(0.35, 0.07, 0.12),
+            glassMat
+        );
+        opticSlit.position.set(0, 2.72, 0.62);
+        car.add(opticSlit);
+
+        // Twin .50 Cal Heavy Machine Gun Barrels
+        for (const gx of [-0.12, 0.12]) {
+            const barrel = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.024, 0.024, 0.85, 10),
+                gunMat
+            );
+            barrel.rotation.x = Math.PI / 2;
+            barrel.position.set(gx, 2.52, 0.90);
+            car.add(barrel);
+
+            const brake = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.038, 0.038, 0.10, 8),
+                gunMat
+            );
+            brake.rotation.x = Math.PI / 2;
+            brake.position.set(gx, 2.52, 1.34);
+            car.add(brake);
+        }
+
+        // Steel Ammo Can Drum
+        const ammoDrum = new THREE.Mesh(
+            new THREE.BoxGeometry(0.28, 0.28, 0.22),
+            armorDarkMat
+        );
+        ammoDrum.position.set(-0.36, 2.48, 0.35);
+        car.add(ammoDrum);
+
+        // Tactical Gunner Silhouette
+        const gunnerBody = new THREE.Mesh(
+            new THREE.CapsuleGeometry(0.22, 0.44, 4, 8),
+            trimMat
+        );
+        gunnerBody.position.set(0, 2.50, 0.12);
+        car.add(gunnerBody);
+
+        // 11. All-Terrain Heavy Beadlock Wheels
         const wheelPositions = [
-            [-1.25, 0.5, 1.45],
-            [1.25, 0.5, 1.45],
-            [-1.25, 0.5, -1.45],
-            [1.25, 0.5, -1.45]
+            [-1.25, 0.52, 1.45],
+            [1.25, 0.52, 1.45],
+            [-1.25, 0.52, -1.45],
+            [1.25, 0.52, -1.45]
         ];
 
         car.userData.wheels = [];
@@ -145,33 +389,35 @@ export class VehicleManager {
             const wheelGroup = new THREE.Group();
             wheelGroup.position.set(wx, wy, wz);
 
+            // Mud-Terrain Off-Road Tire
             const tire = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.52, 0.52, 0.45, 16),
+                new THREE.CylinderGeometry(0.54, 0.54, 0.48, 18),
                 wheelMat
             );
             tire.rotation.z = Math.PI / 2;
             tire.castShadow = true;
             wheelGroup.add(tire);
 
+            // Deep Concave Rim
             const rim = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.3, 0.3, 0.47, 8),
+                new THREE.CylinderGeometry(0.34, 0.34, 0.50, 10),
                 rimMat
             );
             rim.rotation.z = Math.PI / 2;
             wheelGroup.add(rim);
 
+            // Outer Beadlock Bolt Ring
+            const beadlock = new THREE.Mesh(
+                new THREE.TorusGeometry(0.32, 0.032, 6, 16),
+                beadlockMat
+            );
+            beadlock.rotation.y = Math.PI / 2;
+            beadlock.position.x = wx > 0 ? 0.24 : -0.24;
+            wheelGroup.add(beadlock);
+
             car.add(wheelGroup);
             car.userData.wheels.push(wheelGroup);
         }
-
-        // 7. Armored Turret & Gunner Silhouette
-        const turretRing = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.2, 10), trimMat);
-        turretRing.position.set(0, 2.05, 0.2);
-        car.add(turretRing);
-
-        const gunnerBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.45, 4, 8), trimMat);
-        gunnerBody.position.set(0, 2.35, 0.2);
-        car.add(gunnerBody);
 
         car.traverse(child => {
             if (child.isMesh) {

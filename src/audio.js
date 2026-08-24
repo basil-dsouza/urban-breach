@@ -89,6 +89,174 @@ class SoundEngine {
     }
 
     /**
+     * Heavy .50 Cal Sniper Rifle Gunshot (Thunderous Boom & Long Acoustic Reverb)
+     */
+    playSniperFire(scoped = false) {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+
+        // Heavy Supersonic Noise Whip
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer(0.6);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3200, t);
+        filter.frequency.exponentialRampToValueAtTime(120, t + 0.55);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(1.0 * this.masterVolume, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.58);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+        noise.start(t);
+
+        // Sub-Bass Shockwave
+        const sub = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        sub.type = 'sine';
+        sub.frequency.setValueAtTime(120, t);
+        sub.frequency.exponentialRampToValueAtTime(25, t + 0.35);
+
+        subGain.gain.setValueAtTime(0.9 * this.masterVolume, t);
+        subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+
+        sub.connect(subGain);
+        subGain.connect(this.ctx.destination);
+        sub.start(t);
+        sub.stop(t + 0.4);
+    }
+
+    /**
+     * 12-Gauge Shotgun Blast
+     */
+    playShotgunFire(scoped = false) {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer(0.4);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3600, t);
+        filter.frequency.exponentialRampToValueAtTime(200, t + 0.35);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.95 * this.masterVolume, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+        noise.start(t);
+
+        const thud = this.ctx.createOscillator();
+        const thudGain = this.ctx.createGain();
+        thud.type = 'triangle';
+        thud.frequency.setValueAtTime(160, t);
+        thud.frequency.exponentialRampToValueAtTime(30, t + 0.18);
+
+        thudGain.gain.setValueAtTime(0.85 * this.masterVolume, t);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+
+        thud.connect(thudGain);
+        thudGain.connect(this.ctx.destination);
+        thud.start(t);
+        thud.stop(t + 0.22);
+    }
+
+    /**
+     * Rapid .45 SMG Fire
+     */
+    playSMGFire(scoped = false) {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer(0.14);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(3400, t);
+        filter.frequency.exponentialRampToValueAtTime(600, t + 0.12);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.55 * this.masterVolume, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(t);
+    }
+
+    /**
+     * .44 Magnum Heavy Gunshot
+     */
+    playMagnumFire(scoped = false) {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer(0.35);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(2200, t);
+        filter.frequency.exponentialRampToValueAtTime(250, t + 0.3);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.85 * this.masterVolume, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(t);
+    }
+
+    /**
+     * Spent Brass Shell Casing Tink
+     */
+    playShellCasingDrop() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime + 0.25;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(3200 + Math.random() * 800, t);
+        osc.frequency.exponentialRampToValueAtTime(1800, t + 0.06);
+
+        gain.gain.setValueAtTime(0.12 * this.masterVolume, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.08);
+    }
+
+    /**
      * Enemy rifle gunshot (spatialized snap)
      */
     playEnemyShot(pan = 0) {

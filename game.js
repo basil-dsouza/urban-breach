@@ -4,7 +4,7 @@ import { SpreadSystem } from './src/spread.js';
 import { GrenadePhysics } from './src/grenades.js';
 import { EnemyManager } from './src/enemies.js';
 import { VehicleManager } from './src/vehicles.js';
-import { UIManager } from './src/ui.js';
+import { UIManager, WEAPON_CONFIGS } from './src/ui.js';
 import { soundEngine } from './src/audio.js';
 
 /* =========================================================
@@ -716,11 +716,13 @@ let gunRecoil = 0;
 const keys = {};
 
 // Ammo & Reload State
+let currentWeaponKey = 'AK47';
+let currentWeapon = WEAPON_CONFIGS.AK47;
 let ammo = 30;
-const maxAmmo = 30;
+let maxAmmo = 30;
 let isReloading = false;
 let reloadTimer = 0;
-const reloadDuration = 1.8;
+let reloadDuration = 2.1;
 let reloadPhase = 0;
 
 // Grenade Replenishing System (5s replenish timer, caps at 5)
@@ -733,7 +735,7 @@ const jumpPower = 9;
 const eyeHeight = 1.7;
 const playerRadius = 0.35;
 const normalFOV = 75;
-const aimFOV = 32;
+let aimFOV = 48;
 
 let waveTimer = 0;
 let enemySpawnTimer = 0;
@@ -753,177 +755,201 @@ function getHUDState() {
         isReloading,
         grenadeCount,
         maxGrenades,
-        grenadeTimer: grenadeReplenishTimer
+        grenadeTimer: grenadeReplenishTimer,
+        weapon: currentWeapon
     };
 }
 
-// 11. SEAMLESSLY INTEGRATED & ROUNDED LOW-POLY M16/M4 VIEWMODEL
+// 11. PROCEDURAL 3D WEAPON VIEWMODELS
 const gunGroup = new THREE.Group();
 gunGroup.position.set(0.24, -0.22, -0.48);
 gunGroup.rotation.set(-0.02, -0.04, 0.03);
-
-// Unified PBR Materials with Smooth Normals & Specular Sheen
-const matGunmetal = new THREE.MeshStandardMaterial({
-    color: 0x282c30,
-    metalness: 0.82,
-    roughness: 0.35
-});
-const matGunmetalDark = new THREE.MeshStandardMaterial({
-    color: 0x181a1d,
-    metalness: 0.9,
-    roughness: 0.25
-});
-const matTan = new THREE.MeshStandardMaterial({
-    color: 0xc2a67e, // Desert Tan / FDE
-    metalness: 0.12,
-    roughness: 0.75
-});
-const matGlove = new THREE.MeshStandardMaterial({
-    color: 0x222529,
-    roughness: 0.92
-});
-
-// A. Smooth Sculpted Upper & Lower Receiver
-const upperReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.092, 0.38), matGunmetal);
-upperReceiver.position.set(0, 0.03, 0);
-gunGroup.add(upperReceiver);
-
-const lowerReceiver = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.082, 0.29), matGunmetal);
-lowerReceiver.position.set(0, -0.05, 0.02);
-gunGroup.add(lowerReceiver);
-
-// Mag Well Flare
-const magWell = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.065, 0.115), matGunmetal);
-magWell.position.set(0, -0.09, -0.07);
-gunGroup.add(magWell);
-
-// Brass Deflector & Forward Assist
-const brassDeflector = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.04, 6), matGunmetalDark);
-brassDeflector.rotation.set(0, 0, -Math.PI / 2);
-brassDeflector.position.set(0.042, 0.04, 0.05);
-gunGroup.add(brassDeflector);
-
-const forwardAssist = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.05, 10), matGunmetalDark);
-forwardAssist.rotation.set(0.3, 0, -Math.PI / 3);
-forwardAssist.position.set(0.045, 0.055, 0.11);
-gunGroup.add(forwardAssist);
-
-// B. Seamless Carry Handle Arch & Rear Sight
-const carryTop = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.032, 0.28), matGunmetal);
-carryTop.position.set(0, 0.155, -0.03);
-gunGroup.add(carryTop);
-
-const carryRear = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.085, 0.05), matGunmetal);
-carryRear.position.set(0, 0.11, 0.08);
-gunGroup.add(carryRear);
-
-const carryFront = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.085, 0.04), matGunmetal);
-carryFront.position.set(0, 0.11, -0.14);
-gunGroup.add(carryFront);
-
-const rearSightAperture = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.022, 0.026, 0.045, 12),
-    matGunmetalDark
-);
-rearSightAperture.position.set(0, 0.18, 0.08);
-gunGroup.add(rearSightAperture);
-
-const windageKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.022, 12), matGunmetalDark);
-windageKnob.rotation.z = Math.PI / 2;
-windageKnob.position.set(0.034, 0.175, 0.08);
-gunGroup.add(windageKnob);
-
-// C. Smooth Cylindrical Handguard (Desert Tan / FDE)
-const handguard = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.065, 0.076, 0.38, 16),
-    matTan
-);
-handguard.rotation.x = Math.PI / 2;
-handguard.position.set(0, 0.025, -0.37);
-gunGroup.add(handguard);
-
-// Delta Ring Collar
-const deltaRing = new THREE.Mesh(new THREE.CylinderGeometry(0.074, 0.074, 0.04, 16), matGunmetalDark);
-deltaRing.rotation.x = Math.PI / 2;
-deltaRing.position.set(0, 0.025, -0.185);
-gunGroup.add(deltaRing);
-
-// D. Barrel & Birdcage Flash Hider
-const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.54, 12), matGunmetal);
-barrel.rotation.x = Math.PI / 2;
-barrel.position.set(0, 0.025, -0.70);
-gunGroup.add(barrel);
-
-const flashHider = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.085, 12), matGunmetalDark);
-flashHider.rotation.x = Math.PI / 2;
-flashHider.position.set(0, 0.025, -0.98);
-gunGroup.add(flashHider);
-
-// E. Triangular A-Frame Front Sight Post
-const fsBase = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.06, 0.06), matGunmetal);
-fsBase.position.set(0, 0.06, -0.74);
-gunGroup.add(fsBase);
-
-const fsStrutL = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.12, 0.02), matGunmetal);
-fsStrutL.position.set(-0.012, 0.13, -0.74);
-fsStrutL.rotation.z = -0.18;
-gunGroup.add(fsStrutL);
-
-const fsStrutR = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.12, 0.02), matGunmetal);
-fsStrutR.position.set(0.012, 0.13, -0.74);
-fsStrutR.rotation.z = 0.18;
-gunGroup.add(fsStrutR);
-
-const fsPin = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.045, 8), matGunmetalDark);
-fsPin.position.set(0, 0.18, -0.74);
-gunGroup.add(fsPin);
-
-const slingLoop = new THREE.Mesh(new THREE.TorusGeometry(0.02, 0.005, 6, 12), matGunmetalDark);
-slingLoop.position.set(0, -0.02, -0.74);
-slingLoop.rotation.y = Math.PI / 2;
-gunGroup.add(slingLoop);
-
-// F. Desert Tan Magazine
-const mag = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.29, 0.115), matTan);
-mag.position.set(0, -0.19, -0.06);
-mag.rotation.x = 0.24;
-gunGroup.add(mag);
-
-// G. Buffer Tube & Connected Buttstock
-const bufferTube = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.26, 12), matGunmetal);
-bufferTube.rotation.x = Math.PI / 2;
-bufferTube.position.set(0, 0.025, 0.27);
-gunGroup.add(bufferTube);
-
-const stock = new THREE.Mesh(new THREE.BoxGeometry(0.066, 0.155, 0.28), matTan);
-stock.position.set(0, 0.01, 0.40);
-gunGroup.add(stock);
-
-// H. Desert Tan Pistol Grip
-const pistolGrip = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.165, 0.075), matTan);
-pistolGrip.position.set(0, -0.13, 0.12);
-pistolGrip.rotation.x = -0.38;
-gunGroup.add(pistolGrip);
-
-// I. Operator Gloved Hands
-const handRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
-handRight.position.set(0, -0.12, 0.11);
-gunGroup.add(handRight);
-
-const handLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
-handLeft.position.set(-0.05, 0.0, -0.33);
-gunGroup.add(handLeft);
-
-// J. Muzzle Flash Light
-const muzzleFlashLight = new THREE.PointLight(0xffcc33, 0, 14);
-muzzleFlashLight.position.set(0, 0.025, -1.06);
+let muzzleFlashLight = new THREE.PointLight(0xffcc33, 0, 14);
 gunGroup.add(muzzleFlashLight);
-
 camera.add(gunGroup);
+
+function applyWeaponModel(weaponKey = 'AK47') {
+    while (gunGroup.children.length > 0) {
+        gunGroup.remove(gunGroup.children[0]);
+    }
+
+    muzzleFlashLight = new THREE.PointLight(0xffcc33, 0, 14);
+    gunGroup.add(muzzleFlashLight);
+
+    const matReceiver = new THREE.MeshStandardMaterial({ color: 0x22262a, metalness: 0.88, roughness: 0.32 });
+    const matSteelDark = new THREE.MeshStandardMaterial({ color: 0x141618, metalness: 0.94, roughness: 0.20 });
+    const matSteelSatin = new THREE.MeshStandardMaterial({ color: 0xc4cdd6, metalness: 0.95, roughness: 0.18 });
+    const matWood = new THREE.MeshStandardMaterial({ color: 0x5a2d12, roughness: 0.65 });
+    const matPolymer = new THREE.MeshStandardMaterial({ color: 0x181a1d, metalness: 0.22, roughness: 0.88 });
+    const matGlove = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.94 });
+
+    if (weaponKey === 'SNIPER') {
+        // =========================================================
+        // SUPREME BARRETT .50 CAL ANTI-MATERIEL HEAVY SNIPER RIFLE
+        // =========================================================
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.082, 0.12, 0.68), matReceiver);
+        receiver.position.set(0, 0.04, 0.05);
+        gunGroup.add(receiver);
+
+        const boltHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.09, 8), matSteelDark);
+        boltHandle.rotation.z = Math.PI / 2;
+        boltHandle.position.set(0.07, 0.07, 0.12);
+        gunGroup.add(boltHandle);
+
+        const boltKnob = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), matSteelDark);
+        boltKnob.position.set(0.115, 0.07, 0.12);
+        gunGroup.add(boltKnob);
+
+        // Long Fluted 29" Match Heavy Barrel
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.026, 1.05, 16), matSteelDark);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.045, -0.78);
+        gunGroup.add(barrel);
+
+        // Dual-Baffle Arrowhead Muzzle Brake with 45-deg Gas Deflectors
+        const brake = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.052, 0.14), matSteelDark);
+        brake.position.set(0, 0.045, -1.36);
+        gunGroup.add(brake);
+
+        // Mounted 8-32x56 Precision Optical Sniper Scope with Sunshade
+        const scopeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.42, 16), matSteelDark);
+        scopeBody.rotation.x = Math.PI / 2;
+        scopeBody.position.set(0, 0.16, 0.02);
+        gunGroup.add(scopeBody);
+
+        const scopeObjective = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.024, 0.12, 16), matSteelDark);
+        scopeObjective.rotation.x = Math.PI / 2;
+        scopeObjective.position.set(0, 0.16, -0.24);
+        gunGroup.add(scopeObjective);
+
+        const scopeEyepiece = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.024, 0.08, 16), matSteelDark);
+        scopeEyepiece.rotation.x = Math.PI / 2;
+        scopeEyepiece.position.set(0, 0.16, 0.26);
+        gunGroup.add(scopeEyepiece);
+
+        // Knurled Elevation / Windage Turrets
+        const turretTop = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.024, 12), matSteelDark);
+        turretTop.position.set(0, 0.195, 0.02);
+        gunGroup.add(turretTop);
+
+        const turretSide = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.024, 12), matSteelDark);
+        turretSide.rotation.z = Math.PI / 2;
+        turretSide.position.set(0.036, 0.16, 0.02);
+        gunGroup.add(turretSide);
+
+        // Hex Mounting Rings
+        for (const z of [-0.10, 0.14]) {
+            const ring = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.075, 0.032), matReceiver);
+            ring.position.set(0, 0.13, z);
+            gunGroup.add(ring);
+        }
+
+        // Heavy Folded Steel Bipod
+        for (const side of [-1, 1]) {
+            const bipodLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.30, 8), matSteelDark);
+            bipodLeg.rotation.x = Math.PI / 2 - 0.15;
+            bipodLeg.rotation.z = side * 0.2;
+            bipodLeg.position.set(side * 0.055, -0.04, -0.60);
+            gunGroup.add(bipodLeg);
+        }
+
+        // Heavy Steel .50 BMG 10-Round Box Magazine
+        const mag = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.26, 0.16), matSteelDark);
+        mag.position.set(0, -0.14, -0.04);
+        gunGroup.add(mag);
+
+        // Skeletonized Sniper Stock with Adjustable Cheek Riser
+        const stock = new THREE.Mesh(new THREE.BoxGeometry(0.074, 0.18, 0.38), matReceiver);
+        stock.position.set(0, 0.02, 0.50);
+        gunGroup.add(stock);
+
+        const cheekPad = new THREE.Mesh(new THREE.BoxGeometry(0.078, 0.045, 0.18), matPolymer);
+        cheekPad.position.set(0, 0.125, 0.44);
+        gunGroup.add(cheekPad);
+
+        muzzleFlashLight.position.set(0, 0.045, -1.42);
+
+    } else {
+        // =========================================================
+        // AK-47 SOVIET TACTICAL ASSAULT RIFLE
+        // =========================================================
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.096, 0.44), matSteelDark);
+        receiver.position.set(0, 0.02, 0.02);
+        gunGroup.add(receiver);
+
+        const dustCover = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.42, 12, 1, false, 0, Math.PI), matSteelDark);
+        dustCover.rotation.x = Math.PI / 2;
+        dustCover.position.set(0, 0.068, 0.02);
+        gunGroup.add(dustCover);
+
+        // Curved 30-Round Banana Magazine
+        const mag = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.30, 0.12), matSteelDark);
+        mag.position.set(0, -0.17, -0.08);
+        mag.rotation.x = 0.32;
+        gunGroup.add(mag);
+
+        // Gas Tube & Wooden Handguard
+        const handguardBottom = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.058, 0.28), matWood);
+        handguardBottom.position.set(0, -0.005, -0.34);
+        gunGroup.add(handguardBottom);
+
+        const handguardTop = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.26, 12), matWood);
+        handguardTop.rotation.x = Math.PI / 2;
+        handguardTop.position.set(0, 0.042, -0.34);
+        gunGroup.add(handguardTop);
+
+        // Chrome-Lined Barrel & Slant Muzzle Brake
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.60, 12), matSteelDark);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.026, -0.66);
+        gunGroup.add(barrel);
+
+        const muzzleSlant = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.06, 10), matSteelDark);
+        muzzleSlant.rotation.x = Math.PI / 2;
+        muzzleSlant.rotation.z = -0.3;
+        muzzleSlant.position.set(0, 0.026, -0.98);
+        gunGroup.add(muzzleSlant);
+
+        // Hooded Front Sight Post
+        const frontSight = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.075, 0.035), matSteelDark);
+        frontSight.position.set(0, 0.075, -0.88);
+        gunGroup.add(frontSight);
+
+        // Tangent Rear Sight Notch
+        const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.024, 0.06), matSteelDark);
+        rearSight.position.set(0, 0.075, -0.18);
+        gunGroup.add(rearSight);
+
+        // Classic Wooden Buttstock
+        const stock = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.15, 0.35), matWood);
+        stock.position.set(0, -0.015, 0.40);
+        stock.rotation.x = 0.05;
+        gunGroup.add(stock);
+
+        // Wooden / Bakelite Pistol Grip
+        const pistolGrip = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.16, 0.075), matWood);
+        pistolGrip.position.set(0, -0.12, 0.13);
+        pistolGrip.rotation.x = -0.42;
+        gunGroup.add(pistolGrip);
+
+        muzzleFlashLight.position.set(0, 0.026, -1.02);
+    }
+
+    // Operator Gloved Hands
+    const handRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
+    handRight.position.set(0, -0.12, 0.11);
+    gunGroup.add(handRight);
+
+    const handLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
+    handLeft.position.set(-0.05, 0.0, -0.33);
+    gunGroup.add(handLeft);
+}
+
+applyWeaponModel('AK47');
 
 // 12. UI Manager Initializer
 const uiManager = new UIManager({
-    onStartGame: (selectedDifficulty) => {
+    onStartGame: (selectedDifficulty, selectedWeaponKey) => {
         soundEngine.init();
         soundEngine.resume();
 
@@ -931,7 +957,18 @@ const uiManager = new UIManager({
         health = maxHealth;
         kills = 0;
         wave = 1;
-        ammo = 30;
+
+        currentWeaponKey = selectedWeaponKey || 'AK47';
+        currentWeapon = WEAPON_CONFIGS[currentWeaponKey] || WEAPON_CONFIGS.AK47;
+
+        ammo = currentWeapon.ammo;
+        maxAmmo = currentWeapon.maxAmmo;
+        reloadDuration = currentWeapon.reloadTime;
+        aimFOV = currentWeapon.aimFOV || 48;
+
+        spreadSystem.setWeaponConfig(currentWeapon.spread);
+        applyWeaponModel(currentWeaponKey);
+
         isReloading = false;
         grenadeCount = 3;
         grenadeReplenishTimer = 5.0;
@@ -1072,7 +1109,7 @@ document.addEventListener('mouseup', e => {
 
 document.addEventListener('contextmenu', e => e.preventDefault());
 
-// 17. Player Shooting with Precision & Stealth Break
+// 17. Player Shooting with Multi-Weapon Support & Stealth Break
 function shoot() {
     if (fireCooldown > 0 || isReloading) return;
 
@@ -1084,14 +1121,21 @@ function shoot() {
     }
 
     ammo--;
-    stealthBreakTimer = 3.5; // Shooting breaks stealth for 3.5 seconds
+    stealthBreakTimer = 4.0; // Shooting breaks stealth
     isPlayerHidden = false;
     uiManager.updateHUD(getHUDState());
 
-    fireCooldown = aiming ? 0.12 : 0.09;
-
+    fireCooldown = currentWeapon.fireRate;
     spreadSystem.onFire(aiming);
-    soundEngine.playRifleShot(aiming);
+
+    // Multi-Weapon Sound Effects
+    if (currentWeapon.id === 'SNIPER') {
+        soundEngine.playSniperFire(aiming);
+        soundEngine.playShellCasingDrop();
+    } else {
+        soundEngine.playRifleShot(aiming);
+        if (Math.random() < 0.35) soundEngine.playShellCasingDrop();
+    }
 
     const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
@@ -1103,21 +1147,23 @@ function shoot() {
     const bulletDir = new THREE.Vector3(spreadDirObj.x, spreadDirObj.y, spreadDirObj.z);
 
     const bullet = new THREE.Mesh(
-        new THREE.SphereGeometry(0.045, 8, 8),
+        new THREE.SphereGeometry(currentWeapon.id === 'SNIPER' ? 0.09 : 0.045, 8, 8),
         bulletMat
     );
     bullet.position.copy(camera.position);
 
-    bullet.userData.velocity = bulletDir.multiplyScalar(160);
-    bullet.userData.life = 2.2;
+    const bulletSpeed = currentWeapon.id === 'SNIPER' ? 340 : 175;
+    bullet.userData.velocity = bulletDir.multiplyScalar(bulletSpeed);
+    bullet.userData.damage = currentWeapon.damage;
+    bullet.userData.life = 2.5;
 
     scene.add(bullet);
     bullets.push(bullet);
 
-    muzzleFlashLight.intensity = 8;
-    setTimeout(() => { muzzleFlashLight.intensity = 0; }, 35);
+    muzzleFlashLight.intensity = currentWeapon.id === 'SNIPER' ? 16 : 8;
+    setTimeout(() => { muzzleFlashLight.intensity = 0; }, 40);
 
-    gunRecoil = aiming ? 0.015 : 0.07;
+    gunRecoil = aiming ? currentWeapon.recoilKick * 0.35 : currentWeapon.recoilKick;
 }
 
 // 18. Bullet Holes & Impacts
@@ -1499,7 +1545,8 @@ function updateBullets(delta) {
             enemyCenter.y += 1.45;
 
             if (bullet.position.distanceTo(enemyCenter) < 1.3) {
-                enemy.userData.health--;
+                const enemyDmg = bullet.userData.damage >= 100 ? 10 : (bullet.userData.damage >= 50 ? 3 : 1);
+                enemy.userData.health -= enemyDmg;
                 soundEngine.playEnemyHit();
                 createHitEffect(bullet.position);
 
@@ -1525,7 +1572,8 @@ function updateBullets(delta) {
                 const carCenter = car.position.clone();
                 carCenter.y += 1.0;
                 if (bullet.position.distanceTo(carCenter) < 2.5) {
-                    vehicleManager.damageVehicle(car, 5, () => {
+                    const carDmg = bullet.userData.damage >= 100 ? 35 : (bullet.userData.damage >= 50 ? 18 : 6);
+                    vehicleManager.damageVehicle(car, carDmg, () => {
                         kills += 3;
                         uiManager.updateHUD(getHUDState());
                     });
@@ -1605,7 +1653,7 @@ function updateBulletHoles(delta) {
 
 // 26. Aim, Viewmodel Visibility & Reload Viewmodel Animation
 function updateAimAndGun(delta, moving, sprint) {
-    const targetFOV = aiming ? aimFOV : normalFOV;
+    const targetFOV = aiming ? (currentWeapon.aimFOV || aimFOV) : normalFOV;
     camera.fov = THREE.MathUtils.lerp(camera.fov, targetFOV, delta * 14);
     camera.updateProjectionMatrix();
 
