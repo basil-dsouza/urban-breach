@@ -43,6 +43,18 @@ describe('SpreadSystem — Balanced Hip-Fire & Pinpoint ADS', () => {
         expect(spread.currentSpread).toBe(SPREAD_CONFIG.maxSpread);
     });
 
+    it('should calculate lower base spread when crouching (3.5px) or crouch-moving (6px)', () => {
+        expect(spread.getBaseSpread({ crouching: true, moving: false })).toBe(3.5);
+        expect(spread.getBaseSpread({ crouching: true, moving: true })).toBe(6.0);
+        expect(spread.getBaseSpread({ crouching: false, moving: false })).toBe(7.0);
+    });
+
+    it('should reduce per-shot kick when crouching', () => {
+        const initial = spread.currentSpread;
+        spread.onFire(false, true); // crouching fire
+        expect(spread.currentSpread).toBe(initial + SPREAD_CONFIG.firePerShotKick * 0.65);
+    });
+
     it('should calculate perfectly straight trajectory when aimed (spread <= 0.1)', () => {
         const forward = { x: 0, y: 0, z: -1 };
         const right = { x: 1, y: 0, z: 0 };

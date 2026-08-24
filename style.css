@@ -599,6 +599,34 @@ body {
     font-weight: 900;
 }
 
+.hud-crouch-prompt {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 25, 45, 0.85);
+    border: 1.5px solid #00e5ff;
+    color: #00e5ff;
+    padding: 8px 22px;
+    border-radius: 30px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    backdrop-filter: blur(8px);
+    z-index: 50;
+}
+
+.hud-crouch-prompt span {
+    color: #ffffff;
+    background: #00e5ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 900;
+}
+
 .hud-weapon-card {
     background: rgba(10, 16, 24, 0.85);
     border: 1px solid rgba(0, 229, 255, 0.35);

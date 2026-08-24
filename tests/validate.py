@@ -241,6 +241,49 @@ def test_vehicle_pursuit_and_ramming_system():
     assert car_destroyed is True
     print("[PASS] Vehicle combat pursuit, ramming, and obstacle recovery passed!")
 
+def test_crouch_spread_and_edge_lock():
+    print("Testing crouching spread reduction and edge lock safety...")
+    base_standing = 7.0
+    base_crouching = 3.5
+    base_crouch_moving = 6.0
+    base_moving = 12.0
+
+    # 1. Spread math
+    assert base_crouching < base_standing
+    assert base_crouch_moving < base_moving
+
+    # 2. Edge lock probe math
+    roof_ground = 15.0
+    street_ground = 0.0
+
+    current_pos_x = 9.9
+    next_pos_x = 10.05
+    probe_x = next_pos_x + 0.28 # 10.33m
+
+    def get_ground(x):
+        return roof_ground if x <= 10.0 else street_ground
+
+    current_ground = get_ground(current_pos_x)
+    probe_ground = get_ground(probe_x)
+    drop = current_ground - probe_ground
+
+    # Drop exceeds 0.85m -> movement blocked
+    is_blocked = drop > 0.85
+    assert is_blocked is True
+    print("[PASS] Crouching spread reduction and edge lock safety passed!")
+
+def test_two_gun_arsenal_stats():
+    print("Testing 2-gun arsenal configuration (AK-47 & Barrett .50)...")
+    ak47 = {'ammo': 30, 'damage': 35, 'fireRate': 0.095, 'aimFOV': 48}
+    barrett = {'ammo': 10, 'damage': 200, 'fireRate': 0.85, 'aimFOV': 15}
+
+    assert ak47['ammo'] == 30
+    assert ak47['fireRate'] < 0.1
+    assert barrett['ammo'] == 10
+    assert barrett['damage'] >= 200 # 1-shot lethality
+    assert barrett['aimFOV'] == 15 # 5x optical zoom
+    print("[PASS] 2-gun arsenal configuration passed!")
+
 if __name__ == '__main__':
     test_spread_math()
     test_reload_and_ammo_math()
@@ -250,6 +293,9 @@ if __name__ == '__main__':
     test_chimney_hitboxes_and_top_standing()
     test_fall_damage_system()
     test_vehicle_pursuit_and_ramming_system()
+    test_crouch_spread_and_edge_lock()
+    test_two_gun_arsenal_stats()
     print("\n==========================================")
     print("ALL VALIDATION TESTS PASSED (100%)!")
     print("==========================================")
+

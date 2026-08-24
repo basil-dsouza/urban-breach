@@ -6,6 +6,8 @@ export const SPREAD_CONFIG = {
     baseStanding: 7.0,
     baseMoving: 12.0,
     baseSprinting: 18.0,
+    baseCrouching: 3.5,
+    baseCrouchMoving: 6.0,
     baseAiming: 0.0, // Pinpoint laser precision when aiming
     maxSpread: 26.0,
     fireSpreadRate: 20.0, // spread added per second of continuous fire
@@ -28,23 +30,26 @@ export class SpreadSystem {
         this.currentSpread = this.config.baseStanding;
     }
 
-    getBaseSpread({ moving = false, sprinting = false, aiming = false } = {}) {
+    getBaseSpread({ moving = false, sprinting = false, aiming = false, crouching = false } = {}) {
         if (aiming) return this.config.baseAiming;
+        if (crouching && moving) return this.config.baseCrouchMoving !== undefined ? this.config.baseCrouchMoving : 6.0;
+        if (crouching) return this.config.baseCrouching !== undefined ? this.config.baseCrouching : 3.5;
         if (sprinting && moving) return this.config.baseSprinting;
         if (moving) return this.config.baseMoving;
         return this.config.baseStanding;
     }
 
-    onFire(aiming = false) {
+    onFire(aiming = false, crouching = false) {
         if (aiming) return; // Zero kick when aimed down sights
+        const kick = crouching ? this.config.firePerShotKick * 0.65 : this.config.firePerShotKick;
         this.currentSpread = Math.min(
             this.config.maxSpread,
-            this.currentSpread + this.config.firePerShotKick
+            this.currentSpread + kick
         );
     }
 
-    update(delta, { isFiring = false, moving = false, sprinting = false, aiming = false } = {}) {
-        this.targetBase = this.getBaseSpread({ moving, sprinting, aiming });
+    update(delta, { isFiring = false, moving = false, sprinting = false, aiming = false, crouching = false } = {}) {
+        this.targetBase = this.getBaseSpread({ moving, sprinting, aiming, crouching });
 
         if (aiming) {
             // Instantly snap to 0 spread when aiming
@@ -53,10 +58,11 @@ export class SpreadSystem {
         }
 
         if (isFiring) {
-            // Continuous fire buildup
+            // Continuous fire buildup with crouching stabilization
+            const spreadRate = crouching ? this.config.fireSpreadRate * 0.7 : this.config.fireSpreadRate;
             this.currentSpread = Math.min(
                 this.config.maxSpread,
-                this.currentSpread + this.config.fireSpreadRate * delta
+                this.currentSpread + spreadRate * delta
             );
         } else {
             // Recovery back to target base spread

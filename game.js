@@ -734,7 +734,10 @@ let grenadeReplenishTimer = 5.0;
 
 const gravity = 25;
 const jumpPower = 9;
-const eyeHeight = 1.7;
+const STANDING_EYE_HEIGHT = 1.7;
+const CROUCH_EYE_HEIGHT = 1.0;
+let eyeHeight = STANDING_EYE_HEIGHT;
+let isCrouching = false;
 const playerRadius = 0.35;
 const normalFOV = 75;
 let aimFOV = 48;
@@ -752,6 +755,7 @@ function getHUDState() {
         difficulty: getDifficulty(),
         onLadder,
         isStealth: isPlayerHidden,
+        isCrouching,
         ammo,
         maxAmmo,
         isReloading,
@@ -1151,7 +1155,7 @@ function shoot() {
     uiManager.updateHUD(getHUDState());
 
     fireCooldown = currentWeapon.fireRate;
-    spreadSystem.onFire(aiming);
+    spreadSystem.onFire(aiming, isCrouching);
 
     // Multi-Weapon Sound Effects
     if (currentWeapon.id === 'SNIPER') {
@@ -1309,9 +1313,15 @@ function explodeGrenadeAt(grenadeData) {
 
 // 20. Player Movement, Physics & Ladder Climbing Loop
 function updatePlayer(delta) {
-    const sprint = keys["ShiftLeft"] || keys["ShiftRight"];
+    const crouch = (keys["KeyC"] || keys["ControlLeft"] || keys["ControlRight"]) && !onLadder;
+    isCrouching = crouch;
+
+    const sprint = !crouch && (keys["ShiftLeft"] || keys["ShiftRight"]);
     const moving = keys["KeyW"] || keys["KeyA"] || keys["KeyS"] || keys["KeyD"];
-    const speed = sprint ? 13 : 7.2;
+    const speed = crouch ? 3.4 : (sprint ? 13 : 7.2);
+
+    const targetEyeHeight = crouch ? CROUCH_EYE_HEIGHT : STANDING_EYE_HEIGHT;
+    eyeHeight = THREE.MathUtils.lerp(eyeHeight, targetEyeHeight, delta * 14.0);
 
     const curY = camera.position.y - eyeHeight;
     let nearbyLadder = null;
@@ -1409,6 +1419,7 @@ function updatePlayer(delta) {
             const nextX = camera.position.x + moveVector.x * speed * delta;
             const nextZ = camera.position.z + moveVector.z * speed * delta;
             const playerFeetY = camera.position.y - eyeHeight;
+            const currentGround = getSimpleGround(camera.position.x, camera.position.z);
 
             // Check X Movement
             let collidesX = false;
@@ -1425,6 +1436,16 @@ function updatePlayer(delta) {
                     break;
                 }
             }
+
+            // Crouch Edge Protection along X (Prevents walking off rooftops, ledges & heights)
+            if (!collidesX && crouch && grounded) {
+                const probeDistX = Math.sign(moveVector.x) * 0.28;
+                const groundNextX = getSimpleGround(nextX + probeDistX, camera.position.z);
+                if (currentGround - groundNextX > 0.85) {
+                    collidesX = true;
+                }
+            }
+
             if (!collidesX) camera.position.x = nextX;
 
             // Check Z Movement
@@ -1442,6 +1463,16 @@ function updatePlayer(delta) {
                     break;
                 }
             }
+
+            // Crouch Edge Protection along Z (Prevents walking off rooftops, ledges & heights)
+            if (!collidesZ && crouch && grounded) {
+                const probeDistZ = Math.sign(moveVector.z) * 0.28;
+                const groundNextZ = getSimpleGround(camera.position.x, nextZ + probeDistZ);
+                if (currentGround - groundNextZ > 0.85) {
+                    collidesZ = true;
+                }
+            }
+
             if (!collidesZ) camera.position.z = nextZ;
         }
 
@@ -1487,7 +1518,7 @@ function updatePlayer(delta) {
         }
     }
 
-    return { moving, sprint };
+    return { moving, sprint, crouching: crouch };
 }
 
 // 21. Player Damage Handler
@@ -1722,13 +1753,14 @@ function animate() {
     const delta = Math.min(clock.getDelta(), 0.05);
 
     if (gameStarted) {
-        const { moving, sprint } = updatePlayer(delta);
+        const { moving, sprint, crouching } = updatePlayer(delta);
 
         spreadSystem.update(delta, {
             isFiring: mouseHeld,
             moving,
             sprinting: sprint,
-            aiming
+            aiming,
+            crouching
         });
         uiManager.updateCrosshair(spreadSystem.getCrosshairPositions(), aiming);
 

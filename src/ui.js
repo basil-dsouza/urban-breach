@@ -81,6 +81,7 @@ export class UIManager {
             <div class="controls-guide">
                 <div class="ctrl-row"><span>WASD</span> Move / Ladder Climb</div>
                 <div class="ctrl-row"><span>SHIFT</span> Sprint</div>
+                <div class="ctrl-row"><span>C / CTRL</span> Crouch (Reduces Spread & Edge Lock)</div>
                 <div class="ctrl-row"><span>SPACE</span> Jump / Climb Up</div>
                 <div class="ctrl-row"><span>LMB (Hold)</span> Full-Auto Shooting</div>
                 <div class="ctrl-row"><span>RMB</span> Aim Down Sights (Pinpoint Optical Zoom)</div>
@@ -240,12 +241,15 @@ export class UIManager {
                 </div>
             </div>
 
-            <!-- Stealth & Ladder prompts -->
+            <!-- Stealth, Ladder & Crouch prompts -->
             <div id="hud-stealth-prompt" class="hud-stealth-prompt" style="display:none;">
                 🌿 <span>STEALTH</span> HIDDEN IN FOLIAGE
             </div>
             <div id="hud-ladder-prompt" class="hud-ladder-prompt" style="display:none;">
                 🧗 <span>[W]</span> CLIMB UP &nbsp;|&nbsp; <span>[S]</span> CLIMB DOWN
+            </div>
+            <div id="hud-crouch-prompt" class="hud-crouch-prompt" style="display:none;">
+                🛡️ <span>CROUCH</span> STEADY AIM & EDGE LOCK
             </div>
 
             <div class="hud-bottom-right">
@@ -391,6 +395,7 @@ export class UIManager {
         difficulty,
         onLadder = false,
         isStealth = false,
+        isCrouching = false,
         ammo = 30,
         maxAmmo = 30,
         isReloading = false,
@@ -429,6 +434,11 @@ export class UIManager {
         const stealthEl = document.getElementById('hud-stealth-prompt');
         if (stealthEl) {
             stealthEl.style.display = isStealth ? 'flex' : 'none';
+        }
+
+        const crouchEl = document.getElementById('hud-crouch-prompt');
+        if (crouchEl) {
+            crouchEl.style.display = isCrouching ? 'flex' : 'none';
         }
 
         if (difficulty) {
