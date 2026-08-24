@@ -250,7 +250,7 @@ export class UIManager {
 
             <div class="hud-bottom-right">
                 <div class="hud-weapon-card">
-                    <div class="weapon-name">M16/M4A1 CARBINE</div>
+                    <div id="hud-weapon-name" class="weapon-name">M16/M4A1 CARBINE</div>
                     <div class="weapon-ammo-row">
                         <span class="hud-icon">⚡</span>
                         <span class="hud-label">AMMO:</span>
