@@ -1092,16 +1092,26 @@ function updateBushStealth(delta) {
 
 // 16. Input Listeners
 window.addEventListener('keydown', e => {
-    // Prevent default browser shortcuts that interfere with crouch controls (Ctrl/Cmd + WASD/R/G/F/P)
-    if (e.ctrlKey || e.metaKey) {
-        const conflictingCodes = ['KeyW', 'KeyS', 'KeyA', 'KeyD', 'KeyR', 'KeyG', 'KeyF', 'KeyP'];
-        if (conflictingCodes.includes(e.code) || ['w', 's', 'a', 'd', 'r', 'g', 'f', 'p'].includes(e.key.toLowerCase())) {
+    // Prevent default browser shortcuts that interfere with crouch controls (Ctrl/Cmd + WASD/R/G/F/P) only in Fullscreen or Pointer Lock
+    const isFullscreenOrLocked = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement ||
+        document.pointerLockElement
+    );
+
+    if (isFullscreenOrLocked) {
+        if (e.ctrlKey || e.metaKey) {
+            const conflictingCodes = ['KeyW', 'KeyS', 'KeyA', 'KeyD', 'KeyR', 'KeyG', 'KeyF', 'KeyP'];
+            if (conflictingCodes.includes(e.code) || ['w', 's', 'a', 'd', 'r', 'g', 'f', 'p'].includes(e.key.toLowerCase())) {
+                e.preventDefault();
+            }
+        }
+        // Prevent Tab key from shifting focus away from game canvas
+        if (e.code === 'Tab') {
             e.preventDefault();
         }
-    }
-    // Prevent Tab key from shifting focus away from game canvas
-    if (e.code === 'Tab') {
-        e.preventDefault();
     }
 
     keys[e.code] = true;
