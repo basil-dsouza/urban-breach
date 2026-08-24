@@ -719,9 +719,14 @@ export class EnemyManager {
             const inDetectionRange = distToPlayer <= detectionRange;
             const canSeePlayer = inDetectionRange && hasLOS;
 
+            // Decrement ladder cooldown
+            if (enemy.userData.ladderCooldown > 0) {
+                enemy.userData.ladderCooldown -= delta;
+            }
+
             // Target ladder search if player is vertically separated (e.g. on roof or below)
             let activeLadder = null;
-            if (ladders && ladders.length > 0) {
+            if (ladders && ladders.length > 0 && !enemy.userData.onLadder && (!enemy.userData.ladderCooldown || enemy.userData.ladderCooldown <= 0)) {
                 if (dyToPlayer > 2.0) {
                     // Player is above: find nearest ladder leading up towards player's height
                     let bestDist = Infinity;
@@ -758,27 +763,35 @@ export class EnemyManager {
                 const isClimbingUp = dyToPlayer >= -0.5;
 
                 // Snap (x, z) smoothly to ladder
-                enemy.position.x = THREE.MathUtils.lerp(enemy.position.x, lad.x, delta * 12);
-                enemy.position.z = THREE.MathUtils.lerp(enemy.position.z, lad.z, delta * 12);
+                enemy.position.x = THREE.MathUtils.lerp(enemy.position.x, lad.x, delta * 14);
+                enemy.position.z = THREE.MathUtils.lerp(enemy.position.z, lad.z, delta * 14);
 
                 if (isClimbingUp) {
-                    enemy.position.y += 4.5 * delta;
+                    enemy.position.y += 4.8 * delta;
                     if (enemy.position.y >= lad.buildingHeight) {
-                        // Reached the roof! Step off ladder onto rooftop
+                        // Reached the roof! Step firmly onto rooftop inside building footprint
                         enemy.userData.onLadder = false;
                         enemy.userData.climbLadder = null;
-                        const forwardX = Math.sin(enemy.rotation.y);
-                        const forwardZ = Math.cos(enemy.rotation.y);
-                        enemy.position.x += forwardX * 1.5;
-                        enemy.position.z += forwardZ * 1.5;
+                        enemy.userData.ladderCooldown = 2.5;
+
+                        const bX = lad.buildingX !== undefined ? lad.buildingX : lad.x;
+                        const bZ = lad.buildingZ !== undefined ? lad.buildingZ : lad.z - 2.0;
+                        const dirInX = (bX - lad.x) || 0;
+                        const dirInZ = (bZ - lad.z) || -1;
+                        const len = Math.hypot(dirInX, dirInZ) || 1;
+
+                        enemy.position.x = lad.x + (dirInX / len) * 1.8;
+                        enemy.position.z = lad.z + (dirInZ / len) * 1.8;
+                        enemy.position.y = lad.buildingHeight;
                     }
                 } else {
-                    enemy.position.y -= 5.0 * delta;
+                    enemy.position.y -= 5.2 * delta;
                     const gY = typeof getGroundHeight === 'function' ? getGroundHeight(enemy.position.x, enemy.position.z) : 0;
                     if (enemy.position.y <= gY + 0.3) {
                         // Reached the ground!
                         enemy.userData.onLadder = false;
                         enemy.userData.climbLadder = null;
+                        enemy.userData.ladderCooldown = 2.5;
                         enemy.position.y = gY;
                     }
                 }
@@ -791,7 +804,7 @@ export class EnemyManager {
                     enemy.userData.climbLadder = activeLadder;
                     isClimbing = true;
                     const isClimbingUp = dyToPlayer >= -0.5;
-                    enemy.position.y += (isClimbingUp ? 4.5 : -5.0) * delta;
+                    enemy.position.y += (isClimbingUp ? 4.8 : -5.2) * delta;
                 } else {
                     // Walk to ladder base / entry
                     isMoving = true;

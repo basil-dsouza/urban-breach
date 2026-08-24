@@ -604,7 +604,7 @@ for (let i = 0; i < 30; i++) {
 }
 
 // 8. Ladders on Buildings (Extends 1.4m above roof for smooth mounting/dismounting)
-function createLadder(x, z, buildingHeight, rotY = 0) {
+function createLadder(x, z, buildingHeight, rotY = 0, building = null) {
     const totalHeight = buildingHeight + 1.4;
     const group = new THREE.Group();
     group.position.set(x, 0, z);
@@ -634,7 +634,9 @@ function createLadder(x, z, buildingHeight, rotY = 0) {
         buildingHeight,
         height: totalHeight,
         bottom: 0,
-        top: totalHeight
+        top: totalHeight,
+        buildingX: building ? building.x : x,
+        buildingZ: building ? building.z : z
     });
 
     scene.add(group);
@@ -642,7 +644,7 @@ function createLadder(x, z, buildingHeight, rotY = 0) {
 
 for (const b of buildings) {
     if (b.style === 'flat' || Math.random() < 0.12) {
-        createLadder(b.x, b.z + b.d / 2 + 0.15, b.h);
+        createLadder(b.x, b.z + b.d / 2 + 0.15, b.h, 0, b);
     }
 }
 
@@ -811,36 +813,48 @@ function applyWeaponModel(weaponKey = 'AK47') {
         brake.position.set(0, 0.045, -1.36);
         gunGroup.add(brake);
 
+        // Full-Length Straight Monolithic Top Picatinny Rail (MIL-STD-1913)
+        const picatinnyRail = new THREE.Mesh(new THREE.BoxGeometry(0.048, 0.022, 0.74), matSteelDark);
+        picatinnyRail.position.set(0, 0.106, 0.02);
+        gunGroup.add(picatinnyRail);
+
+        // Machined Picatinny Cross-Slots
+        for (let rz = -0.30; rz <= 0.34; rz += 0.045) {
+            const slot = new THREE.Mesh(new THREE.BoxGeometry(0.050, 0.008, 0.018), matReceiver);
+            slot.position.set(0, 0.116, rz);
+            gunGroup.add(slot);
+        }
+
         // Mounted 8-32x56 Precision Optical Sniper Scope with Sunshade
-        const scopeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.42, 16), matSteelDark);
+        const scopeBody = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.44, 16), matSteelDark);
         scopeBody.rotation.x = Math.PI / 2;
-        scopeBody.position.set(0, 0.16, 0.02);
+        scopeBody.position.set(0, 0.170, 0.02);
         gunGroup.add(scopeBody);
 
         const scopeObjective = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.024, 0.12, 16), matSteelDark);
         scopeObjective.rotation.x = Math.PI / 2;
-        scopeObjective.position.set(0, 0.16, -0.24);
+        scopeObjective.position.set(0, 0.170, -0.24);
         gunGroup.add(scopeObjective);
 
         const scopeEyepiece = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.024, 0.08, 16), matSteelDark);
         scopeEyepiece.rotation.x = Math.PI / 2;
-        scopeEyepiece.position.set(0, 0.16, 0.26);
+        scopeEyepiece.position.set(0, 0.170, 0.28);
         gunGroup.add(scopeEyepiece);
 
         // Knurled Elevation / Windage Turrets
         const turretTop = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.024, 12), matSteelDark);
-        turretTop.position.set(0, 0.195, 0.02);
+        turretTop.position.set(0, 0.205, 0.02);
         gunGroup.add(turretTop);
 
         const turretSide = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.024, 12), matSteelDark);
         turretSide.rotation.z = Math.PI / 2;
-        turretSide.position.set(0.036, 0.16, 0.02);
+        turretSide.position.set(0.036, 0.170, 0.02);
         gunGroup.add(turretSide);
 
-        // Hex Mounting Rings
+        // Hex Mounting Rings Clamped Directly onto Picatinny Rail
         for (const z of [-0.10, 0.14]) {
-            const ring = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.075, 0.032), matReceiver);
-            ring.position.set(0, 0.13, z);
+            const ring = new THREE.Mesh(new THREE.BoxGeometry(0.054, 0.065, 0.032), matReceiver);
+            ring.position.set(0, 0.145, z);
             gunGroup.add(ring);
         }
 
@@ -877,10 +891,22 @@ function applyWeaponModel(weaponKey = 'AK47') {
         receiver.position.set(0, 0.02, 0.02);
         gunGroup.add(receiver);
 
-        const dustCover = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.42, 12, 1, false, 0, Math.PI), matSteelDark);
-        dustCover.rotation.x = Math.PI / 2;
-        dustCover.position.set(0, 0.068, 0.02);
+        // Leveled Stamped Steel Top Dust Cover
+        const dustCover = new THREE.Mesh(new THREE.BoxGeometry(0.064, 0.048, 0.44), matSteelDark);
+        dustCover.position.set(0, 0.076, 0.02);
         gunGroup.add(dustCover);
+
+        // Full-Length Straight Tactical Top Picatinny Rail (MIL-STD-1913)
+        const picatinnyBase = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.016, 0.50), matReceiver);
+        picatinnyBase.position.set(0, 0.104, -0.02);
+        gunGroup.add(picatinnyBase);
+
+        // Machined Rail Cross-Slots for authentic tactical finish
+        for (let rz = -0.24; rz <= 0.18; rz += 0.04) {
+            const slot = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.008, 0.018), matSteelDark);
+            slot.position.set(0, 0.112, rz);
+            gunGroup.add(slot);
+        }
 
         // Curved 30-Round Banana Magazine
         const mag = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.30, 0.12), matSteelDark);
@@ -893,8 +919,7 @@ function applyWeaponModel(weaponKey = 'AK47') {
         handguardBottom.position.set(0, -0.005, -0.34);
         gunGroup.add(handguardBottom);
 
-        const handguardTop = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.26, 12), matWood);
-        handguardTop.rotation.x = Math.PI / 2;
+        const handguardTop = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.042, 0.26), matWood);
         handguardTop.position.set(0, 0.042, -0.34);
         gunGroup.add(handguardTop);
 
@@ -915,9 +940,9 @@ function applyWeaponModel(weaponKey = 'AK47') {
         frontSight.position.set(0, 0.075, -0.88);
         gunGroup.add(frontSight);
 
-        // Tangent Rear Sight Notch
-        const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.024, 0.06), matSteelDark);
-        rearSight.position.set(0, 0.075, -0.18);
+        // Low-Profile Tactical Rear Sight Notch (firmly seated on rear of Picatinny rail)
+        const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.032, 0.045), matSteelDark);
+        rearSight.position.set(0, 0.122, 0.18);
         gunGroup.add(rearSight);
 
         // Classic Wooden Buttstock
