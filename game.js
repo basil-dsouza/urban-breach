@@ -1763,6 +1763,7 @@ function animate() {
             crouching
         });
         uiManager.updateCrosshair(spreadSystem.getCrosshairPositions(), aiming);
+        uiManager.updateHUD(getHUDState());
 
         if (mouseHeld) {
             shoot();
