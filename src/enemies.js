@@ -70,6 +70,65 @@ export function hasLineOfSight(p1, p2, obstacles = []) {
 }
 
 /**
+ * Slide-and-Collide Horizontal Obstacle Movement for Ground Humanoids
+ */
+export function moveEnemyWithCollision(enemy, moveX, moveZ, obstacles = []) {
+    const radius = 0.40;
+    const targetX = enemy.position.x + moveX;
+    const targetZ = enemy.position.z + moveZ;
+    const currentY = enemy.position.y;
+
+    let canMoveX = true;
+    if (obstacles && obstacles.length > 0) {
+        for (let i = 0; i < obstacles.length; i++) {
+            const obs = obstacles[i];
+            const obsBottom = obs.bottom !== undefined ? obs.bottom : 0;
+            const obsTop = obs.top !== undefined ? obs.top : 20;
+            // Ignore obstacles above or below enemy
+            if (currentY + 1.8 < obsBottom || currentY > obsTop - 0.2) continue;
+
+            const minX = obs.x - obs.w / 2 - radius;
+            const maxX = obs.x + obs.w / 2 + radius;
+            const minZ = obs.z - obs.d / 2 - radius;
+            const maxZ = obs.z + obs.d / 2 + radius;
+
+            if (targetX >= minX && targetX <= maxX && enemy.position.z >= minZ && enemy.position.z <= maxZ) {
+                canMoveX = false;
+                break;
+            }
+        }
+    }
+
+    if (canMoveX) {
+        enemy.position.x = targetX;
+    }
+
+    let canMoveZ = true;
+    if (obstacles && obstacles.length > 0) {
+        for (let i = 0; i < obstacles.length; i++) {
+            const obs = obstacles[i];
+            const obsBottom = obs.bottom !== undefined ? obs.bottom : 0;
+            const obsTop = obs.top !== undefined ? obs.top : 20;
+            if (currentY + 1.8 < obsBottom || currentY > obsTop - 0.2) continue;
+
+            const minX = obs.x - obs.w / 2 - radius;
+            const maxX = obs.x + obs.w / 2 + radius;
+            const minZ = obs.z - obs.d / 2 - radius;
+            const maxZ = obs.z + obs.d / 2 + radius;
+
+            if (enemy.position.x >= minX && enemy.position.x <= maxX && targetZ >= minZ && targetZ <= maxZ) {
+                canMoveZ = false;
+                break;
+            }
+        }
+    }
+
+    if (canMoveZ) {
+        enemy.position.z = targetZ;
+    }
+}
+
+/**
  * Humanoid Enemy System with Lifelike Human Faces, Two-Handed Weapon Grips & Natural Locomotion
  */
 
@@ -806,7 +865,7 @@ export class EnemyManager {
                     const isClimbingUp = dyToPlayer >= -0.5;
                     enemy.position.y += (isClimbingUp ? 4.8 : -5.2) * delta;
                 } else {
-                    // Walk to ladder base / entry
+                    // Walk to ladder base / entry with collision
                     isMoving = true;
                     const ladDirX = (activeLadder.x - enemy.position.x) / distToLadder;
                     const ladDirZ = (activeLadder.z - enemy.position.z) / distToLadder;
@@ -817,8 +876,7 @@ export class EnemyManager {
                     while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
                     enemy.rotation.y += diffAngle * Math.min(delta * 8.0, 1.0);
 
-                    enemy.position.x += ladDirX * moveSpeed * delta;
-                    enemy.position.z += ladDirZ * moveSpeed * delta;
+                    moveEnemyWithCollision(enemy, ladDirX * moveSpeed * delta, ladDirZ * moveSpeed * delta, obstacles);
                 }
             } else {
                 // Normal Ground / Roof Pursuit & Aiming
@@ -851,8 +909,7 @@ export class EnemyManager {
                             dirZ /= len;
                         }
 
-                        enemy.position.x += dirX * moveSpeed * delta;
-                        enemy.position.z += dirZ * moveSpeed * delta;
+                        moveEnemyWithCollision(enemy, dirX * moveSpeed * delta, dirZ * moveSpeed * delta, obstacles);
                     }
                 }
             }
@@ -995,13 +1052,18 @@ export class EnemyManager {
 
             // Ground Clamping (Disabled during active ladder climbing)
             if (!enemy.userData.onLadder) {
-                const groundY = typeof getGroundHeight === 'function'
-                    ? getGroundHeight(enemy.position.x, enemy.position.z)
-                    : 0;
+                let targetGroundY = 0;
+                if (typeof getGroundHeight === 'function') {
+                    const sampleGround = getGroundHeight(enemy.position.x, enemy.position.z);
+                    // Only snap up if surface is within 1.6m step height; higher surfaces are overhead roofs!
+                    if (sampleGround <= enemy.position.y + 1.6) {
+                        targetGroundY = sampleGround;
+                    }
+                }
 
                 enemy.position.y = THREE.MathUtils.lerp(
                     enemy.position.y,
-                    groundY,
+                    targetGroundY,
                     delta * 8
                 );
             }

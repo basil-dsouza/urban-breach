@@ -187,4 +187,22 @@ describe('EnemyManager & Lifelike Humanoid Modeling', () => {
         expect(enemy.userData.onLadder).toBe(true);
         expect(enemy.position.y).toBeGreaterThan(0);
     });
+
+    it('should never teleport ground enemies up onto overhead building rooftops', () => {
+        const scene = new THREE.Scene();
+        const manager = new EnemyManager(scene);
+        const enemy = manager.createEnemyMesh('gunner', DIFFICULTY_LEVELS.MEDIUM);
+        enemy.position.set(10, 0, 10);
+        scene.add(enemy);
+        manager.enemies.push(enemy);
+
+        const playerPos = new THREE.Vector3(10, 15, 10);
+        const buildingGroundHeight = (x, z) => 15.0; // Rooftop height overhead
+
+        // Update ground enemy
+        manager.update(0.1, playerPos, buildingGroundHeight, () => {}, false, []);
+
+        // Enemy should remain at ground level (y < 1.0) and not snap to 15m
+        expect(enemy.position.y).toBeLessThan(1.0);
+    });
 });
