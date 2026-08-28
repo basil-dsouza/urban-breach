@@ -930,7 +930,7 @@ body {
     border-radius: 8px;
     padding: 12px 18px;
     width: 220px;
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: 8px;
     font-size: 13px;

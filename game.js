@@ -1077,7 +1077,8 @@ uiManager.onHostLobby = (nickname, gameMode) => {
         }
         const statusEl = document.getElementById('lobby-status-subtitle');
         if (statusEl) {
-            statusEl.textContent = `SECURE HOST ONLINE (CODE: ${code})`;
+            statusEl.textContent = `HOST ONLINE (CODE: ${code})`;
+            statusEl.style.color = '#10b981'; // Green
         }
     });
 };
@@ -1086,10 +1087,12 @@ uiManager.onJoinLobby = (code, nickname) => {
     const statusEl = document.getElementById('lobby-status-subtitle');
     if (statusEl) {
         statusEl.textContent = 'CONNECTING TO PEER HOST...';
+        statusEl.style.color = '#8faec4';
     }
     multiplayerManager.initClient(code, nickname, () => {
         if (statusEl) {
-            statusEl.textContent = `CONNECTED TO LOBBY: ${code.toUpperCase()}`;
+            statusEl.textContent = `JOINED ROOM SUCCESSFULLY (CODE: ${code.toUpperCase()})`;
+            statusEl.style.color = '#10b981'; // Green
         }
         const displayEl = document.getElementById('lobby-code-display');
         if (displayEl) {
@@ -1099,6 +1102,7 @@ uiManager.onJoinLobby = (code, nickname) => {
     }, (err) => {
         if (statusEl) {
             statusEl.textContent = `CONNECTION FAILED: ${err}`;
+            statusEl.style.color = '#ef4444'; // Red
         }
         alert(`Failed to connect: ${err}`);
         
@@ -1139,6 +1143,11 @@ uiManager.onLobbyUpdate = (playersList, gameMode) => {
 
 uiManager.onLeaveLobby = () => {
     multiplayerManager.shutdown();
+    const statusEl = document.getElementById('lobby-status-subtitle');
+    if (statusEl) {
+        statusEl.textContent = 'DEPLOY WITH YOUR SQUAD (MAX 5 PLAYERS)';
+        statusEl.style.color = '#8faec4';
+    }
 };
 
 uiManager.onLobbyLaunch = () => {
@@ -1272,9 +1281,11 @@ window.addEventListener('keydown', e => {
                 e.preventDefault();
             }
         }
-        // Prevent Tab key from shifting focus away from game canvas
-        if (e.code === 'Tab') {
-            e.preventDefault();
+    if (e.code === 'Tab') {
+        e.preventDefault();
+        const scoreboard = document.getElementById('mp-scoreboard');
+        if (scoreboard) {
+            scoreboard.style.display = 'flex';
         }
     }
 
@@ -1291,6 +1302,13 @@ window.addEventListener('keydown', e => {
 
 window.addEventListener('keyup', e => {
     keys[e.code] = false;
+
+    if (e.code === 'Tab') {
+        const scoreboard = document.getElementById('mp-scoreboard');
+        if (scoreboard) {
+            scoreboard.style.display = 'none';
+        }
+    }
 });
 
 window.addEventListener('mousemove', e => {

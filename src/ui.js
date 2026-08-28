@@ -124,7 +124,7 @@ export class UIManager {
         this.lobbyScreen.style.display = 'none';
         this.lobbyScreen.innerHTML = `
             <div class="game-logo">MULTIPLAYER LOBBY</div>
-            <div class="game-subtitle" id="lobby-status-subtitle">ESTABLISH SECURE PEER CHANNEL (MAX 5 PLAYERS)</div>
+            <div class="game-subtitle" id="lobby-status-subtitle">DEPLOY WITH YOUR SQUAD (MAX 5 PLAYERS)</div>
 
             <div style="display: flex; gap: 32px; justify-content: center; align-items: flex-start; margin-bottom: 24px;">
                 <!-- Column 1: Settings -->
@@ -145,7 +145,7 @@ export class UIManager {
 
                     <div style="border-top: 1.5px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 8px; display: flex; flex-direction: column; gap: 12px;">
                         <button id="btn-host-lobby" class="btn-primary" style="font-size:16px; padding: 12px 24px;">
-                            HOST SECURE GAME
+                            HOST GAME
                         </button>
                         
                         <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
