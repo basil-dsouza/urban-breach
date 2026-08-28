@@ -127,6 +127,7 @@ class SoundEngine {
         dist.connect(this.ctx.destination);
 
         noise.start(t);
+        noise.stop(t + (scoped ? 0.28 : 0.38));
         osc.start(t);
         osc.stop(t + 0.14);
         crackOsc.start(t);
@@ -190,6 +191,7 @@ class SoundEngine {
         dist.connect(this.ctx.destination);
 
         noise.start(t);
+        noise.stop(t + 0.85);
         sub.start(t);
         sub.stop(t + 0.5);
     }
@@ -251,6 +253,7 @@ class SoundEngine {
         dist.connect(this.ctx.destination);
 
         noise.start(t);
+        noise.stop(t + 0.55);
         thud.start(t);
         thud.stop(t + 0.26);
     }
@@ -308,6 +311,7 @@ class SoundEngine {
         dist.connect(this.ctx.destination);
 
         noise.start(t);
+        noise.stop(t + 0.18);
         osc.start(t);
         osc.stop(t + 0.1);
     }
@@ -365,6 +369,7 @@ class SoundEngine {
         dist.connect(this.ctx.destination);
 
         noise.start(t);
+        noise.stop(t + 0.45);
         osc.start(t);
         osc.stop(t + 0.2);
     }
@@ -573,6 +578,7 @@ class SoundEngine {
         sub.start(t);
         sub.stop(t + 0.95);
         noise.start(t);
+        noise.stop(t + 1.2);
     }
 
     /**
@@ -681,6 +687,7 @@ class SoundEngine {
         gain.connect(this.ctx.destination);
 
         noise.start(t);
+        noise.stop(t + 0.5);
     }
 
     /**

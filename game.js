@@ -1047,7 +1047,14 @@ const uiManager = new UIManager({
         stealthBreakTimer = 0;
         gameStarted = true;
 
-        camera.position.set(0, eyeHeight, 20);
+        if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
+            // Clients spawn close (5-9 meters offset) but not on top of the host
+            const spawnX = (Math.random() > 0.5 ? 1 : -1) * (5.0 + Math.random() * 4.0);
+            const spawnZ = 20.0 + (Math.random() - 0.5) * 4.0;
+            camera.position.set(spawnX, eyeHeight, spawnZ);
+        } else {
+            camera.position.set(0, eyeHeight, 20);
+        }
         camera.fov = normalFOV;
         camera.updateProjectionMatrix();
 
@@ -1538,11 +1545,22 @@ function shoot() {
             }
         } else if (hitData.type === 'player') {
             if (multiplayerManager.gameMode === 'ffa') {
-                multiplayerManager.sendToHost({
-                    type: 'hit_player',
-                    targetPeerId: hitData.peerId,
-                    damage: currentWeapon.damage
-                });
+                if (multiplayerManager.isHost) {
+                    const targetConn = multiplayerManager.connections[hitData.peerId];
+                    if (targetConn) {
+                        targetConn.send({
+                            type: 'damage_taken',
+                            amount: currentWeapon.damage,
+                            source: 'pvp'
+                        });
+                    }
+                } else {
+                    multiplayerManager.sendToHost({
+                        type: 'hit_player',
+                        targetPeerId: hitData.peerId,
+                        damage: currentWeapon.damage
+                    });
+                }
                 createHitEffect(hitData.point);
             }
         } else if (hitData.type === 'obstacle') {
