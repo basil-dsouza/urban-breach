@@ -1935,7 +1935,8 @@ function spawnWave(difficulty) {
         enemyManager.spawnEnemy(
             camera.position,
             isKnife ? 'knife' : 'gunner',
-            diff
+            diff,
+            getSimpleGround
         );
     }
 

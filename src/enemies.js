@@ -726,7 +726,7 @@ export class EnemyManager {
         return enemy;
     }
 
-    spawnEnemy(playerPos, archetype = 'gunner', difficulty) {
+    spawnEnemy(playerPos, archetype = 'gunner', difficulty, getGroundHeight) {
         const enemy = this.createEnemyMesh(archetype, difficulty);
         const spawnDistance = THREE.MathUtils.randFloat(28, 55);
         const spawnAngle = Math.random() * Math.PI * 2;
@@ -734,7 +734,12 @@ export class EnemyManager {
         const sx = playerPos.x + Math.sin(spawnAngle) * spawnDistance;
         const sz = playerPos.z + Math.cos(spawnAngle) * spawnDistance;
 
-        enemy.position.set(sx, 0, sz);
+        let sy = 0;
+        if (typeof getGroundHeight === 'function') {
+            sy = getGroundHeight(sx, sz);
+        }
+
+        enemy.position.set(sx, sy, sz);
         this.scene.add(enemy);
         this.enemies.push(enemy);
         return enemy;
