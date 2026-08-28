@@ -62,6 +62,9 @@ export class MultiplayerManager {
         };
 
         this.peer = new window.Peer(this.roomCode, {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
             config: {
                 iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
             }
@@ -134,6 +137,9 @@ export class MultiplayerManager {
         this.roomCode = code.toUpperCase().trim();
 
         this.peer = new window.Peer({
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
             config: {
                 iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
             }
@@ -154,6 +160,11 @@ export class MultiplayerManager {
                 this.handleData('host', data);
             });
 
+            conn.on('error', err => {
+                console.error('Connection channel error:', err);
+                if (onConnectFailed) onConnectFailed('Channel error: ' + (err.message || err));
+            });
+
             conn.on('close', () => {
                 console.log('Disconnected from host.');
                 if (onConnectFailed) onConnectFailed('Host disconnected.');
@@ -162,7 +173,11 @@ export class MultiplayerManager {
 
         this.peer.on('error', err => {
             console.error('PeerJS Client Error:', err);
-            if (onConnectFailed) onConnectFailed(err.message || 'Connection failed.');
+            let msg = err.message || 'Connection failed.';
+            if (err.type === 'peer-unavailable') {
+                msg = 'Room code not found. Make sure the Host is active!';
+            }
+            if (onConnectFailed) onConnectFailed(msg);
         });
     }
 
