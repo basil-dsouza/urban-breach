@@ -827,6 +827,8 @@ export class MultiplayerManager {
         const updateTracer = () => {
             if (life <= 0) {
                 this.scene.remove(tracer);
+                tracerGeo.dispose();
+                bulletMat.dispose();
             } else {
                 tracer.position.add(bulletDir.clone().multiplyScalar(speed * 0.016));
                 life -= 0.016;
@@ -840,10 +842,9 @@ export class MultiplayerManager {
         console.log(`Replicating grenade throw from peer: ${peerId}`);
         soundEngine.playGrenadeBounce();
 
-        const grenadeMesh = new THREE.Mesh(
-            new THREE.SphereGeometry(0.18, 12, 12),
-            new THREE.MeshStandardMaterial({ color: 0x22262a, metalness: 0.85, roughness: 0.3 })
-        );
+        const grenadeGeo = new THREE.SphereGeometry(0.18, 12, 12);
+        const grenadeMat = new THREE.MeshStandardMaterial({ color: 0x22262a, metalness: 0.85, roughness: 0.3 });
+        const grenadeMesh = new THREE.Mesh(grenadeGeo, grenadeMat);
         grenadeMesh.position.set(pos.x, pos.y, pos.z);
         this.scene.add(grenadeMesh);
 
@@ -855,15 +856,21 @@ export class MultiplayerManager {
         const updateGrenade = () => {
             if (life <= 0) {
                 this.scene.remove(grenadeMesh);
+                grenadeGeo.dispose();
+                grenadeMat.dispose();
+
                 // Trigger client explosion effect locally
                 soundEngine.playGrenadeExplosion();
-                const flash = new THREE.Mesh(
-                    new THREE.SphereGeometry(3.5, 16, 16),
-                    new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.85 })
-                );
+                const flashGeo = new THREE.SphereGeometry(3.5, 16, 16);
+                const flashMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.85 });
+                const flash = new THREE.Mesh(flashGeo, flashMat);
                 flash.position.copy(localPos);
                 this.scene.add(flash);
-                setTimeout(() => this.scene.remove(flash), 180);
+                setTimeout(() => {
+                    this.scene.remove(flash);
+                    flashGeo.dispose();
+                    flashMat.dispose();
+                }, 180);
             } else {
                 localVel.y -= 9.8 * 0.016 * 1.5; // Custom gravity match
                 localPos.add(localVel.clone().multiplyScalar(0.016));
@@ -1045,6 +1052,10 @@ export class MultiplayerManager {
 
     syncScores(scores) {
         if (!scores || typeof document === 'undefined') return;
+
+        const scoresStr = JSON.stringify(scores);
+        if (this.lastScoresStr === scoresStr) return;
+        this.lastScoresStr = scoresStr;
 
         // Render dynamic scoreboard UI
         let scoreboardContainer = document.getElementById('mp-scoreboard');
