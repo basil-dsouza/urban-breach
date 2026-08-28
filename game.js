@@ -1364,6 +1364,7 @@ function performShootRaycast(bulletDir) {
     
     // Bind raycaster to center-screen (0, 0)
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    raycaster.camera = camera;
     
     // Apply calculated weapon spread to the ray direction
     raycaster.ray.direction.copy(bulletDir).normalize();
@@ -1400,6 +1401,8 @@ function performShootRaycast(bulletDir) {
         !c.isCamera && 
         !c.isLight && 
         c.isMesh && 
+        !c.isSprite &&
+        c.type !== 'Sprite' &&
         !c.userData?.isMedkit &&
         !c.userData?.isBullet
     );
