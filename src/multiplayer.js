@@ -630,7 +630,6 @@ export class MultiplayerManager {
 
         // Add sprite nameplate
         this.updateNameplateTexture(rp);
-        this.scene.add(rp.nameplate);
 
         this.remotePlayers[peerId] = rp;
         return rp;
@@ -639,6 +638,12 @@ export class MultiplayerManager {
     updateNameplateTexture(rp) {
         if (rp.nameplate) {
             this.scene.remove(rp.nameplate);
+            if (rp.nameplate.material) {
+                if (rp.nameplate.material.map) {
+                    rp.nameplate.material.map.dispose();
+                }
+                rp.nameplate.material.dispose();
+            }
         }
 
         if (typeof document === 'undefined') return;
@@ -676,7 +681,14 @@ export class MultiplayerManager {
         const sprite = new THREE.Sprite(material);
         sprite.scale.set(1.92, 0.4, 1.0);
 
+        // Set position immediately to prevent (0,0,0) pop in the character chest
+        if (rp.mesh) {
+            sprite.position.copy(rp.mesh.position);
+            sprite.position.y += 2.25;
+        }
+
         rp.nameplate = sprite;
+        this.scene.add(sprite); // Make sure it is added back to the scene!
         rp.lastHealth = rp.health;
     }
 
