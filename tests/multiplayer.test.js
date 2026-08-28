@@ -16,7 +16,7 @@ global.window.Peer = class MockPeer {
     destroy() {}
 };
 
-describe('MultiplayerManager Core Architecture', () => {
+describe('MultiplayerManager Core Architecture & Connection Specs', () => {
     let manager;
     let scene;
     let camera;
@@ -42,9 +42,18 @@ describe('MultiplayerManager Core Architecture', () => {
         expect(manager.roomCode).toMatch(/^UB-\d{4}$/);
     });
 
-    it('should configure PeerJS with Google public STUN servers', () => {
+    it('should configure Host PeerJS with debug: 2 and Google public STUN servers', () => {
         manager.initHost('CaptainPrice', 'ffa');
         const peerInstance = manager.peer;
+        expect(peerInstance.options.debug).toBe(2);
+        expect(peerInstance.options.config.iceServers[0].urls).toBe('stun:stun.l.google.com:19302');
+    });
+
+    it('should configure Client PeerJS with undefined ID (auto-generated) and debug: 2', () => {
+        manager.initClient('UB-9999', 'Soap');
+        const peerInstance = manager.peer;
+        expect(peerInstance.id).toBeUndefined(); // Must be undefined to allow automatic ID generation
+        expect(peerInstance.options.debug).toBe(2);
         expect(peerInstance.options.config.iceServers[0].urls).toBe('stun:stun.l.google.com:19302');
     });
 
