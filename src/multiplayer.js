@@ -136,7 +136,7 @@ export class MultiplayerManager {
         this.localNickname = nickname || 'Client';
         this.roomCode = code.toUpperCase().trim();
 
-        this.peer = new window.Peer({
+        this.peer = new window.Peer(undefined, {
             host: '0.peerjs.com',
             port: 443,
             secure: true,
