@@ -1175,6 +1175,10 @@ uiManager.onWeaponSelect = (weaponKey) => {
 };
 
 // Sync callbacks back from multiplayer manager
+multiplayerManager.onLobbyUpdate = (playersList, gameMode) => {
+    uiManager.onLobbyUpdate(playersList, gameMode);
+};
+
 multiplayerManager.onLobbyNext = () => {
     uiManager.lobbyScreen.style.display = 'none';
     uiManager.difficultyScreen.style.display = 'flex';
