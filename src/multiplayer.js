@@ -567,7 +567,7 @@ export class MultiplayerManager {
             if (rp.nameplate) {
                 // Keep nameplate sprite above head
                 rp.nameplate.position.copy(rp.mesh.position);
-                rp.nameplate.position.y += 2.25;
+                rp.nameplate.position.y += 2.9;
 
                 // Update canvas health indicator dynamically
                 if (rp.lastHealth !== rp.health) {
@@ -692,7 +692,7 @@ export class MultiplayerManager {
         // Set position immediately to prevent (0,0,0) pop in the character chest
         if (rp.mesh) {
             sprite.position.copy(rp.mesh.position);
-            sprite.position.y += 2.25;
+            sprite.position.y += 2.9;
         }
 
         rp.nameplate = sprite;
@@ -934,7 +934,7 @@ export class MultiplayerManager {
             }
 
             // Save target states for interpolation
-            mesh.userData.targetPos = new THREE.Vector3(e.x, e.y - 0.85, e.z); // Root alignment offset
+            mesh.userData.targetPos = new THREE.Vector3(e.x, e.y, e.z); // Root alignment offset
             mesh.userData.targetYaw = e.yaw;
             mesh.userData.targetPitch = e.pitch;
             mesh.userData.isMoving = e.isMoving;

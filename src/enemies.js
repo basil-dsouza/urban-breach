@@ -1067,6 +1067,7 @@ export class EnemyManager {
                     delta * 8
                 );
             }
+            enemy.userData.isMoving = isMoving;
         }
     }
 
