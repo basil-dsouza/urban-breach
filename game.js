@@ -1294,6 +1294,8 @@ window.addEventListener('keydown', e => {
                 e.preventDefault();
             }
         }
+    }
+
     if (e.code === 'Tab') {
         e.preventDefault();
         const scoreboard = document.getElementById('mp-scoreboard');
