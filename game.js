@@ -1141,6 +1141,15 @@ uiManager.onLobbyUpdate = (playersList, gameMode) => {
     }
 };
 
+uiManager.onGameModeSelect = (gameMode) => {
+    if (multiplayerManager.isMultiplayer) {
+        multiplayerManager.gameMode = gameMode;
+        if (multiplayerManager.isHost) {
+            multiplayerManager.broadcastLobbyInfo();
+        }
+    }
+};
+
 uiManager.onLeaveLobby = () => {
     multiplayerManager.shutdown();
     const statusEl = document.getElementById('lobby-status-subtitle');

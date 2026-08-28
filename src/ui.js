@@ -440,6 +440,7 @@ export class UIManager {
                 }
                 this.lobbyScreen.style.display = 'none';
                 this.lobbySelectScreen.style.display = 'flex';
+                this.isClientConnected = false;
                 
                 // Reset lobby UI state
                 document.getElementById('lobby-roster-list').innerHTML = `
@@ -457,7 +458,7 @@ export class UIManager {
         const btnModeFfa = document.getElementById('btn-mode-ffa');
         if (btnModePve && btnModeFfa) {
             btnModePve.onclick = () => {
-                if (this.isMultiplayerMode && this.isHost) {
+                if (this.isMultiplayerMode && !this.isClientConnected) {
                     btnModePve.classList.add('selected');
                     btnModeFfa.classList.remove('selected');
                     this.selectedGameMode = 'pve';
@@ -465,7 +466,7 @@ export class UIManager {
                 }
             };
             btnModeFfa.onclick = () => {
-                if (this.isMultiplayerMode && this.isHost) {
+                if (this.isMultiplayerMode && !this.isClientConnected) {
                     btnModeFfa.classList.add('selected');
                     btnModePve.classList.remove('selected');
                     this.selectedGameMode = 'ffa';
@@ -501,6 +502,7 @@ export class UIManager {
                     return;
                 }
                 this.isHost = false;
+                this.isClientConnected = true;
                 document.getElementById('btn-lobby-launch').style.display = 'none';
                 document.getElementById('mode-settings-block').style.display = 'none';
                 document.getElementById('btn-host-lobby').style.display = 'none';
