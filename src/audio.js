@@ -32,7 +32,8 @@ class SoundEngine {
     createNoiseBuffer(duration = 0.5) {
         if (!this.ctx) return null;
         const sampleRate = this.ctx.sampleRate;
-        const buffer = this.ctx.createBuffer(1, sampleRate * duration, sampleRate);
+        const numSamples = Math.max(1, Math.floor(sampleRate * duration));
+        const buffer = this.ctx.createBuffer(1, numSamples, sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < data.length; i++) {
             data[i] = Math.random() * 2 - 1;
@@ -50,7 +51,11 @@ class SoundEngine {
             curve[i] = Math.tanh(x * amount * 5);
         }
         shaper.curve = curve;
-        shaper.oversample = '4x';
+        try {
+            shaper.oversample = '4x';
+        } catch (e) {
+            console.warn('Oversampling not supported on WaveShaperNode', e);
+        }
         return shaper;
     }
 
