@@ -1357,6 +1357,96 @@ document.addEventListener('mouseup', e => {
 
 document.addEventListener('contextmenu', e => e.preventDefault());
 
+// 16.5. Center-Screen Raycasting Hitscan Helper
+function performShootRaycast(bulletDir) {
+    camera.updateMatrixWorld();
+    const raycaster = new THREE.Raycaster();
+    
+    // Bind raycaster to center-screen (0, 0)
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    
+    // Apply calculated weapon spread to the ray direction
+    raycaster.ray.direction.copy(bulletDir).normalize();
+
+    const targets = [];
+    const targetMap = new Map();
+
+    // 1. Enemies
+    for (const enemy of enemyManager.enemies) {
+        targets.push(enemy);
+        targetMap.set(enemy, { type: 'enemy', object: enemy });
+    }
+
+    // 2. Vehicles
+    for (const car of vehicleManager.vehicles) {
+        targets.push(car);
+        targetMap.set(car, { type: 'vehicle', object: car });
+    }
+
+    // 3. Remote Players
+    if (multiplayerManager.isMultiplayer) {
+        for (const peerId in multiplayerManager.remotePlayers) {
+            const rp = multiplayerManager.remotePlayers[peerId];
+            if (rp && rp.mesh) {
+                targets.push(rp.mesh);
+                targetMap.set(rp.mesh, { type: 'player', peerId: peerId, object: rp });
+            }
+        }
+    }
+
+    // 4. Solid Obstacles
+    const obstaclesInScene = scene.children.filter(c => 
+        c !== muzzleFlashLight && 
+        !c.isCamera && 
+        !c.isLight && 
+        c.isMesh && 
+        !c.userData?.isMedkit &&
+        !c.userData?.isBullet
+    );
+    for (const obj of obstaclesInScene) {
+        if (!targets.includes(obj)) {
+            targets.push(obj);
+            targetMap.set(obj, { type: 'obstacle', object: obj });
+        }
+    }
+
+    const hits = raycaster.intersectObjects(targets, true);
+    if (hits.length > 0) {
+        const firstHit = hits[0];
+        
+        // Traverse up the parent tree to match our root target map entry
+        let rootObj = firstHit.object;
+        let mapping = targetMap.get(rootObj);
+        while (rootObj.parent && !mapping) {
+            rootObj = rootObj.parent;
+            mapping = targetMap.get(rootObj);
+        }
+
+        if (mapping) {
+            return {
+                hit: true,
+                point: firstHit.point,
+                face: firstHit.face,
+                distance: firstHit.distance,
+                type: mapping.type,
+                peerId: mapping.peerId,
+                object: mapping.object
+            };
+        } else {
+            return {
+                hit: true,
+                point: firstHit.point,
+                face: firstHit.face,
+                distance: firstHit.distance,
+                type: 'obstacle',
+                object: firstHit.object
+            };
+        }
+    }
+
+    return { hit: false };
+}
+
 // 17. Player Shooting with Multi-Weapon Support & Stealth Break
 function shoot() {
     if (fireCooldown > 0 || isReloading) return;
@@ -1394,16 +1484,84 @@ function shoot() {
     const spreadDirObj = spreadSystem.calculateSpreadDirection(forward, right, up);
     const bulletDir = new THREE.Vector3(spreadDirObj.x, spreadDirObj.y, spreadDirObj.z);
 
+    // Perform hitscan raycasting
+    const hitData = performShootRaycast(bulletDir);
+
+    if (hitData.hit) {
+        if (hitData.type === 'enemy') {
+            const enemy = hitData.object;
+            const enemyDmg = currentWeapon.damage >= 100 ? 10 : (currentWeapon.damage >= 50 ? 3 : 1);
+            soundEngine.playEnemyHit();
+            createHitEffect(hitData.point);
+
+            if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
+                multiplayerManager.sendToHost({
+                    type: 'hit_enemy',
+                    enemyId: enemy.userData.id,
+                    damage: enemyDmg
+                });
+            } else {
+                enemy.userData.health -= enemyDmg;
+                if (enemy.userData.health <= 0) {
+                    const diff = getDifficulty();
+                    if (Math.random() < (diff.medkitDropChance || 0.4)) {
+                        enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
+                    }
+                    scene.remove(enemy);
+                    const idx = enemyManager.enemies.indexOf(enemy);
+                    if (idx !== -1) {
+                        enemyManager.enemies.splice(idx, 1);
+                    }
+                    kills++;
+                    uiManager.updateHUD(getHUDState());
+                }
+            }
+        } else if (hitData.type === 'vehicle') {
+            const car = hitData.object;
+            const carDmg = currentWeapon.damage >= 100 ? 35 : (currentWeapon.damage >= 50 ? 18 : 6);
+            createHitEffect(hitData.point, 0xffaa00);
+
+            if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
+                multiplayerManager.sendToHost({
+                    type: 'hit_vehicle',
+                    vehicleId: car.userData.id,
+                    damage: carDmg
+                });
+            } else {
+                vehicleManager.damageVehicle(car, carDmg, () => {
+                    kills += 3;
+                    uiManager.updateHUD(getHUDState());
+                });
+            }
+        } else if (hitData.type === 'player') {
+            if (multiplayerManager.gameMode === 'ffa') {
+                multiplayerManager.sendToHost({
+                    type: 'hit_player',
+                    targetPeerId: hitData.peerId,
+                    damage: currentWeapon.damage
+                });
+                createHitEffect(hitData.point);
+            }
+        } else if (hitData.type === 'obstacle') {
+            createBulletHole(
+                hitData.point,
+                hitData.face ? hitData.face.normal.clone() : new THREE.Vector3(0, 1, 0)
+            );
+        }
+    }
+
+    // Spawn cosmetic tracer bullet
     const bullet = new THREE.Mesh(
         new THREE.SphereGeometry(currentWeapon.id === 'SNIPER' ? 0.09 : 0.045, 8, 8),
         bulletMat
     );
+    bullet.name = 'bullet';
+    bullet.userData.isBullet = true;
     bullet.position.copy(camera.position);
 
     const bulletSpeed = currentWeapon.id === 'SNIPER' ? 340 : 175;
-    bullet.userData.velocity = bulletDir.multiplyScalar(bulletSpeed);
-    bullet.userData.damage = currentWeapon.damage;
-    bullet.userData.life = 2.5;
+    bullet.userData.velocity = bulletDir.clone().multiplyScalar(bulletSpeed);
+    bullet.userData.life = hitData.hit ? (hitData.distance / bulletSpeed) : 2.5;
 
     scene.add(bullet);
     bullets.push(bullet);
@@ -1814,124 +1972,12 @@ function updateWaves(delta) {
 function updateBullets(delta) {
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
-        const oldPos = bullet.position.clone();
-
         bullet.position.add(
             bullet.userData.velocity.clone().multiplyScalar(delta)
         );
 
-        let hit = false;
-
-        for (let j = enemyManager.enemies.length - 1; j >= 0; j--) {
-            const enemy = enemyManager.enemies[j];
-            const enemyCenter = enemy.position.clone();
-            enemyCenter.y += 1.45;
-
-            if (bullet.position.distanceTo(enemyCenter) < 1.3) {
-                const enemyDmg = bullet.userData.damage >= 100 ? 10 : (bullet.userData.damage >= 50 ? 3 : 1);
-                soundEngine.playEnemyHit();
-                createHitEffect(bullet.position);
-
-                if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
-                    multiplayerManager.sendToHost({
-                        type: 'hit_enemy',
-                        enemyId: enemy.userData.id,
-                        damage: enemyDmg
-                    });
-                } else {
-                    enemy.userData.health -= enemyDmg;
-
-                    if (enemy.userData.health <= 0) {
-                        const diff = getDifficulty();
-                        if (Math.random() < (diff.medkitDropChance || 0.4)) {
-                            enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
-                        }
-
-                        scene.remove(enemy);
-                        enemyManager.enemies.splice(j, 1);
-                        kills++;
-                        uiManager.updateHUD(getHUDState());
-                    }
-                }
-
-                hit = true;
-                break;
-            }
-        }
-
-        // PvP Player Hit Detection (FFA only)
-        if (!hit && multiplayerManager.isMultiplayer) {
-            for (const peerId in multiplayerManager.remotePlayers) {
-                const rp = multiplayerManager.remotePlayers[peerId];
-                const rpCenter = rp.mesh.position.clone();
-                rpCenter.y += 1.45; // Chest/Head height
-
-                if (bullet.position.distanceTo(rpCenter) < 1.3) {
-                    if (multiplayerManager.gameMode === 'ffa') {
-                        multiplayerManager.sendToHost({
-                            type: 'hit_player',
-                            targetPeerId: peerId,
-                            damage: bullet.userData.damage
-                        });
-                        createHitEffect(bullet.position);
-                        hit = true;
-                    }
-                    break;
-                }
-            }
-        }
-
-        if (!hit) {
-            for (const car of vehicleManager.vehicles) {
-                const carCenter = car.position.clone();
-                carCenter.y += 1.0;
-                if (bullet.position.distanceTo(carCenter) < 2.5) {
-                    const carDmg = bullet.userData.damage >= 100 ? 35 : (bullet.userData.damage >= 50 ? 18 : 6);
-                    createHitEffect(bullet.position, 0xffaa00);
-
-                    if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
-                        multiplayerManager.sendToHost({
-                            type: 'hit_vehicle',
-                            vehicleId: car.userData.id,
-                            damage: carDmg
-                        });
-                    } else {
-                        vehicleManager.damageVehicle(car, carDmg, () => {
-                            kills += 3;
-                            uiManager.updateHUD(getHUDState());
-                        });
-                    }
-                    hit = true;
-                    break;
-                }
-            }
-        }
-
-        if (!hit) {
-            const ray = new THREE.Raycaster();
-            const direction = bullet.position.clone().sub(oldPos).normalize();
-            ray.set(oldPos, direction);
-
-            const targets = scene.children.filter(c => c !== bullet && !c.isCamera && !c.isLight && !c.userData?.enemy && !c.userData?.vehicle && !c.userData?.isMedkit && !c.userData?.isPlayer);
-            const hits = ray.intersectObjects(targets, true);
-
-            for (const h of hits) {
-                if (h.object === bullet || h.object.userData?.enemy || h.object.userData?.vehicle || h.object.userData?.isMedkit || h.object.userData?.isPlayer) continue;
-                if (gunGroup.getObjectById(h.object.id)) continue;
-
-                if (h.distance < oldPos.distanceTo(bullet.position) + 0.2) {
-                    createBulletHole(
-                        h.point,
-                        h.face ? h.face.normal.clone() : new THREE.Vector3(0, 1, 0)
-                    );
-                    hit = true;
-                    break;
-                }
-            }
-        }
-
         bullet.userData.life -= delta;
-        if (hit || bullet.userData.life <= 0) {
+        if (bullet.userData.life <= 0) {
             scene.remove(bullet);
             bullets.splice(i, 1);
         }
@@ -2020,6 +2066,10 @@ function animate() {
     const delta = Math.min(clock.getDelta(), 0.05);
 
     if (gameStarted) {
+        camera.rotation.y = yaw;
+        camera.rotation.x = pitch;
+        camera.updateMatrixWorld();
+
         const { moving, sprint, crouching } = updatePlayer(delta);
 
         spreadSystem.update(delta, {
@@ -2098,8 +2148,6 @@ function animate() {
             grenades: activeGrenades
         }, delta);
 
-        camera.rotation.y = yaw;
-        camera.rotation.x = pitch;
     }
 
     uiManager.updateDamageFlash(delta);
