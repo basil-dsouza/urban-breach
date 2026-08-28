@@ -1912,11 +1912,11 @@ function updateBullets(delta) {
             const direction = bullet.position.clone().sub(oldPos).normalize();
             ray.set(oldPos, direction);
 
-            const targets = scene.children.filter(c => c !== bullet && !c.userData?.enemy && !c.userData?.vehicle && !c.userData?.isMedkit);
+            const targets = scene.children.filter(c => c !== bullet && !c.isCamera && !c.isLight && !c.userData?.enemy && !c.userData?.vehicle && !c.userData?.isMedkit && !c.userData?.isPlayer);
             const hits = ray.intersectObjects(targets, true);
 
             for (const h of hits) {
-                if (h.object === bullet || h.object.userData?.enemy || h.object.userData?.vehicle || h.object.userData?.isMedkit) continue;
+                if (h.object === bullet || h.object.userData?.enemy || h.object.userData?.vehicle || h.object.userData?.isMedkit || h.object.userData?.isPlayer) continue;
                 if (gunGroup.getObjectById(h.object.id)) continue;
 
                 if (h.distance < oldPos.distanceTo(bullet.position) + 0.2) {

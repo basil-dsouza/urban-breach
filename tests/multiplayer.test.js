@@ -46,6 +46,10 @@ describe('MultiplayerManager Core Architecture & Connection Specs', () => {
         manager.initHost('CaptainPrice', 'ffa');
         const peerInstance = manager.peer;
         expect(peerInstance.options.debug).toBe(2);
+        expect(peerInstance.options.host).toBe('0.peerjs.com');
+        expect(peerInstance.options.port).toBe(443);
+        expect(peerInstance.options.secure).toBe(true);
+        expect(peerInstance.options.path).toBe('/');
         expect(peerInstance.options.config.iceServers[0].urls).toBe('stun:stun.l.google.com:19302');
     });
 
@@ -54,6 +58,10 @@ describe('MultiplayerManager Core Architecture & Connection Specs', () => {
         const peerInstance = manager.peer;
         expect(peerInstance.id).toBeUndefined(); // Must be undefined to allow automatic ID generation
         expect(peerInstance.options.debug).toBe(2);
+        expect(peerInstance.options.host).toBe('0.peerjs.com');
+        expect(peerInstance.options.port).toBe(443);
+        expect(peerInstance.options.secure).toBe(true);
+        expect(peerInstance.options.path).toBe('/');
         expect(peerInstance.options.config.iceServers[0].urls).toBe('stun:stun.l.google.com:19302');
     });
 

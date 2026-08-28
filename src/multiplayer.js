@@ -62,6 +62,10 @@ export class MultiplayerManager {
         };
 
         this.peer = new window.Peer(this.roomCode, {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
+            path: '/',
             debug: 2,
             config: {
                 iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -135,6 +139,10 @@ export class MultiplayerManager {
         this.roomCode = code.toUpperCase().trim();
 
         this.peer = new window.Peer(undefined, {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
+            path: '/',
             debug: 2,
             config: {
                 iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
