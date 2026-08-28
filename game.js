@@ -6,6 +6,7 @@ import { EnemyManager } from './src/enemies.js';
 import { VehicleManager } from './src/vehicles.js';
 import { UIManager, WEAPON_CONFIGS } from './src/ui.js';
 import { soundEngine } from './src/audio.js';
+import { MultiplayerManager } from './src/multiplayer.js';
 
 /* =========================================================
    SURVIVAL FPS — EXPANDED 3D CITY ENGINE
@@ -653,6 +654,47 @@ const spreadSystem = new SpreadSystem();
 const grenadePhysics = new GrenadePhysics();
 const enemyManager = new EnemyManager(scene);
 const vehicleManager = new VehicleManager(scene);
+const multiplayerManager = new MultiplayerManager(scene, camera);
+
+// Expose globals for network manager access
+window.enemyManagerGlobal = enemyManager;
+window.vehicleManagerGlobal = vehicleManager;
+window.damagePlayerLocal = (amount, source) => {
+    damagePlayer(amount, source);
+};
+window.damageEnemyLocal = (enemyId, damage) => {
+    const enemy = enemyManager.enemies.find(e => e.userData.id === enemyId);
+    if (enemy) {
+        enemy.userData.health -= damage;
+        soundEngine.playEnemyHit();
+        createHitEffect(enemy.position);
+
+        if (enemy.userData.health <= 0) {
+            const diff = getDifficulty();
+            if (Math.random() < (diff.medkitDropChance || 0.4)) {
+                enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
+            }
+
+            scene.remove(enemy);
+            const idx = enemyManager.enemies.indexOf(enemy);
+            if (idx !== -1) {
+                enemyManager.enemies.splice(idx, 1);
+            }
+            kills++;
+            uiManager.updateHUD(getHUDState());
+        }
+    }
+};
+window.damageVehicleLocal = (vehicleId, damage) => {
+    const car = vehicleManager.vehicles.find(c => c.userData.id === vehicleId);
+    if (car) {
+        vehicleManager.damageVehicle(car, damage, () => {
+            kills += 3;
+            uiManager.updateHUD(getHUDState());
+        });
+        createHitEffect(car.position, 0xffaa00);
+    }
+};
 
 // Ground & Slanted Roof Surface Height Calculation
 function getSimpleGround(x, z) {
@@ -1011,13 +1053,135 @@ const uiManager = new UIManager({
 
         document.body.requestPointerLock();
 
-        spawnWave(selectedDifficulty);
+        if (multiplayerManager.isMultiplayer && multiplayerManager.isHost) {
+            multiplayerManager.sendGameStartSync(uiManager.selectedDifficultyKey);
+        }
+
+        if (!multiplayerManager.isMultiplayer || multiplayerManager.isHost) {
+            spawnWave(selectedDifficulty);
+        }
         uiManager.updateHUD(getHUDState());
     },
     onRestart: () => {
         location.reload();
     }
 });
+
+// Configure multiplayer callbacks on uiManager and multiplayerManager
+uiManager.onHostLobby = (nickname, gameMode) => {
+    multiplayerManager.initHost(nickname, gameMode, (code) => {
+        const displayEl = document.getElementById('lobby-code-display');
+        if (displayEl) {
+            displayEl.style.display = 'block';
+            displayEl.textContent = `CODE: ${code}`;
+        }
+        const statusEl = document.getElementById('lobby-status-subtitle');
+        if (statusEl) {
+            statusEl.textContent = `SECURE HOST ONLINE (CODE: ${code})`;
+        }
+    });
+};
+
+uiManager.onJoinLobby = (code, nickname) => {
+    const statusEl = document.getElementById('lobby-status-subtitle');
+    if (statusEl) {
+        statusEl.textContent = 'CONNECTING TO PEER HOST...';
+    }
+    multiplayerManager.initClient(code, nickname, () => {
+        if (statusEl) {
+            statusEl.textContent = `CONNECTED TO LOBBY: ${code.toUpperCase()}`;
+        }
+        const displayEl = document.getElementById('lobby-code-display');
+        if (displayEl) {
+            displayEl.style.display = 'block';
+            displayEl.textContent = `CODE: ${code.toUpperCase()}`;
+        }
+    }, (err) => {
+        if (statusEl) {
+            statusEl.textContent = `CONNECTION FAILED: ${err}`;
+        }
+        alert(`Failed to connect: ${err}`);
+        
+        const hostBtn = document.getElementById('btn-host-lobby');
+        if (hostBtn) hostBtn.style.display = 'inline-block';
+        const block = document.getElementById('mode-settings-block');
+        if (block) block.style.display = 'flex';
+    });
+};
+
+uiManager.onLobbyUpdate = (playersList, gameMode) => {
+    const listEl = document.getElementById('lobby-roster-list');
+    if (listEl) {
+        listEl.innerHTML = playersList.map(p => {
+            const statusText = p.isHost ? 'HOST' : (p.isReady ? 'READY' : 'JOINED');
+            const statusClass = p.isHost ? 'status-host' : 'status-ready';
+            return `
+                <div class="lobby-player-item">
+                    <span class="lobby-player-name">${p.nickname}</span>
+                    <span class="lobby-player-status ${statusClass}">${statusText}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    const btnModePve = document.getElementById('btn-mode-pve');
+    const btnModeFfa = document.getElementById('btn-mode-ffa');
+    if (btnModePve && btnModeFfa) {
+        if (gameMode === 'pve') {
+            btnModePve.classList.add('selected');
+            btnModeFfa.classList.remove('selected');
+        } else {
+            btnModeFfa.classList.add('selected');
+            btnModePve.classList.remove('selected');
+        }
+    }
+};
+
+uiManager.onLeaveLobby = () => {
+    multiplayerManager.shutdown();
+};
+
+uiManager.onLobbyLaunch = () => {
+    multiplayerManager.sendLobbyNext();
+    uiManager.lobbyScreen.style.display = 'none';
+    uiManager.difficultyScreen.style.display = 'flex';
+    uiManager.setMultiplayerRole(true);
+};
+
+uiManager.onDifficultySelect = (difficultyKey) => {
+    multiplayerManager.sendDifficultySync(difficultyKey);
+};
+
+uiManager.onWeaponSelect = (weaponKey) => {
+    // Local weapon update selection is allowed
+};
+
+// Sync callbacks back from multiplayer manager
+multiplayerManager.onLobbyNext = () => {
+    uiManager.lobbyScreen.style.display = 'none';
+    uiManager.difficultyScreen.style.display = 'flex';
+    uiManager.setMultiplayerRole(false);
+};
+
+multiplayerManager.onDifficultySync = (difficultyKey) => {
+    uiManager.setDifficultyKey(difficultyKey);
+};
+
+multiplayerManager.onGameStartSync = (difficultyKey) => {
+    const diff = setDifficulty(difficultyKey);
+    uiManager.difficultyScreen.style.display = 'none';
+    uiManager.hud.style.display = 'block';
+    uiManager.crosshair.style.display = 'block';
+
+    const diffBadge = document.getElementById('hud-diff-badge');
+    if (diffBadge) {
+        diffBadge.textContent = diff.name;
+        diffBadge.style.color = diff.color;
+        diffBadge.style.borderColor = diff.color;
+    }
+
+    uiManager.onStartGame(diff, uiManager.selectedWeaponKey);
+};
 
 // 13. Reload Mechanics
 function startReload() {
@@ -1211,6 +1375,10 @@ function shoot() {
     scene.add(bullet);
     bullets.push(bullet);
 
+    if (multiplayerManager.isMultiplayer) {
+        multiplayerManager.sendLocalShoot(camera.position, bulletDir, currentWeapon.id);
+    }
+
     muzzleFlashLight.intensity = currentWeapon.id === 'SNIPER' ? 16 : 8;
     setTimeout(() => { muzzleFlashLight.intensity = 0; }, 40);
 
@@ -1273,6 +1441,10 @@ function throwPlayerGrenade() {
 
     grenadeData.mesh = grenadeMesh;
     activeGrenades.push(grenadeData);
+
+    if (multiplayerManager.isMultiplayer) {
+        multiplayerManager.sendLocalGrenade(camera.position, grenadeData.velocity);
+    }
 }
 
 function explodeGrenadeAt(grenadeData) {
@@ -1624,24 +1796,55 @@ function updateBullets(delta) {
 
             if (bullet.position.distanceTo(enemyCenter) < 1.3) {
                 const enemyDmg = bullet.userData.damage >= 100 ? 10 : (bullet.userData.damage >= 50 ? 3 : 1);
-                enemy.userData.health -= enemyDmg;
                 soundEngine.playEnemyHit();
                 createHitEffect(bullet.position);
 
-                if (enemy.userData.health <= 0) {
-                    const diff = getDifficulty();
-                    if (Math.random() < (diff.medkitDropChance || 0.4)) {
-                        enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
-                    }
+                if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
+                    multiplayerManager.sendToHost({
+                        type: 'hit_enemy',
+                        enemyId: enemy.userData.id,
+                        damage: enemyDmg
+                    });
+                } else {
+                    enemy.userData.health -= enemyDmg;
 
-                    scene.remove(enemy);
-                    enemyManager.enemies.splice(j, 1);
-                    kills++;
-                    uiManager.updateHUD(getHUDState());
+                    if (enemy.userData.health <= 0) {
+                        const diff = getDifficulty();
+                        if (Math.random() < (diff.medkitDropChance || 0.4)) {
+                            enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
+                        }
+
+                        scene.remove(enemy);
+                        enemyManager.enemies.splice(j, 1);
+                        kills++;
+                        uiManager.updateHUD(getHUDState());
+                    }
                 }
 
                 hit = true;
                 break;
+            }
+        }
+
+        // PvP Player Hit Detection (FFA only)
+        if (!hit && multiplayerManager.isMultiplayer) {
+            for (const peerId in multiplayerManager.remotePlayers) {
+                const rp = multiplayerManager.remotePlayers[peerId];
+                const rpCenter = rp.mesh.position.clone();
+                rpCenter.y += 1.45; // Chest/Head height
+
+                if (bullet.position.distanceTo(rpCenter) < 1.3) {
+                    if (multiplayerManager.gameMode === 'ffa') {
+                        multiplayerManager.sendToHost({
+                            type: 'hit_player',
+                            targetPeerId: peerId,
+                            damage: bullet.userData.damage
+                        });
+                        createHitEffect(bullet.position);
+                        hit = true;
+                    }
+                    break;
+                }
             }
         }
 
@@ -1651,11 +1854,20 @@ function updateBullets(delta) {
                 carCenter.y += 1.0;
                 if (bullet.position.distanceTo(carCenter) < 2.5) {
                     const carDmg = bullet.userData.damage >= 100 ? 35 : (bullet.userData.damage >= 50 ? 18 : 6);
-                    vehicleManager.damageVehicle(car, carDmg, () => {
-                        kills += 3;
-                        uiManager.updateHUD(getHUDState());
-                    });
                     createHitEffect(bullet.position, 0xffaa00);
+
+                    if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
+                        multiplayerManager.sendToHost({
+                            type: 'hit_vehicle',
+                            vehicleId: car.userData.id,
+                            damage: carDmg
+                        });
+                    } else {
+                        vehicleManager.damageVehicle(car, carDmg, () => {
+                            kills += 3;
+                            uiManager.updateHUD(getHUDState());
+                        });
+                    }
                     hit = true;
                     break;
                 }
@@ -1799,19 +2011,46 @@ function animate() {
         updateGrenadeReplenish(delta);
         updateBushStealth(delta);
 
-        // Update enemies with stealth state, solid obstacle line-of-sight & ladder climbing
-        enemyManager.update(delta, camera.position, getSimpleGround, (dmg, src) => {
-            damagePlayer(dmg, src);
-        }, isPlayerHidden, obstacles, ladders);
+        if (!multiplayerManager.isMultiplayer || multiplayerManager.isHost) {
+            // Update enemies with stealth state, solid obstacle line-of-sight & ladder climbing
+            enemyManager.update(delta, camera.position, getSimpleGround, (dmg, src) => {
+                damagePlayer(dmg, src);
+            }, isPlayerHidden, obstacles, ladders);
 
-        vehicleManager.update(delta, camera.position, obstacles, (dmg, src) => {
-            damagePlayer(dmg, src);
-        });
+            vehicleManager.update(delta, camera.position, obstacles, (dmg, src) => {
+                damagePlayer(dmg, src);
+            });
+        } else {
+            // Client only updates bullets visually
+            enemyManager.bulletManager.update(delta, camera.position, () => {}, obstacles);
+        }
 
         updateBullets(delta);
         updateActiveGrenades(delta);
         updateBulletHoles(delta);
-        updateWaves(delta);
+
+        if (!multiplayerManager.isMultiplayer || multiplayerManager.isHost) {
+            updateWaves(delta);
+        }
+
+        // Periodically send local player state to peer / host
+        if (multiplayerManager.isMultiplayer) {
+            const timeNow = clock.getElapsedTime();
+            if (timeNow - multiplayerManager.lastStateSend > multiplayerManager.sendInterval) {
+                multiplayerManager.sendLocalPlayerState(
+                    camera.position,
+                    yaw,
+                    pitch,
+                    currentWeaponKey,
+                    aiming,
+                    isCrouching,
+                    health,
+                    kills
+                );
+                multiplayerManager.lastStateSend = timeNow;
+            }
+            multiplayerManager.update(delta);
+        }
         updateAimAndGun(delta, moving, sprint);
 
         // Render Heading-Up Tactical Radar

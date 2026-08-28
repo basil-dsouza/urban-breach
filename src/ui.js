@@ -91,6 +91,95 @@ export class UIManager {
         `;
         this.uiRoot.appendChild(this.titleScreen);
 
+        // 1b. Lobby Select Screen (Singleplayer / Multiplayer Selection)
+        this.lobbySelectScreen = document.createElement('div');
+        this.lobbySelectScreen.id = 'lobby-select-screen';
+        this.lobbySelectScreen.className = 'screen-overlay';
+        this.lobbySelectScreen.style.display = 'none';
+        this.lobbySelectScreen.innerHTML = `
+            <div class="game-logo">URBAN BREACH</div>
+            <div class="game-subtitle">SELECT GAME FORMAT</div>
+
+            <div class="lobby-select-grid">
+                <div class="lobby-select-card" id="card-singleplayer">
+                    <h3>SINGLEPLAYER</h3>
+                    <p>Standard tactical survival vs enemy waves. Climb buildings, throw grenades, and set highscores solo.</p>
+                </div>
+                <div class="lobby-select-card" id="card-multiplayer">
+                    <h3>MULTIPLAYER</h3>
+                    <p>Deploy with up to 5 players. Select FFA Deathmatch (PvP) with active hostile bots, or play cooperative PvE.</p>
+                </div>
+            </div>
+
+            <button id="btn-back-to-title" class="btn-secondary">
+                ← BACK TO MAIN MENU
+            </button>
+        `;
+        this.uiRoot.appendChild(this.lobbySelectScreen);
+
+        // 1c. Multiplayer Lobby Screen
+        this.lobbyScreen = document.createElement('div');
+        this.lobbyScreen.id = 'lobby-screen';
+        this.lobbyScreen.className = 'screen-overlay';
+        this.lobbyScreen.style.display = 'none';
+        this.lobbyScreen.innerHTML = `
+            <div class="game-logo">MULTIPLAYER LOBBY</div>
+            <div class="game-subtitle" id="lobby-status-subtitle">ESTABLISH SECURE PEER CHANNEL (MAX 5 PLAYERS)</div>
+
+            <div style="display: flex; gap: 32px; justify-content: center; align-items: flex-start; margin-bottom: 24px;">
+                <!-- Column 1: Settings -->
+                <div class="lobby-form">
+                    <h3>OPERATOR SETTINGS</h3>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <label style="font-size: 13px; font-weight: 800; color: #cbd5e1;">NICKNAME</label>
+                        <input type="text" id="input-nickname" class="lobby-input" value="Operator-${Math.floor(100 + Math.random() * 900)}" maxlength="14" />
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 6px;" id="mode-settings-block">
+                        <label style="font-size: 13px; font-weight: 800; color: #cbd5e1;">GAME MODE</label>
+                        <div class="mode-selection">
+                            <button id="btn-mode-pve" class="mode-btn selected">PVE CO-OP</button>
+                            <button id="btn-mode-ffa" class="mode-btn">FFA PVP</button>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1.5px solid rgba(255,255,255,0.1); padding-top: 16px; margin-top: 8px; display: flex; flex-direction: column; gap: 12px;">
+                        <button id="btn-host-lobby" class="btn-primary" style="font-size:16px; padding: 12px 24px;">
+                            HOST SECURE GAME
+                        </button>
+                        
+                        <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+                            <input type="text" id="input-lobby-code" class="lobby-input" placeholder="ROOM CODE" style="width: 140px; font-size:15px; padding: 10px;" />
+                            <button id="btn-join-lobby" class="btn-secondary" style="font-size:15px; padding: 10px 20px;">
+                                JOIN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Squad Roster -->
+                <div class="lobby-form" style="width: 320px;">
+                    <h3>SQUAD ROSTER</h3>
+                    <div class="lobby-player-list" id="lobby-roster-list">
+                        <div style="color:#94a3b8; font-size: 14px; text-align: center; padding: 10px;">Lobby uninitialized. Host or join a room.</div>
+                    </div>
+                    <div id="lobby-code-display" style="display:none; text-align:center; font-size: 18px; font-weight:900; color:#00e5ff; letter-spacing:2px; padding:10px; background: rgba(0,229,255,0.08); border: 1px dashed #00e5ff; border-radius:6px; margin-top: 12px;">
+                        CODE: -
+                    </div>
+                </div>
+            </div>
+
+            <div class="diff-actions">
+                <button id="btn-lobby-back" class="btn-secondary">
+                    ← LEAVE LOBBY
+                </button>
+                <button id="btn-lobby-launch" class="btn-primary" style="display:none;">
+                    PROCEED TO WEAPON SELECT →
+                </button>
+            </div>
+        `;
+        this.uiRoot.appendChild(this.lobbyScreen);
+
         // 2. Difficulty & Weapon Select Screen
         this.difficultyScreen = document.createElement('div');
         this.difficultyScreen.id = 'difficulty-screen';
@@ -309,7 +398,126 @@ export class UIManager {
         if (btnToDiff) {
             btnToDiff.onclick = () => {
                 this.titleScreen.style.display = 'none';
+                this.lobbySelectScreen.style.display = 'flex';
+            };
+        }
+
+        // Singleplayer selection
+        const cardSingleplayer = document.getElementById('card-singleplayer');
+        if (cardSingleplayer) {
+            cardSingleplayer.onclick = () => {
+                this.lobbySelectScreen.style.display = 'none';
                 this.difficultyScreen.style.display = 'flex';
+                this.resetSingleplayerUI();
+            };
+        }
+
+        // Multiplayer selection
+        const cardMultiplayer = document.getElementById('card-multiplayer');
+        if (cardMultiplayer) {
+            cardMultiplayer.onclick = () => {
+                this.lobbySelectScreen.style.display = 'none';
+                this.lobbyScreen.style.display = 'flex';
+                this.isMultiplayerMode = true;
+            };
+        }
+
+        // Back from format screen
+        const btnBackToTitle = document.getElementById('btn-back-to-title');
+        if (btnBackToTitle) {
+            btnBackToTitle.onclick = () => {
+                this.lobbySelectScreen.style.display = 'none';
+                this.titleScreen.style.display = 'flex';
+            };
+        }
+
+        // Back from Lobby screen
+        const btnLobbyBack = document.getElementById('btn-lobby-back');
+        if (btnLobbyBack) {
+            btnLobbyBack.onclick = () => {
+                if (typeof this.onLeaveLobby === 'function') {
+                    this.onLeaveLobby();
+                }
+                this.lobbyScreen.style.display = 'none';
+                this.lobbySelectScreen.style.display = 'flex';
+                
+                // Reset lobby UI state
+                document.getElementById('lobby-roster-list').innerHTML = `
+                    <div style="color:#94a3b8; font-size: 14px; text-align: center; padding: 10px;">Lobby uninitialized. Host or join a room.</div>
+                `;
+                document.getElementById('lobby-code-display').style.display = 'none';
+                document.getElementById('btn-lobby-launch').style.display = 'none';
+                document.getElementById('mode-settings-block').style.display = 'flex';
+                document.getElementById('btn-host-lobby').style.display = 'inline-block';
+            };
+        }
+
+        // Game Mode Toggle (PVE / FFA)
+        const btnModePve = document.getElementById('btn-mode-pve');
+        const btnModeFfa = document.getElementById('btn-mode-ffa');
+        if (btnModePve && btnModeFfa) {
+            btnModePve.onclick = () => {
+                if (this.isMultiplayerMode && this.isHost) {
+                    btnModePve.classList.add('selected');
+                    btnModeFfa.classList.remove('selected');
+                    this.selectedGameMode = 'pve';
+                    if (typeof this.onGameModeSelect === 'function') this.onGameModeSelect('pve');
+                }
+            };
+            btnModeFfa.onclick = () => {
+                if (this.isMultiplayerMode && this.isHost) {
+                    btnModeFfa.classList.add('selected');
+                    btnModePve.classList.remove('selected');
+                    this.selectedGameMode = 'ffa';
+                    if (typeof this.onGameModeSelect === 'function') this.onGameModeSelect('ffa');
+                }
+            };
+        }
+
+        // Host secure lobby click
+        const btnHostLobby = document.getElementById('btn-host-lobby');
+        if (btnHostLobby) {
+            btnHostLobby.onclick = () => {
+                const nickname = document.getElementById('input-nickname').value || 'Host';
+                const gameMode = btnModePve.classList.contains('selected') ? 'pve' : 'ffa';
+                this.isHost = true;
+                
+                document.getElementById('btn-lobby-launch').style.display = 'inline-block';
+
+                if (typeof this.onHostLobby === 'function') {
+                    this.onHostLobby(nickname, gameMode);
+                }
+            };
+        }
+
+        // Join lobby click
+        const btnJoinLobby = document.getElementById('btn-join-lobby');
+        if (btnJoinLobby) {
+            btnJoinLobby.onclick = () => {
+                const code = document.getElementById('input-lobby-code').value;
+                const nickname = document.getElementById('input-nickname').value || 'Client';
+                if (!code) {
+                    alert('Please enter a room code!');
+                    return;
+                }
+                this.isHost = false;
+                document.getElementById('btn-lobby-launch').style.display = 'none';
+                document.getElementById('mode-settings-block').style.display = 'none';
+                document.getElementById('btn-host-lobby').style.display = 'none';
+
+                if (typeof this.onJoinLobby === 'function') {
+                    this.onJoinLobby(code, nickname);
+                }
+            };
+        }
+
+        // Launch Lobby click (Host proceeds to Weapon Select)
+        const btnLobbyLaunch = document.getElementById('btn-lobby-launch');
+        if (btnLobbyLaunch) {
+            btnLobbyLaunch.onclick = () => {
+                if (typeof this.onLobbyLaunch === 'function') {
+                    this.onLobbyLaunch();
+                }
             };
         }
 
@@ -317,16 +525,21 @@ export class UIManager {
         if (btnBackTitle) {
             btnBackTitle.onclick = () => {
                 this.difficultyScreen.style.display = 'none';
-                this.titleScreen.style.display = 'flex';
+                this.lobbySelectScreen.style.display = 'flex';
             };
         }
 
         const diffCards = this.difficultyScreen.querySelectorAll('.diff-card');
         diffCards.forEach(card => {
             card.onclick = () => {
+                if (this.isMultiplayerMode && !this.isHost) return; // Clients locked out of diff selection
                 diffCards.forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 this.selectedDifficultyKey = card.dataset.key;
+
+                if (this.isMultiplayerMode && this.isHost && typeof this.onDifficultySelect === 'function') {
+                    this.onDifficultySelect(this.selectedDifficultyKey);
+                }
             };
         });
 
@@ -336,6 +549,10 @@ export class UIManager {
                 wepCards.forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 this.selectedWeaponKey = card.dataset.key;
+
+                if (typeof this.onWeaponSelect === 'function') {
+                    this.onWeaponSelect(this.selectedWeaponKey);
+                }
             };
         });
 
@@ -518,5 +735,50 @@ export class UIManager {
         if (goKills) goKills.textContent = kills;
 
         this.gameOverScreen.style.display = 'flex';
+    }
+
+    setDifficultyKey(key) {
+        this.selectedDifficultyKey = key;
+        const diffCards = this.difficultyScreen.querySelectorAll('.diff-card');
+        diffCards.forEach(card => {
+            if (card.dataset.key === key) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    }
+
+    setMultiplayerRole(isHost) {
+        this.isHost = isHost;
+        const btnLaunch = document.getElementById('btn-launch-game');
+        let waitingEl = document.getElementById('mp-lobby-waiting');
+
+        if (!waitingEl) {
+            waitingEl = document.createElement('div');
+            waitingEl.id = 'mp-lobby-waiting';
+            waitingEl.className = 'diff-title';
+            waitingEl.style.marginTop = '20px';
+            waitingEl.style.color = '#f59e0b';
+            waitingEl.textContent = 'WAITING FOR HOST TO DEPLOY...';
+            btnLaunch.parentNode.insertBefore(waitingEl, btnLaunch.nextSibling);
+        }
+
+        if (isHost) {
+            btnLaunch.style.display = 'inline-block';
+            waitingEl.style.display = 'none';
+        } else {
+            btnLaunch.style.display = 'none';
+            waitingEl.style.display = 'block';
+        }
+    }
+
+    resetSingleplayerUI() {
+        this.isMultiplayerMode = false;
+        this.isHost = false;
+        const btnLaunch = document.getElementById('btn-launch-game');
+        if (btnLaunch) btnLaunch.style.display = 'inline-block';
+        const waitingEl = document.getElementById('mp-lobby-waiting');
+        if (waitingEl) waitingEl.style.display = 'none';
     }
 }

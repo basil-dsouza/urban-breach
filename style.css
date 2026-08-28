@@ -747,3 +747,220 @@ body {
     letter-spacing: 2px;
     color: #cbd5e1;
 }
+
+/* =========================================================
+   MULTIPLAYER LOBBY SCREENS
+   ========================================================= */
+
+.lobby-select-grid {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.lobby-select-card {
+    background: rgba(12, 18, 26, 0.85);
+    border: 2px solid rgba(0, 229, 255, 0.25);
+    border-radius: 12px;
+    padding: 30px;
+    width: 280px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lobby-select-card:hover {
+    border-color: #00e5ff;
+    transform: translateY(-4px);
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.25);
+}
+
+.lobby-select-card h3 {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    color: #00e5ff;
+}
+
+.lobby-select-card p {
+    font-size: 14px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.lobby-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: rgba(12, 18, 26, 0.95);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    border-radius: 12px;
+    padding: 32px;
+    width: 420px;
+    margin-bottom: 20px;
+}
+
+.lobby-form h3 {
+    font-size: 22px;
+    color: #00e5ff;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.lobby-input {
+    padding: 12px 18px;
+    background: rgba(8, 12, 16, 0.8);
+    border: 1.5px solid rgba(0, 229, 255, 0.3);
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 16px;
+    font-family: monospace;
+    text-align: center;
+}
+
+.lobby-input:focus {
+    border-color: #00e5ff;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+}
+
+.lobby-player-list {
+    background: rgba(8, 12, 16, 0.6);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px;
+    max-height: 180px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.lobby-player-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.lobby-player-name {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.lobby-player-status {
+    font-size: 12px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.status-host {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+}
+
+.status-ready {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.status-connecting {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.5);
+}
+
+/* Game Mode Selection */
+.mode-selection {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.mode-btn.selected {
+    background: rgba(0, 229, 255, 0.15);
+    border-color: #00e5ff;
+    color: #00e5ff;
+}
+
+/* =========================================================
+   MULTIPLAYER SCOREBOARD & MULTIPLAYER HUD INFO
+   ========================================================= */
+
+.hud-multiplayer-info {
+    position: absolute;
+    top: 90px;
+    left: 20px;
+    background: rgba(10, 16, 24, 0.8);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 6px;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.scoreboard-container {
+    position: absolute;
+    top: 90px;
+    right: 20px;
+    background: rgba(10, 16, 24, 0.85);
+    border: 1.5px solid rgba(0, 229, 255, 0.35);
+    border-radius: 8px;
+    padding: 12px 18px;
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.scoreboard-title {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #00e5ff;
+    border-bottom: 1.5px solid rgba(0, 229, 255, 0.25);
+    padding-bottom: 6px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.scoreboard-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.scoreboard-row.local-player {
+    color: #00e5ff;
+    font-weight: 900;
+}
