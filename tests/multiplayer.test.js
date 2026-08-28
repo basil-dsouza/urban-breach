@@ -39,7 +39,7 @@ describe('MultiplayerManager Core Architecture & Connection Specs', () => {
         expect(manager.isHost).toBe(true);
         expect(manager.localNickname).toBe('CaptainPrice');
         expect(manager.gameMode).toBe('ffa');
-        expect(manager.roomCode).toMatch(/^UB-\d{4}$/);
+        expect(manager.roomCode).toMatch(/^UB\d{4}$/);
     });
 
     it('should configure Host PeerJS with debug: 2 and Google public STUN servers', () => {
@@ -50,7 +50,7 @@ describe('MultiplayerManager Core Architecture & Connection Specs', () => {
     });
 
     it('should configure Client PeerJS with undefined ID (auto-generated) and debug: 2', () => {
-        manager.initClient('UB-9999', 'Soap');
+        manager.initClient('UB9999', 'Soap');
         const peerInstance = manager.peer;
         expect(peerInstance.id).toBeUndefined(); // Must be undefined to allow automatic ID generation
         expect(peerInstance.options.debug).toBe(2);

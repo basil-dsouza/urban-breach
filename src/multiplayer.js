@@ -42,7 +42,7 @@ export class MultiplayerManager {
         this.isHost = true;
         this.localNickname = nickname || 'Host';
         this.gameMode = gameMode || 'pve';
-        this.roomCode = 'UB-' + Math.floor(1000 + Math.random() * 9000);
+        this.roomCode = 'UB' + Math.floor(1000 + Math.random() * 9000);
 
         this.players = {
             'host': {
@@ -535,7 +535,7 @@ export class MultiplayerManager {
             rp.kills = pData.kills || 0;
 
             // Apply smooth interpolation to mesh position/rotation
-            const finalTargetY = rp.targetPos.y - 0.85; // Align mesh root to player feet
+            const finalTargetY = rp.targetPos.y - (rp.targetCrouching ? 1.0 : 1.6); // Align mesh root to player feet
             const currentMeshPos = rp.mesh.position;
             currentMeshPos.x = THREE.MathUtils.lerp(currentMeshPos.x, rp.targetPos.x, lerpFactor);
             currentMeshPos.y = THREE.MathUtils.lerp(currentMeshPos.y, finalTargetY, lerpFactor);
