@@ -1211,7 +1211,7 @@ export class MultiplayerManager {
         if (window.uiManagerGlobal) {
             window.uiManagerGlobal.showChatPanel(false);
         }
-        const chatLog = typeof document !== 'undefined' ? document.getElementById('hud-chat-log') : null;
+        const chatLog = typeof document !== 'undefined' ? document.getElementById('chat-log') : null;
         if (chatLog) {
             chatLog.innerHTML = '';
         }

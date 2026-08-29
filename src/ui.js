@@ -363,23 +363,29 @@ export class UIManager {
         `;
         this.uiRoot.appendChild(this.hud);
 
-        // Chat Panel on the Bottom Left (Independent of HUD visibility)
+        // Chat Panel on the Bottom Left (Attached to document.body above WebGL)
         this.chatPanel = document.createElement('div');
-        this.chatPanel.id = 'hud-chat-panel';
+        this.chatPanel.id = 'chat-box';
         this.chatPanel.className = 'hud-chat-panel';
         this.chatPanel.style.display = 'none'; // Hidden by default
         this.chatPanel.innerHTML = `
-            <div id="hud-chat-log" class="hud-chat-log"></div>
-            <input id="hud-chat-input" class="hud-chat-input" placeholder="Press ENTER to chat..." maxlength="100" autocomplete="off" style="display:none;" />
+            <div id="chat-log" class="hud-chat-log"></div>
+            <input id="chat-input" class="hud-chat-input" placeholder="Press ENTER or T to chat..." maxlength="100" autocomplete="off" style="display:none;" />
         `;
-        this.uiRoot.appendChild(this.chatPanel);
+        document.body.appendChild(this.chatPanel);
 
-        // Auto-blur chat input safety handler
-        const chatInput = this.chatPanel.querySelector('#hud-chat-input');
+        // Focus / Blur listeners to disable game controls while typing
+        const chatInput = this.chatPanel.querySelector('#chat-input');
         if (chatInput) {
+            chatInput.addEventListener('focus', () => {
+                window.chatInputActive = true;
+                console.log("[CHAT] Input focused. Game controls suspended.");
+            });
             chatInput.addEventListener('blur', () => {
+                window.chatInputActive = false;
                 chatInput.style.display = 'none';
                 chatInput.value = '';
+                console.log("[CHAT] Input blurred. Game controls restored.");
             });
         }
 
@@ -628,20 +634,24 @@ export class UIManager {
         }
     }
 
-    addChatMessage(sender, text) {
-        const chatLog = document.getElementById('hud-chat-log');
-        if (!chatLog) return;
+    renderMessage(senderId, text) {
+        console.log(`[CHAT] Message received from ${senderId}: "${text}"`);
+        const chatLog = document.getElementById('chat-log');
+        if (!chatLog) {
+            console.warn("[CHAT] Cannot render message - #chat-log not found in DOM.");
+            return;
+        }
 
         const msgEl = document.createElement('div');
         msgEl.className = 'chat-message';
 
-        if (sender === 'System') {
+        if (senderId === 'System') {
             msgEl.classList.add('system');
             msgEl.innerHTML = `[SYSTEM] ${text}`;
         } else {
             const senderSpan = document.createElement('span');
             senderSpan.className = 'sender';
-            senderSpan.textContent = sender + ":";
+            senderSpan.textContent = senderId + ":";
             msgEl.appendChild(senderSpan);
 
             const textNode = document.createTextNode(" " + text);
@@ -650,6 +660,7 @@ export class UIManager {
 
         chatLog.appendChild(msgEl);
         chatLog.scrollTop = chatLog.scrollHeight;
+        console.log("[CHAT] DOM element created and appended to log.");
 
         // Auto-fade message after 8 seconds
         setTimeout(() => {
@@ -661,6 +672,10 @@ export class UIManager {
                 }
             }, 1500);
         }, 8000);
+    }
+
+    addChatMessage(sender, text) {
+        this.renderMessage(sender, text);
     }
 
     showChatPanel(visible) {

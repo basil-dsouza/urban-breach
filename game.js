@@ -1285,14 +1285,15 @@ function updateBushStealth(delta) {
 
 // 16. Input Listeners
 window.addEventListener('keydown', e => {
-    const chatInput = document.getElementById('hud-chat-input');
-    const chatPanel = document.getElementById('hud-chat-panel');
+    const chatInput = document.getElementById('chat-input');
+    const chatPanel = document.getElementById('chat-box');
 
     if (chatInput && document.activeElement === chatInput) {
         if (e.code === 'Enter') {
             e.preventDefault();
             const text = chatInput.value.trim();
             if (text.length > 0) {
+                console.log("[CHAT] Sending payload:", text);
                 if (multiplayerManager.isMultiplayer) {
                     multiplayerManager.sendChatMessage(text);
                 } else {
@@ -1305,13 +1306,23 @@ window.addEventListener('keydown', e => {
             if (gameStarted) {
                 document.body.requestPointerLock();
             }
+        } else if (e.code === 'Escape') {
+            e.preventDefault();
+            console.log("[CHAT] Escape pressed. Canceling input.");
+            chatInput.value = '';
+            chatInput.style.display = 'none';
+            chatInput.blur();
+            if (gameStarted) {
+                document.body.requestPointerLock();
+            }
         }
         return;
     }
 
-    if (e.code === 'Enter' && chatPanel && chatPanel.style.display !== 'none') {
+    if ((e.code === 'Enter' || e.code === 'KeyT') && chatPanel && chatPanel.style.display !== 'none') {
         e.preventDefault();
         if (chatInput) {
+            console.log("[CHAT] Key pressed to open chat input.");
             chatInput.style.display = 'block';
             chatInput.focus();
             if (gameStarted) {
@@ -1359,8 +1370,7 @@ window.addEventListener('keydown', e => {
 });
 
 window.addEventListener('keyup', e => {
-    const chatInput = document.getElementById('hud-chat-input');
-    if (chatInput && document.activeElement === chatInput) {
+    if (window.chatInputActive) {
         return;
     }
 
@@ -1375,7 +1385,7 @@ window.addEventListener('keyup', e => {
 });
 
 window.addEventListener('mousemove', e => {
-    if (document.pointerLockElement === document.body && gameStarted) {
+    if (document.pointerLockElement === document.body && gameStarted && !window.chatInputActive) {
         const sens = aiming ? 0.0010 : 0.0022;
         yaw -= e.movementX * sens;
         pitch -= e.movementY * sens;
@@ -1386,6 +1396,8 @@ window.addEventListener('mousemove', e => {
 document.addEventListener('mousedown', e => {
     soundEngine.init();
     soundEngine.resume();
+
+    if (window.chatInputActive) return;
 
     if (e.button === 0) {
         mouseHeld = true;
@@ -1760,6 +1772,12 @@ function explodeGrenadeAt(grenadeData) {
 
 // 20. Player Movement, Physics & Ladder Climbing Loop
 function updatePlayer(delta) {
+    if (window.chatInputActive) {
+        isCrouching = false;
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, playerY + STANDING_EYE_HEIGHT, delta * 14.0);
+        return { moving: false, sprint: false, crouching: false };
+    }
+
     const crouch = (keys["KeyC"] || keys["ControlLeft"] || keys["ControlRight"]) && !onLadder;
     isCrouching = crouch;
 
@@ -2152,7 +2170,7 @@ function animate() {
         uiManager.updateCrosshair(spreadSystem.getCrosshairPositions(), aiming);
         uiManager.updateHUD(getHUDState());
 
-        if (mouseHeld) {
+        if (mouseHeld && !window.chatInputActive) {
             shoot();
         }
 

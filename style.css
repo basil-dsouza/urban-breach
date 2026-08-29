@@ -969,7 +969,7 @@ body {
    MULTIPLAYER CHAT SYSTEM
    ========================================================= */
 
-.hud-chat-panel {
+#chat-box, .hud-chat-panel {
     position: absolute;
     bottom: 24px;
     left: 24px;
@@ -978,12 +978,12 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    pointer-events: none; /* Let clicks pass through except on active input */
+    pointer-events: auto;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    z-index: 35;
+    z-index: 99999;
 }
 
-.hud-chat-log {
+#chat-log, .hud-chat-log {
     flex-grow: 1;
     overflow-y: auto;
     display: flex;
@@ -995,11 +995,11 @@ body {
     scrollbar-color: rgba(0, 229, 255, 0.2) transparent;
 }
 
-.hud-chat-log::-webkit-scrollbar {
+#chat-log::-webkit-scrollbar, .hud-chat-log::-webkit-scrollbar {
     width: 4px;
 }
 
-.hud-chat-log::-webkit-scrollbar-thumb {
+#chat-log::-webkit-scrollbar-thumb, .hud-chat-log::-webkit-scrollbar-thumb {
     background: rgba(0, 229, 255, 0.2);
     border-radius: 2px;
 }
@@ -1031,7 +1031,7 @@ body {
     margin-right: 6px;
 }
 
-.hud-chat-input {
+#chat-input, .hud-chat-input {
     background: rgba(6, 10, 15, 0.9);
     border: 1.5px solid rgba(0, 229, 255, 0.35);
     border-radius: 6px;
@@ -1043,7 +1043,7 @@ body {
     box-sizing: border-box;
 }
 
-.hud-chat-input:focus {
+#chat-input:focus, .hud-chat-input:focus {
     outline: none;
     border-color: #00e5ff;
     box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
