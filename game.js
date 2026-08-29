@@ -1774,7 +1774,8 @@ function explodeGrenadeAt(grenadeData) {
 function updatePlayer(delta) {
     if (window.chatInputActive) {
         isCrouching = false;
-        camera.position.y = THREE.MathUtils.lerp(camera.position.y, playerY + STANDING_EYE_HEIGHT, delta * 14.0);
+        const groundLevel = getSimpleGround(camera.position.x, camera.position.z);
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, groundLevel + STANDING_EYE_HEIGHT, delta * 14.0);
         return { moving: false, sprint: false, crouching: false };
     }
 
