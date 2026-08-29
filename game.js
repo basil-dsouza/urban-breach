@@ -1286,6 +1286,8 @@ function updateBushStealth(delta) {
 // 16. Input Listeners
 window.addEventListener('keydown', e => {
     const chatInput = document.getElementById('hud-chat-input');
+    const chatPanel = document.getElementById('hud-chat-panel');
+
     if (chatInput && document.activeElement === chatInput) {
         if (e.code === 'Enter') {
             e.preventDefault();
@@ -1300,17 +1302,21 @@ window.addEventListener('keydown', e => {
             chatInput.value = '';
             chatInput.style.display = 'none';
             chatInput.blur();
-            document.body.requestPointerLock();
+            if (gameStarted) {
+                document.body.requestPointerLock();
+            }
         }
         return;
     }
 
-    if (e.code === 'Enter' && gameStarted) {
+    if (e.code === 'Enter' && chatPanel && chatPanel.style.display !== 'none') {
         e.preventDefault();
         if (chatInput) {
             chatInput.style.display = 'block';
             chatInput.focus();
-            document.exitPointerLock();
+            if (gameStarted) {
+                document.exitPointerLock();
+            }
         }
         return;
     }

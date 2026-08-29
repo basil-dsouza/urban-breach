@@ -360,25 +360,28 @@ export class UIManager {
                     </div>
                 </div>
             </div>
-
-            <!-- Chat Panel on the Bottom Left -->
-            <div id="hud-chat-panel" class="hud-chat-panel">
-                <div id="hud-chat-log" class="hud-chat-log"></div>
-                <input id="hud-chat-input" class="hud-chat-input" placeholder="Press ENTER to chat..." maxlength="100" autocomplete="off" style="display:none;" />
-            </div>
         `;
         this.uiRoot.appendChild(this.hud);
 
+        // Chat Panel on the Bottom Left (Independent of HUD visibility)
+        this.chatPanel = document.createElement('div');
+        this.chatPanel.id = 'hud-chat-panel';
+        this.chatPanel.className = 'hud-chat-panel';
+        this.chatPanel.style.display = 'none'; // Hidden by default
+        this.chatPanel.innerHTML = `
+            <div id="hud-chat-log" class="hud-chat-log"></div>
+            <input id="hud-chat-input" class="hud-chat-input" placeholder="Press ENTER to chat..." maxlength="100" autocomplete="off" style="display:none;" />
+        `;
+        this.uiRoot.appendChild(this.chatPanel);
+
         // Auto-blur chat input safety handler
-        setTimeout(() => {
-            const chatInput = document.getElementById('hud-chat-input');
-            if (chatInput) {
-                chatInput.addEventListener('blur', () => {
-                    chatInput.style.display = 'none';
-                    chatInput.value = '';
-                });
-            }
-        }, 100);
+        const chatInput = this.chatPanel.querySelector('#hud-chat-input');
+        if (chatInput) {
+            chatInput.addEventListener('blur', () => {
+                chatInput.style.display = 'none';
+                chatInput.value = '';
+            });
+        }
 
         // 6. Damage Flash Overlay
         this.damageFlash = document.createElement('div');
@@ -658,6 +661,12 @@ export class UIManager {
                 }
             }, 1500);
         }, 8000);
+    }
+
+    showChatPanel(visible) {
+        if (this.chatPanel) {
+            this.chatPanel.style.display = visible ? 'flex' : 'none';
+        }
     }
 
     updateHUD({

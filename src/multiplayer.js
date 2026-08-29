@@ -75,6 +75,9 @@ export class MultiplayerManager {
 
         this.peer.on('open', () => {
             console.log(`Hosted lobby with code: ${this.roomCode}`);
+            if (window.uiManagerGlobal) {
+                window.uiManagerGlobal.showChatPanel(true);
+            }
             if (onReadyCallback) onReadyCallback(this.roomCode);
         });
 
@@ -157,6 +160,9 @@ export class MultiplayerManager {
 
             conn.on('open', () => {
                 console.log('Successfully connected to Host!');
+                if (window.uiManagerGlobal) {
+                    window.uiManagerGlobal.showChatPanel(true);
+                }
                 conn.send({ type: 'join', nickname: this.localNickname });
                 if (onConnectSuccess) onConnectSuccess();
             });
@@ -1202,6 +1208,13 @@ export class MultiplayerManager {
 
     shutdown() {
         console.log('Shutting down PeerJS connection.');
+        if (window.uiManagerGlobal) {
+            window.uiManagerGlobal.showChatPanel(false);
+        }
+        const chatLog = typeof document !== 'undefined' ? document.getElementById('hud-chat-log') : null;
+        if (chatLog) {
+            chatLog.innerHTML = '';
+        }
         if (this.peer) {
             this.peer.destroy();
         }
@@ -1218,6 +1231,10 @@ export class MultiplayerManager {
         for (const id in this.sharedVehicles) {
             this.scene.remove(this.sharedVehicles[id]);
         }
+        for (const id in this.sharedMedkits) {
+            this.scene.remove(this.sharedMedkits[id]);
+        }
+        this.sharedMedkits = {};
 
         const scoreboard = typeof document !== 'undefined' ? document.getElementById('mp-scoreboard') : null;
         if (scoreboard) {
