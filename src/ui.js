@@ -432,13 +432,13 @@ export class UIManager {
                     <div class="env-options-grid">
                         <div class="env-card" id="env-card-home">
                             <div class="env-card-icon">🏠</div>
-                            <h3>HOME (AUTOMATIC)</h3>
-                            <p>Recommended. Connects automatically using a standard room code. Ideal for home networks with standard firewalls.</p>
+                            <h3>HOME MODE</h3>
+                            <p>Connect via online lobby matchmaking servers. Suitable for residential or unblocked networks.</p>
                         </div>
                         <div class="env-card" id="env-card-school">
                             <div class="env-card-icon">🏫</div>
-                            <h3>SCHOOL (MANUAL CODE)</h3>
-                            <p>Bypasses restricted networks. Uses zero-backend WebRTC copy-paste to establish direct connection over strict Wi-Fi.</p>
+                            <h3>SCHOOL MODE</h3>
+                            <p>Connect directly peer-to-peer using SDP descriptions. Suitable for school or highly restricted networks.</p>
                         </div>
                     </div>
                 </div>
