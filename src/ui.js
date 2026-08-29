@@ -369,7 +369,7 @@ export class UIManager {
             this.chatPanel = document.createElement('div');
             this.chatPanel.id = 'chat-box';
             this.chatPanel.className = 'hud-chat-panel';
-            this.chatPanel.style.display = 'none'; // Hidden by default
+            this.chatPanel.style.display = 'flex'; // Always visible
             this.chatPanel.innerHTML = `
                 <div id="chat-log" class="hud-chat-log"></div>
                 <input id="chat-input" class="hud-chat-input" placeholder="Press ENTER or T to chat..." maxlength="100" autocomplete="off" style="display:none;" />
@@ -683,7 +683,7 @@ export class UIManager {
 
     showChatPanel(visible) {
         if (this.chatPanel) {
-            this.chatPanel.style.display = visible ? 'flex' : 'none';
+            this.chatPanel.style.display = 'flex';
         }
     }
 
