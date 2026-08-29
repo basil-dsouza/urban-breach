@@ -434,6 +434,7 @@ class SoundEngine {
         filter.connect(gain);
 
         noise.start(t);
+        noise.stop(t + 0.2);
     }
 
     /**
@@ -462,6 +463,7 @@ class SoundEngine {
         gain.connect(this.ctx.destination);
 
         noise.start(t);
+        noise.stop(t + 0.18);
     }
 
     /**
