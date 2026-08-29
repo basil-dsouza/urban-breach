@@ -532,19 +532,31 @@ export class MultiplayerManager {
 
     sendLocalShoot(origin, direction, weaponKey) {
         if (!this.isMultiplayer) return;
+
+        const safeOrigin = {
+            x: origin?.x ?? 0,
+            y: origin?.y ?? 0,
+            z: origin?.z ?? 0
+        };
+        const safeDir = {
+            x: direction?.x ?? 0,
+            y: direction?.y ?? 0,
+            z: direction?.z ?? 0
+        };
+
         if (this.isHost) {
             this.broadcast({
                 type: 'shoot_relay',
                 peerId: 'host',
-                origin: { x: origin.x, y: origin.y, z: origin.z },
-                direction: { x: direction.x, y: direction.y, z: direction.z },
+                origin: safeOrigin,
+                direction: safeDir,
                 weaponKey
             });
         } else {
             this.sendToHost({
                 type: 'shoot',
-                origin: { x: origin.x, y: origin.y, z: origin.z },
-                direction: { x: direction.x, y: direction.y, z: direction.z },
+                origin: safeOrigin,
+                direction: safeDir,
                 weaponKey
             });
         }
@@ -552,18 +564,30 @@ export class MultiplayerManager {
 
     sendLocalGrenade(pos, velocity) {
         if (!this.isMultiplayer) return;
+
+        const safePos = {
+            x: pos?.x ?? 0,
+            y: pos?.y ?? 0,
+            z: pos?.z ?? 0
+        };
+        const safeVel = {
+            x: velocity?.x ?? 0,
+            y: velocity?.y ?? 0,
+            z: velocity?.z ?? 0
+        };
+
         if (this.isHost) {
             this.broadcast({
                 type: 'grenade_relay',
                 peerId: 'host',
-                pos: { x: pos.x, y: pos.y, z: pos.z },
-                velocity: { x: velocity.x, y: velocity.y, z: velocity.z }
+                pos: safePos,
+                velocity: safeVel
             });
         } else {
             this.sendToHost({
                 type: 'grenade',
-                pos: { x: pos.x, y: pos.y, z: pos.z },
-                velocity: { x: velocity.x, y: velocity.y, z: velocity.z }
+                pos: safePos,
+                velocity: safeVel
             });
         }
     }

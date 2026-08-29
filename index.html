@@ -16,6 +16,12 @@
     </script>
 </head>
 <body>
+    <!-- In-Game Chat Overlay -->
+    <div id="chat-box" style="position: fixed; bottom: 20px; left: 20px; width: 340px; height: 200px; display: none; flex-direction: column; justify-content: flex-end; pointer-events: auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; z-index: 999999;">
+        <div id="chat-log" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; scrollbar-width: thin; scrollbar-color: rgba(0, 229, 255, 0.2) transparent;"></div>
+        <input id="chat-input" placeholder="Press ENTER or T to chat..." maxlength="100" autocomplete="off" style="display: none; background: rgba(6, 10, 15, 0.9); border: 1.5px solid rgba(0, 229, 255, 0.35); border-radius: 6px; color: #ffffff; padding: 8px 12px; font-size: 13px; width: 100%; box-sizing: border-box;" />
+    </div>
+
     <script type="module" src="game.js"></script>
 </body>
 </html>

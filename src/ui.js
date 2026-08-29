@@ -364,15 +364,18 @@ export class UIManager {
         this.uiRoot.appendChild(this.hud);
 
         // Chat Panel on the Bottom Left (Attached to document.body above WebGL)
-        this.chatPanel = document.createElement('div');
-        this.chatPanel.id = 'chat-box';
-        this.chatPanel.className = 'hud-chat-panel';
-        this.chatPanel.style.display = 'none'; // Hidden by default
-        this.chatPanel.innerHTML = `
-            <div id="chat-log" class="hud-chat-log"></div>
-            <input id="chat-input" class="hud-chat-input" placeholder="Press ENTER or T to chat..." maxlength="100" autocomplete="off" style="display:none;" />
-        `;
-        document.body.appendChild(this.chatPanel);
+        this.chatPanel = document.getElementById('chat-box');
+        if (!this.chatPanel) {
+            this.chatPanel = document.createElement('div');
+            this.chatPanel.id = 'chat-box';
+            this.chatPanel.className = 'hud-chat-panel';
+            this.chatPanel.style.display = 'none'; // Hidden by default
+            this.chatPanel.innerHTML = `
+                <div id="chat-log" class="hud-chat-log"></div>
+                <input id="chat-input" class="hud-chat-input" placeholder="Press ENTER or T to chat..." maxlength="100" autocomplete="off" style="display:none;" />
+            `;
+            document.body.appendChild(this.chatPanel);
+        }
 
         // Focus / Blur listeners to disable game controls while typing
         const chatInput = this.chatPanel.querySelector('#chat-input');
