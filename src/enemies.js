@@ -169,7 +169,23 @@ export class EnemyBulletManager {
         return bullet;
     }
 
-    update(delta, playerPos, onPlayerHit, obstacles = []) {
+    update(delta, players, onPlayerHit, obstacles = []) {
+        let playersList = [];
+        if (Array.isArray(players)) {
+            playersList = players;
+        } else {
+            const pPos = (players && players.clone) ? players.clone() : new THREE.Vector3();
+            playersList = [{
+                id: 'host',
+                pos: pPos,
+                damageFn: (amount) => {
+                    if (typeof onPlayerHit === 'function') {
+                        onPlayerHit(amount);
+                    }
+                }
+            }];
+        }
+
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
             const oldPos = bullet.position.clone();
@@ -178,19 +194,25 @@ export class EnemyBulletManager {
                 bullet.userData.velocity.clone().multiplyScalar(delta)
             );
 
-            // Check collision with player
-            const playerCenter = playerPos.clone();
-            playerCenter.y -= 0.85;
+            // Check collision with all players in the list
+            let hitPlayer = false;
+            for (const p of playersList) {
+                if (!p || !p.pos) continue;
+                const playerCenter = p.pos.clone();
+                playerCenter.y -= 0.85;
 
-            const distToPlayer = bullet.position.distanceTo(playerCenter);
-            if (distToPlayer < 1.35) {
-                if (typeof onPlayerHit === 'function') {
-                    onPlayerHit(bullet.userData.damage || 6);
+                const distToPlayer = bullet.position.distanceTo(playerCenter);
+                if (distToPlayer < 1.35) {
+                    if (typeof p.damageFn === 'function') {
+                        p.damageFn(bullet.userData.damage || 6);
+                    }
+                    this.scene.remove(bullet);
+                    this.bullets.splice(i, 1);
+                    hitPlayer = true;
+                    break;
                 }
-                this.scene.remove(bullet);
-                this.bullets.splice(i, 1);
-                continue;
             }
+            if (hitPlayer) continue;
 
             // Check collision with building walls / solid obstacles
             let hitObstacle = false;
@@ -745,9 +767,27 @@ export class EnemyManager {
         return enemy;
     }
 
-    update(delta, playerPos, getGroundHeight, onPlayerDamaged, isPlayerHidden = false, obstacles = [], ladders = []) {
+    update(delta, players, getGroundHeight, onPlayerDamaged, isPlayerHidden = false, obstacles = [], ladders = []) {
+        let playersList = [];
+        if (Array.isArray(players)) {
+            playersList = players;
+        } else {
+            const pPos = (players && players.clone) ? players.clone() : new THREE.Vector3();
+            playersList = [{
+                id: 'host',
+                pos: pPos,
+                isCrouching: false,
+                isPlayerHidden: isPlayerHidden,
+                damageFn: (amount, source) => {
+                    if (typeof onPlayerDamaged === 'function') {
+                        onPlayerDamaged(amount, source || 'enemy');
+                    }
+                }
+            }];
+        }
+
         // 1. Update Enemy Bullets with Solid Obstacle Collision Checks
-        this.bulletManager.update(delta, playerPos, onPlayerDamaged, obstacles);
+        this.bulletManager.update(delta, playersList, onPlayerDamaged, obstacles);
 
         // 2. Medkits Bobbing & Rotation
         for (const med of this.medkits) {
@@ -763,25 +803,44 @@ export class EnemyManager {
                 continue;
             }
 
+            // Find closest visible player
+            let closestPlayer = null;
+            let minDistance = Infinity;
+
+            for (const p of playersList) {
+                if (!p || !p.pos) continue;
+                const dx = p.pos.x - enemy.position.x;
+                const dz = p.pos.z - enemy.position.z;
+                const dist = Math.hypot(dx, dz);
+
+                const enemyEyePos = enemy.position.clone();
+                enemyEyePos.y += 1.6;
+                const playerChestPos = p.pos.clone();
+                playerChestPos.y -= 0.5;
+
+                const hasLOS = hasLineOfSight(enemyEyePos, playerChestPos, obstacles);
+                const detectionRange = p.isPlayerHidden ? (enemy.userData.archetype === 'gunner' ? 5.0 : 4.0) : 75.0;
+
+                if (dist <= detectionRange && hasLOS) {
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        closestPlayer = p;
+                    }
+                }
+            }
+
+            const targetPlayer = closestPlayer || playersList[0] || { pos: new THREE.Vector3(0, 1.6, 20), isCrouching: false, damageFn: () => {} };
+            const playerPos = targetPlayer.pos;
+            const canSeePlayer = !!closestPlayer;
+            const onPlayerHitCallback = targetPlayer.damageFn;
+
             const dx = playerPos.x - enemy.position.x;
             const dz = playerPos.z - enemy.position.z;
             const distToPlayer = Math.hypot(dx, dz);
             const dyToPlayer = playerPos.y - enemy.position.y;
 
             const isGunner = enemy.userData.archetype === 'gunner';
-
-            // Eye position & Line-of-Sight check against buildings/obstacles
-            const enemyEyePos = enemy.position.clone();
-            enemyEyePos.y += 1.6;
-            const playerChestPos = playerPos.clone();
-            playerChestPos.y -= 0.5;
-
-            const hasLOS = hasLineOfSight(enemyEyePos, playerChestPos, obstacles);
-
-            // Bush Stealth Detection & Building Occlusion
-            const detectionRange = isPlayerHidden ? (isGunner ? 5.0 : 4.0) : 75.0;
-            const inDetectionRange = distToPlayer <= detectionRange;
-            const canSeePlayer = inDetectionRange && hasLOS;
+            const inDetectionRange = canSeePlayer || distToPlayer <= (targetPlayer.isPlayerHidden ? (isGunner ? 5.0 : 4.0) : 75.0);
 
             // Decrement ladder cooldown
             if (enemy.userData.ladderCooldown > 0) {
@@ -1042,8 +1101,8 @@ export class EnemyManager {
                     enemy.userData.attackAnim = 1.0;
                     enemy.userData.attackCooldown = 1.1;
 
-                    if (typeof onPlayerDamaged === 'function') {
-                        onPlayerDamaged(enemy.userData.damage || 12, 'melee');
+                    if (typeof onPlayerHitCallback === 'function') {
+                        onPlayerHitCallback(enemy.userData.damage || 12, 'melee');
                     }
                 }
 

@@ -964,3 +964,87 @@ body {
     color: #00e5ff;
     font-weight: 900;
 }
+
+/* =========================================================
+   MULTIPLAYER CHAT SYSTEM
+   ========================================================= */
+
+.hud-chat-panel {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    width: 340px;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    pointer-events: none; /* Let clicks pass through except on active input */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    z-index: 35;
+}
+
+.hud-chat-log {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+    pointer-events: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 229, 255, 0.2) transparent;
+}
+
+.hud-chat-log::-webkit-scrollbar {
+    width: 4px;
+}
+
+.hud-chat-log::-webkit-scrollbar-thumb {
+    background: rgba(0, 229, 255, 0.2);
+    border-radius: 2px;
+}
+
+.chat-message {
+    font-size: 13px;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.85);
+    background: rgba(8, 14, 22, 0.55);
+    border-left: 3px solid rgba(0, 229, 255, 0.5);
+    padding: 4px 8px;
+    border-radius: 0 4px 4px 0;
+    width: fit-content;
+    max-width: 100%;
+    word-break: break-word;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.chat-message.system {
+    color: #00e5ff;
+    font-weight: 800;
+    border-left-color: #00e5ff;
+    background: rgba(0, 229, 255, 0.1);
+}
+
+.chat-message .sender {
+    color: #f59e0b;
+    font-weight: 800;
+    margin-right: 6px;
+}
+
+.hud-chat-input {
+    background: rgba(6, 10, 15, 0.9);
+    border: 1.5px solid rgba(0, 229, 255, 0.35);
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 8px 12px;
+    font-size: 13px;
+    pointer-events: auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.hud-chat-input:focus {
+    outline: none;
+    border-color: #00e5ff;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}

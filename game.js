@@ -1285,6 +1285,36 @@ function updateBushStealth(delta) {
 
 // 16. Input Listeners
 window.addEventListener('keydown', e => {
+    const chatInput = document.getElementById('hud-chat-input');
+    if (chatInput && document.activeElement === chatInput) {
+        if (e.code === 'Enter') {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (text.length > 0) {
+                if (multiplayerManager.isMultiplayer) {
+                    multiplayerManager.sendChatMessage(text);
+                } else {
+                    uiManager.addChatMessage('You', text);
+                }
+            }
+            chatInput.value = '';
+            chatInput.style.display = 'none';
+            chatInput.blur();
+            document.body.requestPointerLock();
+        }
+        return;
+    }
+
+    if (e.code === 'Enter' && gameStarted) {
+        e.preventDefault();
+        if (chatInput) {
+            chatInput.style.display = 'block';
+            chatInput.focus();
+            document.exitPointerLock();
+        }
+        return;
+    }
+
     // Prevent default browser shortcuts that interfere with crouch controls (Ctrl/Cmd + WASD/R/G/F/P) only in Fullscreen or Pointer Lock
     const isFullscreenOrLocked = !!(
         document.fullscreenElement ||
@@ -1323,6 +1353,11 @@ window.addEventListener('keydown', e => {
 });
 
 window.addEventListener('keyup', e => {
+    const chatInput = document.getElementById('hud-chat-input');
+    if (chatInput && document.activeElement === chatInput) {
+        return;
+    }
+
     keys[e.code] = false;
 
     if (e.code === 'Tab') {
@@ -1921,6 +1956,13 @@ function updatePlayer(delta) {
             scene.remove(med);
             enemyManager.medkits.splice(i, 1);
             uiManager.updateHUD(getHUDState());
+
+            if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
+                multiplayerManager.sendToHost({
+                    type: 'pickup_medkit',
+                    medkitId: med.userData.id
+                });
+            }
         }
     }
 
@@ -2117,10 +2159,43 @@ function animate() {
         updateBushStealth(delta);
 
         if (!multiplayerManager.isMultiplayer || multiplayerManager.isHost) {
+            const playersList = [{
+                id: 'host',
+                pos: camera.position,
+                isCrouching: isCrouching,
+                isPlayerHidden: isPlayerHidden,
+                damageFn: (amount, source) => {
+                    damagePlayer(amount, source || 'enemy');
+                }
+            }];
+
+            if (multiplayerManager.isMultiplayer && multiplayerManager.isHost) {
+                for (const peerId in multiplayerManager.players) {
+                    if (peerId === 'host') continue;
+                    const pData = multiplayerManager.players[peerId];
+                    if (pData && pData.pos) {
+                        playersList.push({
+                            id: peerId,
+                            pos: new THREE.Vector3(pData.pos.x, pData.pos.y, pData.pos.z),
+                            isCrouching: !!pData.crouching,
+                            isPlayerHidden: false,
+                            damageFn: (amount, source) => {
+                                const conn = multiplayerManager.connections[peerId];
+                                if (conn) {
+                                    conn.send({
+                                        type: 'damage_taken',
+                                        amount: amount,
+                                        source: source || 'enemy'
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+
             // Update enemies with stealth state, solid obstacle line-of-sight & ladder climbing
-            enemyManager.update(delta, camera.position, getSimpleGround, (dmg, src) => {
-                damagePlayer(dmg, src);
-            }, isPlayerHidden, obstacles, ladders);
+            enemyManager.update(delta, playersList, getSimpleGround, null, false, obstacles, ladders);
 
             vehicleManager.update(delta, camera.position, obstacles, (dmg, src) => {
                 damagePlayer(dmg, src);

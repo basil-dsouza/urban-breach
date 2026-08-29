@@ -58,6 +58,8 @@ export class UIManager {
         this.selectedWeaponKey = 'AK47';
         this.radar = null;
 
+        window.uiManagerGlobal = this;
+
         this.initDOM();
     }
 
@@ -358,8 +360,25 @@ export class UIManager {
                     </div>
                 </div>
             </div>
+
+            <!-- Chat Panel on the Bottom Left -->
+            <div id="hud-chat-panel" class="hud-chat-panel">
+                <div id="hud-chat-log" class="hud-chat-log"></div>
+                <input id="hud-chat-input" class="hud-chat-input" placeholder="Press ENTER to chat..." maxlength="100" autocomplete="off" style="display:none;" />
+            </div>
         `;
         this.uiRoot.appendChild(this.hud);
+
+        // Auto-blur chat input safety handler
+        setTimeout(() => {
+            const chatInput = document.getElementById('hud-chat-input');
+            if (chatInput) {
+                chatInput.addEventListener('blur', () => {
+                    chatInput.style.display = 'none';
+                    chatInput.value = '';
+                });
+            }
+        }, 100);
 
         // 6. Damage Flash Overlay
         this.damageFlash = document.createElement('div');
@@ -604,6 +623,41 @@ export class UIManager {
             this.chBars.left.style.transform = crosshairData.left;
             this.chBars.right.style.transform = crosshairData.right;
         }
+    }
+
+    addChatMessage(sender, text) {
+        const chatLog = document.getElementById('hud-chat-log');
+        if (!chatLog) return;
+
+        const msgEl = document.createElement('div');
+        msgEl.className = 'chat-message';
+
+        if (sender === 'System') {
+            msgEl.classList.add('system');
+            msgEl.innerHTML = `[SYSTEM] ${text}`;
+        } else {
+            const senderSpan = document.createElement('span');
+            senderSpan.className = 'sender';
+            senderSpan.textContent = sender + ":";
+            msgEl.appendChild(senderSpan);
+
+            const textNode = document.createTextNode(" " + text);
+            msgEl.appendChild(textNode);
+        }
+
+        chatLog.appendChild(msgEl);
+        chatLog.scrollTop = chatLog.scrollHeight;
+
+        // Auto-fade message after 8 seconds
+        setTimeout(() => {
+            msgEl.style.transition = 'opacity 1.5s ease-out';
+            msgEl.style.opacity = '0';
+            setTimeout(() => {
+                if (msgEl.parentNode) {
+                    msgEl.parentNode.removeChild(msgEl);
+                }
+            }, 1500);
+        }, 8000);
     }
 
     updateHUD({

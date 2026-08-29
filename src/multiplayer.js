@@ -28,6 +28,7 @@ export class MultiplayerManager {
         // Shared scene entities (Host mirrors these to clients)
         this.sharedEnemies = {}; // id -> mesh
         this.sharedVehicles = {}; // id -> mesh
+        this.sharedMedkits = {}; // id -> mesh
 
         // Dummy enemy manager to instantiate helper meshes
         this.dummyEnemyManager = new EnemyManager(scene);
@@ -192,6 +193,26 @@ export class MultiplayerManager {
         }
     }
 
+    sendChatMessage(text) {
+        if (!this.isMultiplayer) return;
+        if (this.isHost) {
+            this.broadcast({
+                type: 'chat',
+                sender: this.localNickname,
+                text: text
+            });
+            if (window.uiManagerGlobal) {
+                window.uiManagerGlobal.addChatMessage(this.localNickname, text);
+            }
+        } else {
+            this.sendToHost({
+                type: 'chat',
+                sender: this.localNickname,
+                text: text
+            });
+        }
+    }
+
     sendToHost(data) {
         if (this.isHost || !this.hostConnection) return;
         this.hostConnection.send(data);
@@ -254,6 +275,19 @@ export class MultiplayerManager {
             }
         }
 
+        else if (data.type === 'chat') {
+            if (this.isHost) {
+                this.broadcast({
+                    type: 'chat',
+                    sender: data.sender,
+                    text: data.text
+                });
+            }
+            if (window.uiManagerGlobal) {
+                window.uiManagerGlobal.addChatMessage(data.sender, data.text);
+            }
+        }
+
         else if (data.type === 'state') {
             if (this.isHost) {
                 // Update client state
@@ -269,6 +303,7 @@ export class MultiplayerManager {
                 this.players = data.players;
                 this.syncSharedEnemies(data.enemies);
                 this.syncSharedVehicles(data.vehicles);
+                this.syncSharedMedkits(data.medkits);
                 this.syncScores(data.scores);
             }
         }
@@ -363,6 +398,20 @@ export class MultiplayerManager {
                 }
             }
         }
+
+        else if (data.type === 'pickup_medkit') {
+            if (this.isHost) {
+                const globalEnemyManager = window.enemyManagerGlobal;
+                if (globalEnemyManager) {
+                    const med = globalEnemyManager.medkits.find(m => m.userData.id === data.medkitId);
+                    if (med) {
+                        this.scene.remove(med);
+                        const idx = globalEnemyManager.medkits.indexOf(med);
+                        if (idx !== -1) globalEnemyManager.medkits.splice(idx, 1);
+                    }
+                }
+            }
+        }
     }
 
     sendLocalPlayerState(pos, yaw, pitch, weaponKey, aiming, crouching, health, kills) {
@@ -438,6 +487,23 @@ export class MultiplayerManager {
             }
         }
 
+        // Gather medkit updates
+        const medkitList = [];
+        if (window.enemyManagerGlobal && window.enemyManagerGlobal.medkits) {
+            for (const med of window.enemyManagerGlobal.medkits) {
+                if (!med.userData.id) {
+                    med.userData.id = 'medkit-' + Math.random().toString(36).substr(2, 9);
+                }
+                medkitList.push({
+                    id: med.userData.id,
+                    x: med.position.x,
+                    y: med.position.y - 0.35,
+                    z: med.position.z,
+                    heal: med.userData.heal || 40
+                });
+            }
+        }
+
         // Aggregate scores
         const scores = Object.values(this.players).map(p => ({
             nickname: p.nickname,
@@ -450,6 +516,7 @@ export class MultiplayerManager {
             players: this.players,
             enemies: enemyList,
             vehicles: vehicleList,
+            medkits: medkitList,
             scores
         });
 
@@ -1041,6 +1108,36 @@ export class MultiplayerManager {
                     if (idx !== -1) globalVehicleManager.vehicles.splice(idx, 1);
                 }
                 delete this.sharedVehicles[id];
+            }
+        }
+    }
+
+    syncSharedMedkits(medkitsData) {
+        if (!medkitsData) return;
+        const receivedIds = new Set();
+        const globalEnemyManager = window.enemyManagerGlobal;
+
+        for (const m of medkitsData) {
+            receivedIds.add(m.id);
+            let mesh = this.sharedMedkits[m.id];
+
+            if (!mesh && globalEnemyManager) {
+                mesh = globalEnemyManager.createMedkitMesh(m.x, m.y, m.z);
+                mesh.userData.id = m.id;
+                mesh.userData.heal = m.heal;
+                this.sharedMedkits[m.id] = mesh;
+            }
+        }
+
+        for (const id in this.sharedMedkits) {
+            if (!receivedIds.has(id)) {
+                const mesh = this.sharedMedkits[id];
+                this.scene.remove(mesh);
+                if (globalEnemyManager) {
+                    const idx = globalEnemyManager.medkits.indexOf(mesh);
+                    if (idx !== -1) globalEnemyManager.medkits.splice(idx, 1);
+                }
+                delete this.sharedMedkits[id];
             }
         }
     }
