@@ -1120,6 +1120,56 @@ uiManager.onJoinLobby = (code, nickname) => {
     });
 };
 
+uiManager.onHostLobbyManual = (nickname, gameMode, pc, dataChannel) => {
+    uiManager.lobbySelectScreen.style.display = 'none';
+    uiManager.lobbyScreen.style.display = 'flex';
+    uiManager.isMultiplayerMode = true;
+    uiManager.isHost = true;
+
+    document.getElementById('btn-lobby-launch').style.display = 'inline-block';
+    document.getElementById('mode-settings-block').style.display = 'none';
+    document.getElementById('btn-host-lobby').style.display = 'none';
+
+    const statusEl = document.getElementById('lobby-status-subtitle');
+    if (statusEl) {
+        statusEl.textContent = 'SCHOOL MODE ACTIVE (SERVERLESS HOST)';
+        statusEl.style.color = '#00e5ff';
+    }
+    const displayEl = document.getElementById('lobby-code-display');
+    if (displayEl) {
+        displayEl.style.display = 'block';
+        displayEl.textContent = 'ROOM: SCHOOL';
+    }
+
+    multiplayerManager.initManualHost(nickname, gameMode, pc, dataChannel);
+};
+
+uiManager.onJoinLobbyManual = (nickname, pc, dataChannel) => {
+    uiManager.lobbySelectScreen.style.display = 'none';
+    uiManager.lobbyScreen.style.display = 'flex';
+    uiManager.isMultiplayerMode = true;
+    uiManager.isHost = false;
+    uiManager.isClientConnected = true;
+
+    document.getElementById('btn-lobby-launch').style.display = 'none';
+    document.getElementById('mode-settings-block').style.display = 'none';
+    document.getElementById('btn-host-lobby').style.display = 'none';
+
+    const statusEl = document.getElementById('lobby-status-subtitle');
+    if (statusEl) {
+        statusEl.textContent = 'SCHOOL MODE ACTIVE (SERVERLESS CLIENT)';
+        statusEl.style.color = '#00e5ff';
+    }
+    const displayEl = document.getElementById('lobby-code-display');
+    if (displayEl) {
+        displayEl.style.display = 'block';
+        displayEl.textContent = 'ROOM: SCHOOL';
+    }
+
+    multiplayerManager.initManualClient(nickname, pc, dataChannel);
+};
+
+
 uiManager.onLobbyUpdate = (playersList, gameMode) => {
     const listEl = document.getElementById('lobby-roster-list');
     if (listEl) {

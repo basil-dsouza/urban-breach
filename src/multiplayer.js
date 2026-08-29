@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { soundEngine } from './audio.js';
 import { EnemyManager } from './enemies.js';
+import { ManualConnection } from './manual-webrtc.js';
 
 export class MultiplayerManager {
     constructor(scene, camera) {
@@ -190,6 +191,105 @@ export class MultiplayerManager {
             }
             if (onConnectFailed) onConnectFailed(msg);
         });
+    }
+
+    initManualHost(nickname, gameMode, pc, dataChannel) {
+        this.isMultiplayer = true;
+        this.isHost = true;
+        this.localNickname = nickname || 'Host';
+        this.gameMode = gameMode || 'pve';
+        this.roomCode = 'MANUAL';
+
+        this.players = {
+            'host': {
+                id: 'host',
+                nickname: this.localNickname,
+                isHost: true,
+                isReady: true,
+                pos: { x: 0, y: 1.7, z: 20 },
+                yaw: 0,
+                pitch: 0,
+                weaponKey: 'AK47',
+                aiming: false,
+                crouching: false,
+                health: 100,
+                kills: 0
+            }
+        };
+
+        const connId = 'client';
+        const conn = new ManualConnection(connId, dataChannel, pc);
+        this.connections[connId] = conn;
+
+        this.players[connId] = {
+            id: connId,
+            nickname: 'Client',
+            isHost: false,
+            isReady: false,
+            pos: { x: 0, y: 1.7, z: 20 },
+            yaw: 0,
+            pitch: 0,
+            weaponKey: 'AK47',
+            aiming: false,
+            crouching: false,
+            health: 100,
+            kills: 0
+        };
+
+        conn.on('data', data => {
+            this.handleData(connId, data);
+        });
+
+        conn.on('close', () => {
+            console.log('Manual client disconnected.');
+            delete this.connections[connId];
+            delete this.players[connId];
+            this.removeRemotePlayer(connId);
+            this.broadcastLobbyInfo();
+        });
+
+        if (window.uiManagerGlobal) {
+            window.uiManagerGlobal.showChatPanel(true);
+        }
+
+        setTimeout(() => {
+            this.broadcastLobbyInfo();
+        }, 100);
+    }
+
+    initManualClient(nickname, pc, dataChannel) {
+        this.isMultiplayer = true;
+        this.isHost = false;
+        this.localNickname = nickname || 'Client';
+        this.roomCode = 'MANUAL';
+
+        const connId = 'host';
+        const conn = new ManualConnection(connId, dataChannel, pc);
+        this.hostConnection = conn;
+
+        conn.on('data', data => {
+            this.handleData('host', data);
+        });
+
+        conn.on('close', () => {
+            console.log('Disconnected from manual host.');
+            alert('Host disconnected.');
+            this.shutdown();
+        });
+
+        conn.on('error', err => {
+            console.error('Manual connection error:', err);
+        });
+
+        if (window.uiManagerGlobal) {
+            window.uiManagerGlobal.showChatPanel(true);
+        }
+
+        if (dataChannel.readyState === 'open') {
+            setTimeout(() => {
+                conn.send({ type: 'join', nickname: this.localNickname });
+            }, 100);
+        }
     }
 
     broadcast(data) {
@@ -1239,6 +1339,21 @@ export class MultiplayerManager {
         if (chatLog) {
             chatLog.innerHTML = '';
         }
+        
+        // Close active connections explicitly (works for both PeerJS and manual WebRTC wrappers)
+        for (const connId in this.connections) {
+            try {
+                this.connections[connId].close();
+            } catch (e) {}
+        }
+        this.connections = {};
+        if (this.hostConnection) {
+            try {
+                this.hostConnection.close();
+            } catch (e) {}
+            this.hostConnection = null;
+        }
+
         if (this.peer) {
             this.peer.destroy();
         }

@@ -1,5 +1,6 @@
 import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from './difficulty.js';
 import { TacticalRadar } from './radar.js';
+import { startManualHost, startManualClient, applyManualAnswer } from './manual-webrtc.js';
 
 export const WEAPON_CONFIGS = {
     AK47: {
@@ -415,6 +416,98 @@ export class UIManager {
         `;
         this.uiRoot.appendChild(this.gameOverScreen);
 
+        // 8. Connection Environment Modal
+        this.envModal = document.createElement('div');
+        this.envModal.id = 'mp-env-modal';
+        this.envModal.className = 'env-modal-overlay';
+        this.envModal.style.display = 'none';
+        this.envModal.innerHTML = `
+            <div class="env-modal-content">
+                <button class="env-modal-close" id="btn-close-env-modal">×</button>
+                <div class="env-modal-logo">MULTIPLAYER CONNECT</div>
+                <div class="env-modal-subtitle">Select Connection Protocol</div>
+                
+                <!-- Screen 1: Environment Options -->
+                <div id="env-selector-view">
+                    <div class="env-options-grid">
+                        <div class="env-card" id="env-card-home">
+                            <div class="env-card-icon">🏠</div>
+                            <h3>HOME (AUTOMATIC)</h3>
+                            <p>Recommended. Connects automatically using a standard room code. Ideal for home networks with standard firewalls.</p>
+                        </div>
+                        <div class="env-card" id="env-card-school">
+                            <div class="env-card-icon">🏫</div>
+                            <h3>SCHOOL (MANUAL CODE)</h3>
+                            <p>Bypasses restricted networks. Uses zero-backend WebRTC copy-paste to establish direct connection over strict Wi-Fi.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screen 2: WebRTC Workspace -->
+                <div id="webrtc-workspace-view" class="webrtc-workspace">
+                    <div class="webrtc-info-tooltip">
+                        <strong>⚠️ Why are codes so long?</strong> Without a central signaling server to match players and negotiate addresses, players must manually exchange full Session Description Protocol (SDP) details. An SDP contains routing details, ICE candidates, and security keys, which cannot be compressed into a short 4-6 digit code.
+                    </div>
+
+                    <div style="display: flex; gap: 16px; margin-bottom: 8px;">
+                        <div class="webrtc-form-row" style="flex: 1;">
+                            <label style="font-size: 12px; font-weight: 800; color: #cbd5e1;">NICKNAME</label>
+                            <input type="text" id="webrtc-nickname" class="lobby-input" style="padding: 8px; font-size:13px;" value="Operator-${Math.floor(100 + Math.random() * 900)}" maxlength="14" />
+                        </div>
+                        <div class="webrtc-form-row" style="flex: 1;">
+                            <label style="font-size: 12px; font-weight: 800; color: #cbd5e1;">GAME MODE</label>
+                            <select id="webrtc-gamemode" class="lobby-input" style="padding: 8px; font-size:13px; height: 35px; background: rgba(10, 18, 28, 0.95); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px;">
+                                <option value="pve">PVE CO-OP</option>
+                                <option value="ffa">FFA PVP</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="webrtc-role-select">
+                        <button id="btn-webrtc-host-mode" class="btn-primary" style="font-size: 13px; padding: 8px 16px;">HOST A MATCH</button>
+                        <button id="btn-webrtc-join-mode" class="btn-primary" style="font-size: 13px; padding: 8px 16px;">JOIN A MATCH</button>
+                    </div>
+
+                    <!-- Host Section -->
+                    <div id="webrtc-host-section" style="display: none; flex-direction: column; gap: 12px;">
+                        <div class="webrtc-form-row">
+                            <label style="font-size: 12px; font-weight: 800; color: #00e5ff;">1. YOUR OFFER CODE (COPY & SEND TO CLIENT)</label>
+                            <div class="webrtc-textarea-container">
+                                <textarea id="webrtc-host-offer" class="webrtc-textarea" readonly placeholder="Generating code..."></textarea>
+                                <button id="btn-webrtc-copy-offer" class="webrtc-copy-btn">COPY</button>
+                            </div>
+                        </div>
+                        <div class="webrtc-form-row">
+                            <label style="font-size: 12px; font-weight: 800; color: #cbd5e1;">2. PASTE CLIENT'S ANSWER CODE</label>
+                            <textarea id="webrtc-host-answer" class="webrtc-textarea" placeholder="Paste the Base64 answer code here..."></textarea>
+                        </div>
+                        <button id="btn-webrtc-apply-answer" class="btn-primary" style="font-size: 14px; padding: 10px; width: 100%;">ESTABLISH CONNECTION</button>
+                    </div>
+
+                    <!-- Client Section -->
+                    <div id="webrtc-client-section" style="display: none; flex-direction: column; gap: 12px;">
+                        <div class="webrtc-form-row">
+                            <label style="font-size: 12px; font-weight: 800; color: #cbd5e1;">1. PASTE HOST'S OFFER CODE</label>
+                            <textarea id="webrtc-client-offer" class="webrtc-textarea" placeholder="Paste the Base64 offer code here..."></textarea>
+                        </div>
+                        <button id="btn-webrtc-import-offer" class="btn-primary" style="font-size: 14px; padding: 10px; width: 100%;">IMPORT OFFER & GENERATE ANSWER</button>
+                        <div class="webrtc-form-row" id="webrtc-client-answer-row" style="display: none;">
+                            <label style="font-size: 12px; font-weight: 800; color: #00e5ff;">2. YOUR ANSWER CODE (COPY & SEND TO HOST)</label>
+                            <div class="webrtc-textarea-container">
+                                <textarea id="webrtc-client-answer" class="webrtc-textarea" readonly placeholder="Generating answer..."></textarea>
+                                <button id="btn-webrtc-copy-answer" class="webrtc-copy-btn">COPY</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="webrtc-status" class="webrtc-status-banner">STATUS: IDLE</div>
+                    
+                    <button id="btn-webrtc-back" class="btn-secondary" style="font-size: 12px; padding: 6px 12px; align-self: flex-start;">← BACK</button>
+                </div>
+            </div>
+        `;
+        this.uiRoot.appendChild(this.envModal);
+
         // Initialize Radar
         const radarCanvas = document.getElementById('radar-canvas');
         if (radarCanvas) {
@@ -447,9 +540,7 @@ export class UIManager {
         const cardMultiplayer = document.getElementById('card-multiplayer');
         if (cardMultiplayer) {
             cardMultiplayer.onclick = () => {
-                this.lobbySelectScreen.style.display = 'none';
-                this.lobbyScreen.style.display = 'flex';
-                this.isMultiplayerMode = true;
+                this.showEnvironmentModal();
             };
         }
 
@@ -620,6 +711,230 @@ export class UIManager {
                 }
             };
         }
+
+        // ==================== MANUAL WEBRTC MODAL EVENT BINDINGS ====================
+        
+        // Close modal button
+        const btnCloseEnvModal = document.getElementById('btn-close-env-modal');
+        if (btnCloseEnvModal) {
+            btnCloseEnvModal.onclick = () => {
+                this.envModal.style.display = 'none';
+                if (this.currentManualPC) {
+                    this.currentManualPC.close();
+                    this.currentManualPC = null;
+                }
+            };
+        }
+
+        // Option A: Home (Automatic)
+        const cardHome = document.getElementById('env-card-home');
+        if (cardHome) {
+            cardHome.onclick = () => {
+                this.startExistingHomeMultiplayer();
+            };
+        }
+
+        // Option B: School (Manual Code)
+        const cardSchool = document.getElementById('env-card-school');
+        const selectorView = document.getElementById('env-selector-view');
+        const workspaceView = document.getElementById('webrtc-workspace-view');
+        if (cardSchool && selectorView && workspaceView) {
+            cardSchool.onclick = () => {
+                selectorView.style.display = 'none';
+                workspaceView.style.display = 'flex';
+                document.getElementById('webrtc-status').textContent = 'STATUS: IDLE';
+                document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+                document.getElementById('webrtc-host-section').style.display = 'none';
+                document.getElementById('webrtc-client-section').style.display = 'none';
+            };
+        }
+
+        // Back button in workspace
+        const btnWebrtcBack = document.getElementById('btn-webrtc-back');
+        if (btnWebrtcBack && selectorView && workspaceView) {
+            btnWebrtcBack.onclick = () => {
+                workspaceView.style.display = 'none';
+                selectorView.style.display = 'block';
+                if (this.currentManualPC) {
+                    this.currentManualPC.close();
+                    this.currentManualPC = null;
+                }
+            };
+        }
+
+        // Host section toggle
+        const btnHostMode = document.getElementById('btn-webrtc-host-mode');
+        const btnJoinMode = document.getElementById('btn-webrtc-join-mode');
+        const hostSection = document.getElementById('webrtc-host-section');
+        const clientSection = document.getElementById('webrtc-client-section');
+        
+        if (btnHostMode && btnJoinMode && hostSection && clientSection) {
+            btnHostMode.onclick = () => {
+                hostSection.style.display = 'flex';
+                clientSection.style.display = 'none';
+                document.getElementById('webrtc-status').textContent = 'STATUS: GENERATING OFFER (GATHERING ICE)...';
+                document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+                document.getElementById('webrtc-host-offer').value = '';
+                document.getElementById('webrtc-host-answer').value = '';
+
+                if (this.currentManualPC) {
+                    try { this.currentManualPC.close(); } catch(e) {}
+                }
+
+                this.currentManualPC = startManualHost(
+                    (offerCode) => {
+                        const offerTex = document.getElementById('webrtc-host-offer');
+                        offerTex.value = offerCode;
+                        navigator.clipboard.writeText(offerCode).then(() => {
+                            document.getElementById('webrtc-status').textContent = 'STATUS: OFFER COPIED! SEND TO CLIENT AND WAIT FOR ANSWER.';
+                            document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+                        }).catch(() => {
+                            document.getElementById('webrtc-status').textContent = 'STATUS: OFFER GENERATED. COPY CODE MANUALLY.';
+                            document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+                        });
+                    },
+                    (pc, channel) => {
+                        document.getElementById('webrtc-status').textContent = 'STATUS: CONNECTED!';
+                        document.getElementById('webrtc-status').className = 'webrtc-status-banner connected';
+                        setTimeout(() => {
+                            this.envModal.style.display = 'none';
+                            const nickname = document.getElementById('webrtc-nickname').value || 'Manual-Host';
+                            const gameMode = document.getElementById('webrtc-gamemode').value || 'pve';
+                            if (typeof this.onHostLobbyManual === 'function') {
+                                this.onHostLobbyManual(nickname, gameMode, pc, channel);
+                            }
+                        }, 500);
+                    }
+                );
+            };
+
+            btnJoinMode.onclick = () => {
+                clientSection.style.display = 'flex';
+                hostSection.style.display = 'none';
+                document.getElementById('webrtc-status').textContent = 'STATUS: PASTE HOST OFFER TO START';
+                document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+                document.getElementById('webrtc-client-offer').value = '';
+                document.getElementById('webrtc-client-answer').value = '';
+                document.getElementById('webrtc-client-answer-row').style.display = 'none';
+
+                if (this.currentManualPC) {
+                    try { this.currentManualPC.close(); } catch(e) {}
+                    this.currentManualPC = null;
+                }
+            };
+        }
+
+        // Import offer and generate answer
+        const btnImportOffer = document.getElementById('btn-webrtc-import-offer');
+        if (btnImportOffer) {
+            btnImportOffer.onclick = () => {
+                const offerCode = document.getElementById('webrtc-client-offer').value.trim();
+                if (!offerCode) {
+                    alert('Please paste the host offer code!');
+                    return;
+                }
+
+                document.getElementById('webrtc-status').textContent = 'STATUS: GENERATING ANSWER (GATHERING ICE)...';
+                document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+
+                if (this.currentManualPC) {
+                    try { this.currentManualPC.close(); } catch(e) {}
+                }
+
+                this.currentManualPC = startManualClient(
+                    offerCode,
+                    (answerCode) => {
+                        document.getElementById('webrtc-client-answer-row').style.display = 'flex';
+                        const answerTex = document.getElementById('webrtc-client-answer');
+                        answerTex.value = answerCode;
+                        navigator.clipboard.writeText(answerCode).then(() => {
+                            document.getElementById('webrtc-status').textContent = 'STATUS: ANSWER COPIED! SEND TO HOST TO CONNECT.';
+                            document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+                        }).catch(() => {
+                            document.getElementById('webrtc-status').textContent = 'STATUS: ANSWER GENERATED. COPY CODE MANUALLY.';
+                            document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+                        });
+                    },
+                    (pc, channel) => {
+                        document.getElementById('webrtc-status').textContent = 'STATUS: CONNECTED!';
+                        document.getElementById('webrtc-status').className = 'webrtc-status-banner connected';
+                        setTimeout(() => {
+                            this.envModal.style.display = 'none';
+                            const nickname = document.getElementById('webrtc-nickname').value || 'Manual-Client';
+                            if (typeof this.onJoinLobbyManual === 'function') {
+                                this.onJoinLobbyManual(nickname, pc, channel);
+                            }
+                        }, 500);
+                    }
+                );
+            };
+        }
+
+        // Apply Answer
+        const btnApplyAnswer = document.getElementById('btn-webrtc-apply-answer');
+        if (btnApplyAnswer) {
+            btnApplyAnswer.onclick = () => {
+                const answerCode = document.getElementById('webrtc-host-answer').value.trim();
+                if (!answerCode) {
+                    alert('Please paste the client answer code!');
+                    return;
+                }
+
+                if (!this.currentManualPC) {
+                    alert('No host peer connection active! Click "Host a Match" first.');
+                    return;
+                }
+
+                document.getElementById('webrtc-status').textContent = 'STATUS: APPLYING ANSWER...';
+                document.getElementById('webrtc-status').className = 'webrtc-status-banner';
+                applyManualAnswer(this.currentManualPC, answerCode);
+            };
+        }
+
+        // Copy Offer button
+        const btnCopyOffer = document.getElementById('btn-webrtc-copy-offer');
+        if (btnCopyOffer) {
+            btnCopyOffer.onclick = () => {
+                const offerVal = document.getElementById('webrtc-host-offer').value;
+                if (offerVal) {
+                    navigator.clipboard.writeText(offerVal).then(() => {
+                        btnCopyOffer.textContent = 'COPIED!';
+                        setTimeout(() => btnCopyOffer.textContent = 'COPY', 1500);
+                    });
+                }
+            };
+        }
+
+        // Copy Answer button
+        const btnCopyAnswer = document.getElementById('btn-webrtc-copy-answer');
+        if (btnCopyAnswer) {
+            btnCopyAnswer.onclick = () => {
+                const answerVal = document.getElementById('webrtc-client-answer').value;
+                if (answerVal) {
+                    navigator.clipboard.writeText(answerVal).then(() => {
+                        btnCopyAnswer.textContent = 'COPIED!';
+                        setTimeout(() => btnCopyAnswer.textContent = 'COPY', 1500);
+                    });
+                }
+            };
+        }
+    }
+
+    showEnvironmentModal() {
+        this.envModal.style.display = 'flex';
+        document.getElementById('env-selector-view').style.display = 'block';
+        document.getElementById('webrtc-workspace-view').style.display = 'none';
+        if (this.currentManualPC) {
+            try { this.currentManualPC.close(); } catch(e) {}
+            this.currentManualPC = null;
+        }
+    }
+
+    startExistingHomeMultiplayer() {
+        this.lobbySelectScreen.style.display = 'none';
+        this.lobbyScreen.style.display = 'flex';
+        this.isMultiplayerMode = true;
+        this.envModal.style.display = 'none';
     }
 
     updateCrosshair(crosshairData, aiming) {

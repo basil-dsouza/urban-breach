@@ -1048,3 +1048,229 @@ body {
     border-color: #00e5ff;
     box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
 }
+
+/* ==================== MULTIPLAYER ENVIRONMENT MODAL STYLES ==================== */
+.env-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(4, 8, 12, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999999;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #ffffff;
+}
+
+.env-modal-content {
+    background: rgba(10, 18, 28, 0.95);
+    border: 2px solid #00e5ff;
+    box-shadow: 0 0 30px rgba(0, 229, 255, 0.25);
+    border-radius: 12px;
+    width: 650px;
+    max-width: 90vw;
+    padding: 32px;
+    box-sizing: border-box;
+    position: relative;
+    animation: modalSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideIn {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.env-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.env-modal-close:hover {
+    color: #00e5ff;
+}
+
+.env-modal-logo {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: #00e5ff;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.env-modal-subtitle {
+    font-size: 13px;
+    color: #8faec4;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 28px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+}
+
+.env-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.env-card {
+    background: rgba(16, 26, 38, 0.6);
+    border: 1.5px solid #334155;
+    border-radius: 10px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.env-card:hover {
+    border-color: #00e5ff;
+    background: rgba(0, 229, 255, 0.05);
+    transform: translateY(-4px);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
+}
+
+.env-card-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+}
+
+.env-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #ffffff;
+    letter-spacing: 1px;
+}
+
+.env-card p {
+    margin: 0;
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.webrtc-workspace {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.webrtc-role-select {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.webrtc-form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.webrtc-textarea-container {
+    position: relative;
+    width: 100%;
+}
+
+.webrtc-textarea {
+    width: 100%;
+    height: 90px;
+    background: rgba(6, 10, 15, 0.95);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    border-radius: 6px;
+    color: #00e5ff;
+    font-family: monospace;
+    font-size: 11px;
+    padding: 10px;
+    padding-right: 50px;
+    box-sizing: border-box;
+    resize: none;
+    scrollbar-width: thin;
+}
+
+.webrtc-textarea:focus {
+    outline: none;
+    border-color: #00e5ff;
+}
+
+.webrtc-copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 229, 255, 0.15);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    color: #00e5ff;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.15s ease;
+}
+
+.webrtc-copy-btn:hover {
+    background: #00e5ff;
+    color: #0a121c;
+}
+
+.webrtc-status-banner {
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px dashed rgba(0, 229, 255, 0.4);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #00e5ff;
+    font-weight: bold;
+    text-align: center;
+}
+
+.webrtc-status-banner.connected {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #10b981;
+}
+
+.webrtc-status-banner.error {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+}
+
+.webrtc-info-tooltip {
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: #f59e0b;
+    line-height: 1.4;
+}
+
+.webrtc-info-tooltip strong {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
