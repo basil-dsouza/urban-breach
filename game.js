@@ -1294,10 +1294,15 @@ window.addEventListener('keydown', e => {
             const text = chatInput.value.trim();
             if (text.length > 0) {
                 console.log("[CHAT] Sending payload:", text);
-                if (multiplayerManager.isMultiplayer) {
-                    multiplayerManager.sendChatMessage(text);
-                } else {
-                    uiManager.addChatMessage('You', text);
+                try {
+                    if (multiplayerManager.isMultiplayer) {
+                        multiplayerManager.sendChatMessage(text);
+                    } else {
+                        uiManager.addChatMessage('You', text);
+                    }
+                } catch (err) {
+                    console.error("[CHAT] Transmission error:", err);
+                    uiManager.addChatMessage('System', 'Failed to send message.');
                 }
             }
             chatInput.value = '';
@@ -1319,7 +1324,7 @@ window.addEventListener('keydown', e => {
         return;
     }
 
-    if ((e.code === 'Enter' || e.code === 'KeyT') && chatPanel && chatPanel.style.display !== 'none') {
+    if ((e.code === 'Enter' || e.code === 'KeyT') && chatPanel && (multiplayerManager.isMultiplayer || gameStarted)) {
         e.preventDefault();
         if (chatInput) {
             console.log("[CHAT] Key pressed to open chat input.");
