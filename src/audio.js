@@ -73,6 +73,7 @@ class SoundEngine {
 
         // 1. Initial Transient Noise Crack
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(scoped ? 0.38 : 0.28);
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
@@ -127,7 +128,7 @@ class SoundEngine {
         dist.connect(this.ctx.destination);
 
         noise.start(t);
-        noise.stop(t + (scoped ? 0.28 : 0.38));
+        noise.stop(t + (scoped ? 0.38 : 0.28));
         osc.start(t);
         osc.stop(t + 0.14);
         crackOsc.start(t);
@@ -148,6 +149,7 @@ class SoundEngine {
 
         // 1. Supersonic whip & heavy noise blast
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(0.85);
 
         const filter = this.ctx.createBiquadFilter();
@@ -210,6 +212,7 @@ class SoundEngine {
 
         // Scatter blast noise
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(0.55);
 
         const filter = this.ctx.createBiquadFilter();
@@ -271,6 +274,7 @@ class SoundEngine {
         mainGain.gain.setValueAtTime(this.masterVolume * 0.7, t);
 
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(0.18);
 
         const filter = this.ctx.createBiquadFilter();
@@ -329,6 +333,7 @@ class SoundEngine {
         mainGain.gain.setValueAtTime(this.masterVolume * 1.1, t);
 
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(0.45);
 
         const filter = this.ctx.createBiquadFilter();
@@ -410,6 +415,7 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(0.2);
 
         const filter = this.ctx.createBiquadFilter();
@@ -447,6 +453,7 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(0.18);
 
         const filter = this.ctx.createBiquadFilter();
@@ -548,6 +555,7 @@ class SoundEngine {
 
         // Debris / Fireblast noise
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(1.2);
 
         const filter = this.ctx.createBiquadFilter();
@@ -674,6 +682,7 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const noise = this.ctx.createBufferSource();
+        noise.loop = false;
         noise.buffer = this.createNoiseBuffer(0.5);
 
         const filter = this.ctx.createBiquadFilter();
