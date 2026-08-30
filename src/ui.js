@@ -17,11 +17,16 @@ export const WEAPON_CONFIGS = {
         aimFOV: 48,
         recoilKick: 0.065,
         spread: {
-            baseSpread: 0.016,
-            movementSpreadMultiplier: 2.4,
-            sprintSpreadMultiplier: 4.2,
-            aimSpreadMultiplier: 0.12,
-            spreadRecoverySpeed: 4.8
+            baseStanding: 7.0,
+            baseMoving: 12.0,
+            baseSprinting: 18.0,
+            baseCrouching: 3.5,
+            baseCrouchMoving: 6.0,
+            baseAiming: 0.0,
+            maxSpread: 26.0,
+            fireSpreadRate: 20.0,
+            firePerShotKick: 2.0,
+            recoverySpeed: 16.0
         }
     },
     SNIPER: {
@@ -38,11 +43,16 @@ export const WEAPON_CONFIGS = {
         aimFOV: 15,
         recoilKick: 0.22,
         spread: {
-            baseSpread: 0.035,
-            movementSpreadMultiplier: 3.0,
-            sprintSpreadMultiplier: 5.0,
-            aimSpreadMultiplier: 0.001,
-            spreadRecoverySpeed: 3.5
+            baseStanding: 18.0,
+            baseMoving: 30.0,
+            baseSprinting: 45.0,
+            baseCrouching: 10.0,
+            baseCrouchMoving: 16.0,
+            baseAiming: 0.0,
+            maxSpread: 50.0,
+            fireSpreadRate: 50.0,
+            firePerShotKick: 15.0,
+            recoverySpeed: 10.0
         }
     },
     SHOTGUN: {
@@ -60,11 +70,16 @@ export const WEAPON_CONFIGS = {
         aimFOV: 58,
         recoilKick: 0.16,
         spread: {
-            baseSpread: 0.055,
-            movementSpreadMultiplier: 1.5,
-            sprintSpreadMultiplier: 2.5,
-            aimSpreadMultiplier: 0.65,
-            spreadRecoverySpeed: 4.0
+            baseStanding: 65.0,
+            baseMoving: 85.0,
+            baseSprinting: 120.0,
+            baseCrouching: 50.0,
+            baseCrouchMoving: 65.0,
+            baseAiming: 40.0,
+            maxSpread: 140.0,
+            fireSpreadRate: 0.0,
+            firePerShotKick: 5.0,
+            recoverySpeed: 25.0
         }
     }
 };
@@ -960,14 +975,18 @@ export class UIManager {
         this.envModal.style.display = 'none';
     }
 
-    updateCrosshair(crosshairData, aiming) {
+    updateCrosshair(crosshairData, aiming, weaponKey) {
         if (aiming) {
             this.crosshair.style.opacity = '0';
-            this.scope.style.display = 'block';
+            if (weaponKey === 'SNIPER') {
+                this.scope.style.display = 'block';
+            } else {
+                this.scope.style.display = 'none';
+            }
         } else {
             this.crosshair.style.opacity = '1';
             this.scope.style.display = 'none';
-
+            
             this.chBars.top.style.transform = crosshairData.top;
             this.chBars.bottom.style.transform = crosshairData.bottom;
             this.chBars.left.style.transform = crosshairData.left;

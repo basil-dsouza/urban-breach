@@ -52,8 +52,12 @@ export class SpreadSystem {
         this.targetBase = this.getBaseSpread({ moving, sprinting, aiming, crouching });
 
         if (aiming) {
-            // Instantly snap to 0 spread when aiming
-            this.currentSpread = Math.max(0, this.currentSpread - this.config.recoverySpeed * 3 * delta);
+            // Recover/snap towards the aiming target base spread (e.g. 40.0 for Shotgun, 0.0 for AK47)
+            if (this.currentSpread > this.targetBase) {
+                this.currentSpread = Math.max(this.targetBase, this.currentSpread - this.config.recoverySpeed * 3 * delta);
+            } else if (this.currentSpread < this.targetBase) {
+                this.currentSpread = Math.min(this.targetBase, this.currentSpread + this.config.recoverySpeed * 3 * delta);
+            }
             return this.currentSpread;
         }
 

@@ -1015,9 +1015,30 @@ function applyWeaponModel(weaponKey = 'AK47') {
         barrel.position.set(0, 0.054, -0.48);
         gunGroup.add(barrel);
 
-        // Front Brass Bead Sight
+        // Raised Receiver Sighting Channel (Left and Right Ridges to break flat profile)
+        const leftRidge = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.012, 0.46), matReceiver);
+        leftRidge.position.set(-0.028, 0.076, 0.02);
+        gunGroup.add(leftRidge);
+
+        const rightRidge = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.012, 0.46), matReceiver);
+        rightRidge.position.set(0.028, 0.076, 0.02);
+        gunGroup.add(rightRidge);
+
+        // Raised Ventilated Rib on top of the barrel
+        const ventRib = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.008, 0.72), matSteelDark);
+        ventRib.position.set(0, 0.078, -0.48);
+        gunGroup.add(ventRib);
+
+        // Vertical support posts for the ventilated rib
+        for (let rz = -0.80; rz <= -0.16; rz += 0.16) {
+            const post = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.012, 0.016), matSteelDark);
+            post.position.set(0, 0.068, rz);
+            gunGroup.add(post);
+        }
+
+        // Front Brass Bead Sight (mounted on top of ventilated rib)
         const beadSight = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 6), matSteelSatin);
-        beadSight.position.set(0, 0.078, -0.82);
+        beadSight.position.set(0, 0.086, -0.82);
         gunGroup.add(beadSight);
 
         // 3. Under-barrel Magazine Tube
@@ -2369,8 +2390,8 @@ function updateAimAndGun(delta, moving, sprint) {
 
     gunRecoil = THREE.MathUtils.lerp(gunRecoil, 0, delta * 16);
 
-    // Hide viewmodel gun while aiming so scope is 100% see-through
-    gunGroup.visible = !aiming;
+    // Hide viewmodel gun while aiming only for Sniper (full screen scope overlay)
+    gunGroup.visible = !(aiming && currentWeapon.id === 'SNIPER');
 
     const bob = moving ? Math.sin(Date.now() * 0.008) * 0.015 : 0;
     let targetGunX = 0.24;
@@ -2380,6 +2401,21 @@ function updateAimAndGun(delta, moving, sprint) {
     let targetRotX = -0.02;
     let targetRotY = -0.04;
     let targetRotZ = 0.03;
+
+    if (aiming && currentWeapon.id !== 'SNIPER') {
+        targetGunX = 0.0;
+        targetRotY = 0.0;
+        targetRotZ = 0.0;
+        if (currentWeapon.id === 'AK47') {
+            targetGunY = -0.165;
+            targetGunZ = -0.44 + gunRecoil;
+            targetRotX = 0.0;
+        } else if (currentWeapon.id === 'SHOTGUN') {
+            targetGunY = -0.198;
+            targetGunZ = -0.38 + gunRecoil;
+            targetRotX = 0.0;
+        }
+    }
 
     // Reset viewmodel children base poses
     gunGroup.traverse(child => {
@@ -2523,7 +2559,7 @@ function animate() {
             aiming,
             crouching
         });
-        uiManager.updateCrosshair(spreadSystem.getCrosshairPositions(), aiming);
+        uiManager.updateCrosshair(spreadSystem.getCrosshairPositions(), aiming, currentWeapon.id);
         uiManager.updateHUD(getHUDState());
 
         if (mouseHeld && !window.chatInputActive) {
