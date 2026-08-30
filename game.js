@@ -73,6 +73,7 @@ const bulletHoleMat = new THREE.MeshBasicMaterial({
     color: 0x1a1a1a,
     side: THREE.DoubleSide,
     depthWrite: false,
+    transparent: true,
     polygonOffset: true,
     polygonOffsetFactor: -1.0,
     polygonOffsetUnits: -4.0
@@ -2366,7 +2367,7 @@ function updateWaves(delta) {
 function updateBullets(delta) {
     for (let i = 0; i < BULLET_POOL_SIZE; i++) {
         const bullet = bulletPool[i];
-        if (bullet.visible) {
+        if (bullet.visible && bullet.userData.velocity) {
             bullet.position.add(
                 bullet.userData.velocity.clone().multiplyScalar(delta)
             );
