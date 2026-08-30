@@ -963,9 +963,10 @@ export class MultiplayerManager {
 
             // Create and attach correct gun model
             const isSniper = weaponKey === 'SNIPER';
+            const isShotgun = weaponKey === 'SHOTGUN';
             const rifleGroup = isSniper
                 ? this.createSniperWeaponModel()
-                : this.dummyEnemyManager.createRifleMesh();
+                : (isShotgun ? this.createShotgunWeaponModel() : this.dummyEnemyManager.createRifleMesh());
 
             rifleGroup.name = 'rifle';
             rifleGroup.userData.isRifle = true;
@@ -989,6 +990,42 @@ export class MultiplayerManager {
         receiver.position.set(0.1, 0.05, 0);
         sniper.add(receiver);
         return sniper;
+    }
+
+    createShotgunWeaponModel() {
+        const shotgun = new THREE.Group();
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x181a1c, metalness: 0.8, roughness: 0.3 });
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x5a2d12, roughness: 0.65 });
+        
+        // Barrel
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.70, 6), metalMat);
+        barrel.rotation.z = Math.PI / 2;
+        barrel.position.set(0.35, 0.05, 0);
+        shotgun.add(barrel);
+        
+        // Mag tube
+        const magTube = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.55, 6), metalMat);
+        magTube.rotation.z = Math.PI / 2;
+        magTube.position.set(0.28, 0.02, 0);
+        shotgun.add(magTube);
+
+        // Forearm pump
+        const pump = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.045, 0.045), woodMat);
+        pump.position.set(0.22, 0.02, 0);
+        shotgun.add(pump);
+        
+        // Receiver
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.07, 0.045), metalMat);
+        receiver.position.set(0.05, 0.04, 0);
+        shotgun.add(receiver);
+
+        // Stock
+        const stock = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.04), woodMat);
+        stock.position.set(-0.16, 0.0, 0);
+        stock.rotation.z = 0.15;
+        shotgun.add(stock);
+
+        return shotgun;
     }
 
     animateRemotePlayer(rp, delta) {
@@ -1062,29 +1099,62 @@ export class MultiplayerManager {
         // Attenuate volume based on distance
         const volumeFactor = Math.max(0, Math.min(1.0, 1 - (dist / 140)));
 
+        const isShotgun = weaponKey === 'SHOTGUN';
+
         if (weaponKey === 'SNIPER') {
             soundEngine.playSniperFire(false); // Can just trigger normal audio
             soundEngine.playShellCasingDrop();
+        } else if (isShotgun) {
+            soundEngine.playShotgunFire(false);
+            if (Math.random() < 0.8) {
+                setTimeout(() => {
+                    soundEngine.playShotgunPump();
+                    soundEngine.playShellCasingDrop();
+                }, 220);
+            }
         } else {
             soundEngine.playRifleShot(false);
             if (Math.random() < 0.3) soundEngine.playShellCasingDrop();
         }
 
-        // Get tracer from pool
-        const tracerObj = this.tracerPool[this.tracerPoolIndex];
-        this.tracerPoolIndex = (this.tracerPoolIndex + 1) % this.TRACER_POOL_SIZE;
-
         const bulletDir = new THREE.Vector3(direction.x, direction.y, direction.z).normalize();
 
-        // Position tracer along the raycast trajectory path
-        tracerObj.mesh.material = weaponKey === 'SNIPER' ? sniperTracerMat : defaultTracerMat;
-        tracerObj.mesh.position.copy(shooterPos).add(bulletDir.clone().multiplyScalar(0.9));
-        tracerObj.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bulletDir);
-        tracerObj.mesh.visible = true;
+        if (isShotgun) {
+            const pelletsCount = 6;
+            for (let p = 0; p < pelletsCount; p++) {
+                const tracerObj = this.tracerPool[this.tracerPoolIndex];
+                this.tracerPoolIndex = (this.tracerPoolIndex + 1) % this.TRACER_POOL_SIZE;
 
-        tracerObj.direction.copy(bulletDir);
-        tracerObj.speed = weaponKey === 'SNIPER' ? 240 : 160;
-        tracerObj.life = 0.45;
+                const spreadDir = new THREE.Vector3(
+                    bulletDir.x + (Math.random() - 0.5) * 0.08,
+                    bulletDir.y + (Math.random() - 0.5) * 0.08,
+                    bulletDir.z + (Math.random() - 0.5) * 0.08
+                ).normalize();
+
+                tracerObj.mesh.material = defaultTracerMat;
+                tracerObj.mesh.position.copy(shooterPos).add(spreadDir.clone().multiplyScalar(0.9));
+                tracerObj.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), spreadDir);
+                tracerObj.mesh.visible = true;
+
+                tracerObj.direction.copy(spreadDir);
+                tracerObj.speed = 150;
+                tracerObj.life = 0.35;
+            }
+        } else {
+            // Get tracer from pool
+            const tracerObj = this.tracerPool[this.tracerPoolIndex];
+            this.tracerPoolIndex = (this.tracerPoolIndex + 1) % this.TRACER_POOL_SIZE;
+
+            // Position tracer along the raycast trajectory path
+            tracerObj.mesh.material = weaponKey === 'SNIPER' ? sniperTracerMat : defaultTracerMat;
+            tracerObj.mesh.position.copy(shooterPos).add(bulletDir.clone().multiplyScalar(0.9));
+            tracerObj.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bulletDir);
+            tracerObj.mesh.visible = true;
+
+            tracerObj.direction.copy(bulletDir);
+            tracerObj.speed = weaponKey === 'SNIPER' ? 240 : 160;
+            tracerObj.life = 0.45;
+        }
     }
 
     spawnRemoteGrenade(peerId, pos, velocity) {

@@ -113,6 +113,33 @@ class SoundEngine {
         crackOsc.connect(crackGain);
         crackGain.connect(mainGain);
 
+        // 4. Hyper-Realistic Metallic Bolt Cycle Clink
+        const metalOsc = this.ctx.createOscillator();
+        const metalGain = this.ctx.createGain();
+        metalOsc.type = 'sine';
+        metalOsc.frequency.setValueAtTime(2800, t);
+        metalGain.gain.setValueAtTime(0.12, t);
+        metalGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        metalOsc.connect(metalGain);
+        metalGain.connect(mainGain);
+
+        // 5. Spacious Reverb Tail (Spacious urban echo)
+        const reverbTail = this.ctx.createBufferSource();
+        reverbTail.loop = false;
+        reverbTail.buffer = this.createNoiseBuffer(0.55);
+        const reverbFilter = this.ctx.createBiquadFilter();
+        reverbFilter.type = 'lowpass';
+        reverbFilter.frequency.setValueAtTime(1000, t);
+        reverbFilter.frequency.exponentialRampToValueAtTime(80, t + 0.5);
+
+        const reverbGain = this.ctx.createGain();
+        reverbGain.gain.setValueAtTime(0.15, t);
+        reverbGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+
+        reverbTail.connect(reverbFilter);
+        reverbFilter.connect(reverbGain);
+        reverbGain.connect(mainGain);
+
         // Routing through Analog Compression and Waveshaper Distortion
         const comp = this.ctx.createDynamicsCompressor();
         comp.threshold.setValueAtTime(-14, t);
@@ -133,6 +160,10 @@ class SoundEngine {
         osc.stop(t + 0.14);
         crackOsc.start(t);
         crackOsc.stop(t + 0.06);
+        metalOsc.start(t);
+        metalOsc.stop(t + 0.09);
+        reverbTail.start(t);
+        reverbTail.stop(t + 0.55);
     }
 
     /**
@@ -178,6 +209,33 @@ class SoundEngine {
         sub.connect(subGain);
         subGain.connect(mainGain);
 
+        // 3. Hyper-Realistic Metallic Bolt Cycle Clink
+        const metalOsc = this.ctx.createOscillator();
+        const metalGain = this.ctx.createGain();
+        metalOsc.type = 'sine';
+        metalOsc.frequency.setValueAtTime(3200, t);
+        metalGain.gain.setValueAtTime(0.2, t);
+        metalGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        metalOsc.connect(metalGain);
+        metalGain.connect(mainGain);
+
+        // 4. Spacious Reverb Tail (Decayed heavy echo)
+        const reverbTail = this.ctx.createBufferSource();
+        reverbTail.loop = false;
+        reverbTail.buffer = this.createNoiseBuffer(1.2);
+        const reverbFilter = this.ctx.createBiquadFilter();
+        reverbFilter.type = 'lowpass';
+        reverbFilter.frequency.setValueAtTime(800, t);
+        reverbFilter.frequency.exponentialRampToValueAtTime(50, t + 1.1);
+
+        const reverbGain = this.ctx.createGain();
+        reverbGain.gain.setValueAtTime(0.3, t);
+        reverbGain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+
+        reverbTail.connect(reverbFilter);
+        reverbFilter.connect(reverbGain);
+        reverbGain.connect(mainGain);
+
         // Routing sniper through heavy distortion and compression
         const comp = this.ctx.createDynamicsCompressor();
         comp.threshold.setValueAtTime(-8, t);
@@ -196,6 +254,10 @@ class SoundEngine {
         noise.stop(t + 0.85);
         sub.start(t);
         sub.stop(t + 0.5);
+        metalOsc.start(t);
+        metalOsc.stop(t + 0.15);
+        reverbTail.start(t);
+        reverbTail.stop(t + 1.2);
     }
 
     /**
@@ -241,6 +303,33 @@ class SoundEngine {
         thud.connect(thudGain);
         thudGain.connect(mainGain);
 
+        // Metallic slide pull resonance clink
+        const metalOsc = this.ctx.createOscillator();
+        const metalGain = this.ctx.createGain();
+        metalOsc.type = 'sine';
+        metalOsc.frequency.setValueAtTime(2400, t);
+        metalGain.gain.setValueAtTime(0.18, t);
+        metalGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        metalOsc.connect(metalGain);
+        metalGain.connect(mainGain);
+
+        // Reverb Tail
+        const reverbTail = this.ctx.createBufferSource();
+        reverbTail.loop = false;
+        reverbTail.buffer = this.createNoiseBuffer(0.8);
+        const reverbFilter = this.ctx.createBiquadFilter();
+        reverbFilter.type = 'lowpass';
+        reverbFilter.frequency.setValueAtTime(900, t);
+        reverbFilter.frequency.exponentialRampToValueAtTime(60, t + 0.7);
+
+        const reverbGain = this.ctx.createGain();
+        reverbGain.gain.setValueAtTime(0.25, t);
+        reverbGain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+
+        reverbTail.connect(reverbFilter);
+        reverbFilter.connect(reverbGain);
+        reverbGain.connect(mainGain);
+
         // Routing
         const comp = this.ctx.createDynamicsCompressor();
         comp.threshold.setValueAtTime(-12, t);
@@ -259,6 +348,49 @@ class SoundEngine {
         noise.stop(t + 0.55);
         thud.start(t);
         thud.stop(t + 0.26);
+        metalOsc.start(t);
+        metalOsc.stop(t + 0.12);
+        reverbTail.start(t);
+        reverbTail.stop(t + 0.8);
+    }
+
+    playShotgunPump() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.setValueAtTime(this.masterVolume * 0.8, t);
+
+        // Slide back (metallic shhhk)
+        const slideBack = this.ctx.createOscillator();
+        const slideBackGain = this.ctx.createGain();
+        slideBack.type = 'triangle';
+        slideBack.frequency.setValueAtTime(800, t);
+        slideBack.frequency.linearRampToValueAtTime(400, t + 0.18);
+        slideBackGain.gain.setValueAtTime(0.5, t);
+        slideBackGain.gain.linearRampToValueAtTime(0.001, t + 0.18);
+        slideBack.connect(slideBackGain);
+        slideBackGain.connect(mainGain);
+
+        // Slide forward (metallic clack)
+        const slideForward = this.ctx.createOscillator();
+        const slideForwardGain = this.ctx.createGain();
+        slideForward.type = 'sine';
+        slideForward.frequency.setValueAtTime(1200, t + 0.22);
+        slideForward.frequency.linearRampToValueAtTime(900, t + 0.35);
+        slideForwardGain.gain.setValueAtTime(0.6, t + 0.22);
+        slideForwardGain.gain.linearRampToValueAtTime(0.001, t + 0.35);
+        slideForward.connect(slideForwardGain);
+        slideForwardGain.connect(mainGain);
+
+        mainGain.connect(this.ctx.destination);
+
+        slideBack.start(t);
+        slideBack.stop(t + 0.2);
+        slideForward.start(t + 0.22);
+        slideForward.stop(t + 0.37);
     }
 
     /**

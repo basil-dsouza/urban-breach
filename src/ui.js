@@ -44,6 +44,28 @@ export const WEAPON_CONFIGS = {
             aimSpreadMultiplier: 0.001,
             spreadRecoverySpeed: 3.5
         }
+    },
+    SHOTGUN: {
+        id: 'SHOTGUN',
+        name: 'M590 PUMP-ACTION SHOTGUN',
+        desc: '12-gauge tactical pump-action shotgun. Fires 8 high-velocity buckshot pellets in a devastating close-range spread.',
+        icon: '💥',
+        color: '#ef4444',
+        ammo: 8,
+        maxAmmo: 8,
+        damage: 15,
+        pellets: 8,
+        fireRate: 0.72,
+        reloadTime: 2.5,
+        aimFOV: 58,
+        recoilKick: 0.16,
+        spread: {
+            baseSpread: 0.055,
+            movementSpreadMultiplier: 1.5,
+            sprintSpreadMultiplier: 2.5,
+            aimSpreadMultiplier: 0.65,
+            spreadRecoverySpeed: 4.0
+        }
     }
 };
 

@@ -830,6 +830,7 @@ let isReloading = false;
 let reloadTimer = 0;
 let reloadDuration = 2.1;
 let reloadPhase = 0;
+let pumpTimer = 0;
 
 // Grenade Replenishing System (5s replenish timer, caps at 5)
 let grenadeCount = 3;
@@ -902,11 +903,13 @@ function applyWeaponModel(weaponKey = 'AK47') {
         gunGroup.add(receiver);
 
         const boltHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.09, 8), matSteelDark);
+        boltHandle.name = 'bolt';
         boltHandle.rotation.z = Math.PI / 2;
         boltHandle.position.set(0.07, 0.07, 0.12);
         gunGroup.add(boltHandle);
 
         const boltKnob = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), matSteelDark);
+        boltKnob.name = 'bolt_knob';
         boltKnob.position.set(0.115, 0.07, 0.12);
         gunGroup.add(boltKnob);
 
@@ -977,6 +980,7 @@ function applyWeaponModel(weaponKey = 'AK47') {
 
         // Heavy Steel .50 BMG 10-Round Box Magazine
         const mag = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.26, 0.16), matSteelDark);
+        mag.name = 'magazine';
         mag.position.set(0, -0.14, -0.04);
         gunGroup.add(mag);
 
@@ -991,6 +995,93 @@ function applyWeaponModel(weaponKey = 'AK47') {
 
         muzzleFlashLight.position.set(0, 0.045, -1.42);
 
+    } else if (weaponKey === 'SHOTGUN') {
+        // =========================================================
+        // M590 HYPER-REALISTIC DETAILED PUMP-ACTION SHOTGUN
+        // =========================================================
+        // 1. Receiver
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.10, 0.46), matReceiver);
+        receiver.position.set(0, 0.02, 0.02);
+        gunGroup.add(receiver);
+
+        // Ejection Port on Right Side
+        const ejectionPort = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.038, 0.14), matSteelDark);
+        ejectionPort.position.set(0.036, 0.035, -0.04);
+        gunGroup.add(ejectionPort);
+
+        // 2. Main 12-Gauge Steel Barrel
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.019, 0.72, 12), matSteelDark);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.054, -0.48);
+        gunGroup.add(barrel);
+
+        // Front Brass Bead Sight
+        const beadSight = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 6), matSteelSatin);
+        beadSight.position.set(0, 0.078, -0.82);
+        gunGroup.add(beadSight);
+
+        // 3. Under-barrel Magazine Tube
+        const magTube = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.58, 12), matSteelDark);
+        magTube.rotation.x = Math.PI / 2;
+        magTube.position.set(0, 0.022, -0.41);
+        gunGroup.add(magTube);
+
+        // Double-ring Barrel Clamp
+        const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.046, 0.042), matReceiver);
+        clamp.position.set(0, 0.038, -0.66);
+        gunGroup.add(clamp);
+
+        // 4. Wood Pump Forearm (Ribbed)
+        const pumpForearm = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.054, 0.26), matWood);
+        pumpForearm.name = 'forearm';
+        pumpForearm.position.set(0, 0.018, -0.32);
+        gunGroup.add(pumpForearm);
+
+        // Ribbed grooves on forearm for realistic texture
+        for (let gz = -0.42; gz <= -0.22; gz += 0.04) {
+            const groove = new THREE.Mesh(new THREE.BoxGeometry(0.066, 0.058, 0.012), matWood);
+            groove.name = 'forearm_groove';
+            groove.position.set(0, 0.018, gz);
+            gunGroup.add(groove);
+        }
+
+        // Metal pump slide rails
+        for (const side of [-1, 1]) {
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.012, 0.16), matSteelSatin);
+            rail.name = 'forearm_rail';
+            rail.position.set(side * 0.028, 0.012, -0.16);
+            gunGroup.add(rail);
+        }
+
+        // 5. Classic Curved Wooden Buttstock
+        const stockAdapter = new THREE.Mesh(new THREE.BoxGeometry(0.054, 0.065, 0.14), matWood);
+        stockAdapter.position.set(0, 0.01, 0.22);
+        stockAdapter.rotation.x = -0.06;
+        gunGroup.add(stockAdapter);
+
+        const stockButt = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 0.28), matWood);
+        stockButt.position.set(0, -0.055, 0.38);
+        stockButt.rotation.x = -0.13;
+        gunGroup.add(stockButt);
+
+        // Soft recoil pad
+        const recoilPad = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.142, 0.025), matPolymer);
+        recoilPad.position.set(0, -0.055, 0.52);
+        recoilPad.rotation.x = -0.13;
+        gunGroup.add(recoilPad);
+
+        // 6. Trigger Guard & Trigger
+        const triggerGuard = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.042, 0.09), matSteelDark);
+        triggerGuard.position.set(0, -0.045, 0.06);
+        gunGroup.add(triggerGuard);
+
+        const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.022, 0.016), matSteelSatin);
+        trigger.position.set(0, -0.045, 0.06);
+        trigger.rotation.x = -0.25;
+        gunGroup.add(trigger);
+
+        muzzleFlashLight.position.set(0, 0.054, -0.85);
+
     } else {
         // =========================================================
         // AK-47 SOVIET TACTICAL ASSAULT RIFLE
@@ -1004,12 +1095,12 @@ function applyWeaponModel(weaponKey = 'AK47') {
         dustCover.position.set(0, 0.076, 0.02);
         gunGroup.add(dustCover);
 
-        // Full-Length Straight Tactical Top Picatinny Rail (MIL-STD-1913)
+        // Full-Length Picatinny Rail
         const picatinnyBase = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.016, 0.50), matReceiver);
         picatinnyBase.position.set(0, 0.104, -0.02);
         gunGroup.add(picatinnyBase);
 
-        // Machined Rail Cross-Slots for authentic tactical finish
+        // Machined Rail Cross-Slots
         for (let rz = -0.24; rz <= 0.18; rz += 0.04) {
             const slot = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.008, 0.018), matSteelDark);
             slot.position.set(0, 0.112, rz);
@@ -1018,9 +1109,17 @@ function applyWeaponModel(weaponKey = 'AK47') {
 
         // Curved 30-Round Banana Magazine
         const mag = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.30, 0.12), matSteelDark);
+        mag.name = 'magazine';
         mag.position.set(0, -0.17, -0.08);
         mag.rotation.x = 0.32;
         gunGroup.add(mag);
+
+        // Charging Handle (Bolt)
+        const boltHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.04, 8), matSteelDark);
+        boltHandle.name = 'bolt';
+        boltHandle.rotation.z = Math.PI / 2;
+        boltHandle.position.set(0.042, 0.045, -0.08);
+        gunGroup.add(boltHandle);
 
         // Gas Tube & Wooden Handguard
         const handguardBottom = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.058, 0.28), matWood);
@@ -1048,7 +1147,7 @@ function applyWeaponModel(weaponKey = 'AK47') {
         frontSight.position.set(0, 0.075, -0.88);
         gunGroup.add(frontSight);
 
-        // Low-Profile Tactical Rear Sight Notch (firmly seated on rear of Picatinny rail)
+        // Low-Profile Notch Rear Sight
         const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.032, 0.045), matSteelDark);
         rearSight.position.set(0, 0.122, 0.18);
         gunGroup.add(rearSight);
@@ -1070,11 +1169,19 @@ function applyWeaponModel(weaponKey = 'AK47') {
 
     // Operator Gloved Hands
     const handRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
+    handRight.name = 'handRight';
     handRight.position.set(0, -0.12, 0.11);
     gunGroup.add(handRight);
 
     const handLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
-    handLeft.position.set(-0.05, 0.0, -0.33);
+    handLeft.name = 'handLeft';
+    if (weaponKey === 'SNIPER') {
+        handLeft.position.set(-0.05, 0.0, -0.33);
+    } else if (weaponKey === 'SHOTGUN') {
+        handLeft.position.set(0.0, 0.01, -0.32); // Holds the forearm pump directly!
+    } else {
+        handLeft.position.set(-0.05, 0.0, -0.33);
+    }
     gunGroup.add(handLeft);
 }
 
@@ -1609,6 +1716,7 @@ function performShootRaycast(bulletDir) {
 }
 
 // 17. Player Shooting with Multi-Weapon Support & Stealth Break
+// 17. Player Shooting with Multi-Weapon Support & Stealth Break
 function shoot() {
     if (fireCooldown > 0 || isReloading) return;
 
@@ -1627,10 +1735,20 @@ function shoot() {
     fireCooldown = currentWeapon.fireRate;
     spreadSystem.onFire(aiming, isCrouching);
 
+    const isShotgun = currentWeapon.id === 'SHOTGUN';
+    const pellets = isShotgun ? 8 : 1;
+
     // Multi-Weapon Sound Effects
     if (currentWeapon.id === 'SNIPER') {
         soundEngine.playSniperFire(aiming);
         soundEngine.playShellCasingDrop();
+    } else if (isShotgun) {
+        soundEngine.playShotgunFire(aiming);
+        pumpTimer = 0.50; // Trigger procedural pump-action cocking slide animation
+        setTimeout(() => {
+            soundEngine.playShotgunPump();
+            soundEngine.playShellCasingDrop();
+        }, 220); // Sync slide-pull sound and shell drop to the pump back sequence
     } else {
         soundEngine.playRifleShot(aiming);
         if (Math.random() < 0.35) soundEngine.playShellCasingDrop();
@@ -1642,100 +1760,125 @@ function shoot() {
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
 
-    const spreadDirObj = spreadSystem.calculateSpreadDirection(forward, right, up);
-    const bulletDir = new THREE.Vector3(spreadDirObj.x, spreadDirObj.y, spreadDirObj.z);
+    // Track hits to consolidate network messages
+    const enemyHits = new Map();   // enemy -> accumulated damage
+    const vehicleHits = new Map(); // car -> accumulated damage
+    const playerHits = new Map();  // peerId -> accumulated damage
 
-    // Perform hitscan raycasting
-    const hitData = performShootRaycast(bulletDir);
+    for (let p = 0; p < pellets; p++) {
+        const spreadDirObj = spreadSystem.calculateSpreadDirection(forward, right, up);
+        const bulletDir = new THREE.Vector3(spreadDirObj.x, spreadDirObj.y, spreadDirObj.z);
 
-    if (hitData.hit) {
-        if (hitData.type === 'enemy') {
-            const enemy = hitData.object;
-            const enemyDmg = currentWeapon.damage >= 100 ? 10 : (currentWeapon.damage >= 50 ? 3 : 1);
-            soundEngine.playEnemyHit();
-            createHitEffect(hitData.point);
+        // Perform hitscan raycasting
+        const hitData = performShootRaycast(bulletDir);
 
-            if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
-                multiplayerManager.sendToHost({
-                    type: 'hit_enemy',
-                    enemyId: enemy.userData.id,
-                    damage: enemyDmg
-                });
-            } else {
-                enemy.userData.health -= enemyDmg;
-                if (enemy.userData.health <= 0) {
-                    const diff = getDifficulty();
-                    if (Math.random() < (diff.medkitDropChance || 0.4)) {
-                        enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
-                    }
-                    scene.remove(enemy);
-                    const idx = enemyManager.enemies.indexOf(enemy);
-                    if (idx !== -1) {
-                        enemyManager.enemies.splice(idx, 1);
-                    }
-                    kills++;
-                    uiManager.updateHUD(getHUDState());
-                }
-            }
-        } else if (hitData.type === 'vehicle') {
-            const car = hitData.object;
-            const carDmg = currentWeapon.damage >= 100 ? 35 : (currentWeapon.damage >= 50 ? 18 : 6);
-            createHitEffect(hitData.point, 0xffaa00);
-
-            if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
-                multiplayerManager.sendToHost({
-                    type: 'hit_vehicle',
-                    vehicleId: car.userData.id,
-                    damage: carDmg
-                });
-            } else {
-                vehicleManager.damageVehicle(car, carDmg, () => {
-                    kills += 3;
-                    uiManager.updateHUD(getHUDState());
-                });
-            }
-        } else if (hitData.type === 'player') {
-            if (multiplayerManager.gameMode === 'ffa') {
-                if (multiplayerManager.isHost) {
-                    const targetConn = multiplayerManager.connections[hitData.peerId];
-                    if (targetConn) {
-                        targetConn.send({
-                            type: 'damage_taken',
-                            amount: currentWeapon.damage,
-                            source: 'pvp'
-                        });
-                    }
-                } else {
-                    multiplayerManager.sendToHost({
-                        type: 'hit_player',
-                        targetPeerId: hitData.peerId,
-                        damage: currentWeapon.damage
-                    });
-                }
+        if (hitData.hit) {
+            if (hitData.type === 'enemy') {
+                const enemy = hitData.object;
+                const baseDmg = currentWeapon.damage;
+                const enemyDmg = baseDmg >= 100 ? 10 : (baseDmg >= 50 ? 3 : 1);
+                soundEngine.playEnemyHit();
                 createHitEffect(hitData.point);
+
+                enemyHits.set(enemy, (enemyHits.get(enemy) || 0) + enemyDmg);
+            } else if (hitData.type === 'vehicle') {
+                const car = hitData.object;
+                const baseDmg = currentWeapon.damage;
+                const carDmg = baseDmg >= 100 ? 35 : (baseDmg >= 50 ? 18 : 6);
+                createHitEffect(hitData.point, 0xffaa00);
+
+                vehicleHits.set(car, (vehicleHits.get(car) || 0) + carDmg);
+            } else if (hitData.type === 'player') {
+                if (multiplayerManager.gameMode === 'ffa') {
+                    createHitEffect(hitData.point);
+                    playerHits.set(hitData.peerId, (playerHits.get(hitData.peerId) || 0) + currentWeapon.damage);
+                }
+            } else if (hitData.type === 'obstacle') {
+                createBulletHole(
+                    hitData.point,
+                    hitData.face ? hitData.face.normal.clone() : new THREE.Vector3(0, 1, 0)
+                );
             }
-        } else if (hitData.type === 'obstacle') {
-            createBulletHole(
-                hitData.point,
-                hitData.face ? hitData.face.normal.clone() : new THREE.Vector3(0, 1, 0)
-            );
+        }
+
+        // Spawn cosmetic tracer bullet
+        const bullet = bulletPool[bulletPoolIndex];
+        bulletPoolIndex = (bulletPoolIndex + 1) % BULLET_POOL_SIZE;
+
+        bullet.geometry = currentWeapon.id === 'SNIPER' ? sniperBulletGeo : defaultBulletGeo;
+        bullet.position.copy(camera.position);
+        bullet.visible = true;
+
+        const bulletSpeed = currentWeapon.id === 'SNIPER' ? 340 : (isShotgun ? 160 : 175);
+        bullet.userData.velocity = bulletDir.clone().multiplyScalar(bulletSpeed);
+        bullet.userData.life = hitData.hit ? (hitData.distance / bulletSpeed) : 2.5;
+    }
+
+    // Apply and network accumulated hits
+    // 1. Enemy Hits
+    for (const [enemy, dmg] of enemyHits.entries()) {
+        if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
+            multiplayerManager.sendToHost({
+                type: 'hit_enemy',
+                enemyId: enemy.userData.id,
+                damage: dmg
+            });
+        } else {
+            enemy.userData.health -= dmg;
+            if (enemy.userData.health <= 0) {
+                const diff = getDifficulty();
+                if (Math.random() < (diff.medkitDropChance || 0.4)) {
+                    enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
+                }
+                scene.remove(enemy);
+                const idx = enemyManager.enemies.indexOf(enemy);
+                if (idx !== -1) {
+                    enemyManager.enemies.splice(idx, 1);
+                }
+                kills++;
+                uiManager.updateHUD(getHUDState());
+            }
         }
     }
 
-    // Spawn cosmetic tracer bullet
-    const bullet = bulletPool[bulletPoolIndex];
-    bulletPoolIndex = (bulletPoolIndex + 1) % BULLET_POOL_SIZE;
+    // 2. Vehicle Hits
+    for (const [car, dmg] of vehicleHits.entries()) {
+        if (multiplayerManager.isMultiplayer && !multiplayerManager.isHost) {
+            multiplayerManager.sendToHost({
+                type: 'hit_vehicle',
+                vehicleId: car.userData.id,
+                damage: dmg
+            });
+        } else {
+            vehicleManager.damageVehicle(car, dmg, () => {
+                kills += 3;
+                uiManager.updateHUD(getHUDState());
+            });
+        }
+    }
 
-    bullet.geometry = currentWeapon.id === 'SNIPER' ? sniperBulletGeo : defaultBulletGeo;
-    bullet.position.copy(camera.position);
-    bullet.visible = true;
-
-    const bulletSpeed = currentWeapon.id === 'SNIPER' ? 340 : 175;
-    bullet.userData.velocity = bulletDir.clone().multiplyScalar(bulletSpeed);
-    bullet.userData.life = hitData.hit ? (hitData.distance / bulletSpeed) : 2.5;
+    // 3. Player Hits (FFA)
+    for (const [peerId, dmg] of playerHits.entries()) {
+        if (multiplayerManager.isHost) {
+            const targetConn = multiplayerManager.connections[peerId];
+            if (targetConn) {
+                targetConn.send({
+                    type: 'damage_taken',
+                    amount: dmg,
+                    source: 'pvp'
+                });
+            }
+        } else {
+            multiplayerManager.sendToHost({
+                type: 'hit_player',
+                targetPeerId: peerId,
+                damage: dmg
+            });
+        }
+    }
 
     if (multiplayerManager.isMultiplayer) {
-        multiplayerManager.sendLocalShoot(camera.position, bulletDir, currentWeapon.id);
+        multiplayerManager.sendLocalShoot(camera.position, forward, currentWeapon.id);
     }
 
     muzzleFlashLight.intensity = currentWeapon.id === 'SNIPER' ? 16 : 8;
@@ -2238,12 +2381,115 @@ function updateAimAndGun(delta, moving, sprint) {
     let targetRotY = -0.04;
     let targetRotZ = 0.03;
 
+    // Reset viewmodel children base poses
+    gunGroup.traverse(child => {
+        if (child !== gunGroup) {
+            if (!child.userData.basePos) {
+                child.userData.basePos = child.position.clone();
+                child.userData.baseRot = child.rotation.clone();
+            } else {
+                child.position.copy(child.userData.basePos);
+                child.rotation.copy(child.userData.baseRot);
+            }
+        }
+    });
+
+    // Procedural shotgun pump-action cocking slide animation
+    if (pumpTimer > 0) {
+        pumpTimer -= delta;
+        const p = pumpTimer / 0.50;
+        const slideAmt = Math.sin(p * Math.PI) * 0.08;
+        gunGroup.traverse(child => {
+            if (child.name === 'forearm' || child.name === 'forearm_groove' || child.name === 'forearm_rail' || child.name === 'handLeft') {
+                child.position.z = child.userData.basePos.z + slideAmt;
+            }
+        });
+    }
+
     if (isReloading) {
         const reloadProgress = 1 - (reloadTimer / reloadDuration);
-        const reloadDip = Math.sin(reloadProgress * Math.PI) * 0.12;
-        targetGunY -= reloadDip;
-        targetRotX -= Math.sin(reloadProgress * Math.PI) * 0.32;
-        targetRotZ -= Math.sin(reloadProgress * Math.PI) * 0.18;
+        
+        if (currentWeapon.id === 'AK47') {
+            const reloadDip = Math.sin(reloadProgress * Math.PI) * 0.12;
+            targetGunY -= reloadDip;
+            targetRotX -= Math.sin(reloadProgress * Math.PI) * 0.32;
+            targetRotZ -= Math.sin(reloadProgress * Math.PI) * 0.18;
+
+            if (reloadProgress < 0.4) {
+                const t = reloadProgress / 0.4;
+                gunGroup.traverse(child => {
+                    if (child.name === 'magazine') {
+                        child.position.y = child.userData.basePos.y - t * 0.35;
+                    }
+                });
+            } else if (reloadProgress < 0.8) {
+                const t = (reloadProgress - 0.4) / 0.4;
+                gunGroup.traverse(child => {
+                    if (child.name === 'magazine') {
+                        child.position.y = child.userData.basePos.y - (1 - t) * 0.35;
+                    }
+                });
+            } else {
+                const t = (reloadProgress - 0.8) / 0.2;
+                const boltSlide = Math.sin(t * Math.PI) * 0.06;
+                gunGroup.traverse(child => {
+                    if (child.name === 'bolt') {
+                        child.position.z = child.userData.basePos.z + boltSlide;
+                    }
+                });
+            }
+        } else if (currentWeapon.id === 'SNIPER') {
+            const reloadDip = Math.sin(reloadProgress * Math.PI) * 0.10;
+            targetGunY -= reloadDip;
+            targetRotX -= Math.sin(reloadProgress * Math.PI) * 0.22;
+
+            if (reloadProgress < 0.3) {
+                const t = reloadProgress / 0.3;
+                gunGroup.traverse(child => {
+                    if (child.name === 'bolt' || child.name === 'bolt_knob') {
+                        child.position.z = child.userData.basePos.z + t * 0.08;
+                        child.rotation.z = child.userData.baseRot.z + t * 0.5;
+                    }
+                });
+            } else if (reloadProgress < 0.7) {
+                gunGroup.traverse(child => {
+                    if (child.name === 'bolt' || child.name === 'bolt_knob') {
+                        child.position.z = child.userData.basePos.z + 0.08;
+                        child.rotation.z = child.userData.baseRot.z + 0.5;
+                    }
+                });
+
+                const t = (reloadProgress - 0.3) / 0.4;
+                const magOffset = t < 0.5 ? (t * 2) : ((1 - t) * 2);
+                gunGroup.traverse(child => {
+                    if (child.name === 'magazine') {
+                        child.position.y = child.userData.basePos.y - magOffset * 0.3;
+                    }
+                });
+            } else {
+                const t = (reloadProgress - 0.7) / 0.3;
+                gunGroup.traverse(child => {
+                    if (child.name === 'bolt' || child.name === 'bolt_knob') {
+                        child.position.z = child.userData.basePos.z + (1 - t) * 0.08;
+                        child.rotation.z = child.userData.baseRot.z + (1 - t) * 0.5;
+                    }
+                });
+            }
+        } else if (currentWeapon.id === 'SHOTGUN') {
+            targetRotZ += 0.85;
+            targetRotX -= 0.15;
+            targetGunY -= 0.05;
+            targetGunX -= 0.05;
+
+            const cycle = (reloadTimer * 2.5) % 1.0;
+            const shellSlide = Math.sin(cycle * Math.PI) * 0.08;
+            gunGroup.traverse(child => {
+                if (child.name === 'handLeft') {
+                    child.position.z = child.userData.basePos.z + shellSlide;
+                    child.position.y = child.userData.basePos.y - shellSlide * 0.5;
+                }
+            });
+        }
     }
 
     gunGroup.position.x = THREE.MathUtils.lerp(gunGroup.position.x, targetGunX, delta * 14);
