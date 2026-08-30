@@ -952,7 +952,7 @@ class SoundEngine {
         this.currentTrack = 'menu';
         
         try {
-            const audio = new Audio("Background Sounds/alexander-nakarada-superepic(chosic.com) (1).mp3");
+            const audio = new Audio("Background%20Sounds/alexander-nakarada-superepic(chosic.com)%20(1).mp3");
             audio.volume = 0.50; // set to 50% original volume
             audio.loop = true;
             
@@ -982,11 +982,11 @@ class SoundEngine {
 
         if (selection === 'game1') {
             console.log("[MUSIC] Initiating Game Music track: Ultra Lag");
-            src = "Background Sounds/Ultra-Lag-chosic.com_.mp3";
+            src = "Background%20Sounds/Ultra-Lag-chosic.com_.mp3";
             credits = `Ultra Lag by Alex-Productions | https://onsound.eu/ | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 3.0 https://creativecommons.org/licenses/by/3.0/`;
         } else {
             console.log("[MUSIC] Initiating Game Music track: Thunder Unison");
-            src = "Background Sounds/Thunder-Unison-Action-Dramatic-Epic-Music-chosic.com_ (1).mp3";
+            src = "Background%20Sounds/Thunder-Unison-Action-Dramatic-Epic-Music-chosic.com_%20(1).mp3";
             credits = `Thunder Unison by Keys of Moon | https://soundcloud.com/keysofmoon | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 4.0 https://creativecommons.org/licenses/by/4.0/`;
         }
 
