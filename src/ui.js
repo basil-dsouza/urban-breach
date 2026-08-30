@@ -471,33 +471,34 @@ export class UIManager {
                     <!-- Host Section -->
                     <div id="webrtc-host-section" style="display: none; flex-direction: column; gap: 12px;">
                         <div class="webrtc-form-row">
-                            <label style="font-size: 12px; font-weight: 800; color: #00e5ff;">1. YOUR OFFER CODE (COPY & SEND TO CLIENT)</label>
-                            <div class="webrtc-textarea-container">
-                                <textarea id="webrtc-host-offer" class="webrtc-textarea" readonly placeholder="Generating code..."></textarea>
-                                <button id="btn-webrtc-copy-offer" class="webrtc-copy-btn">COPY</button>
+                            <div class="webrtc-header-row">
+                                <label style="font-size: 12px; font-weight: 800; color: #00e5ff; margin: 0;">1. YOUR OFFER CODE (SEND TO CLIENT)</label>
+                                <button id="btn-webrtc-copy-offer" class="webrtc-copy-btn">COPY CODE</button>
                             </div>
+                            <textarea id="webrtc-host-offer" class="webrtc-textarea" readonly placeholder="Generating code..."></textarea>
                         </div>
                         <div class="webrtc-form-row">
-                            <label style="font-size: 12px; font-weight: 800; color: #cbd5e1;">2. PASTE CLIENT'S ANSWER CODE</label>
+                            <label style="font-size: 12px; font-weight: 800; color: #cbd5e1; margin-bottom: 4px;">2. PASTE CLIENT'S ANSWER CODE</label>
                             <textarea id="webrtc-host-answer" class="webrtc-textarea" placeholder="Paste the Base64 answer code here..."></textarea>
                         </div>
                         <button id="btn-webrtc-apply-answer" class="btn-primary" style="font-size: 14px; padding: 10px; width: 100%;">ESTABLISH CONNECTION</button>
                     </div>
-
+ 
                     <!-- Client Section -->
                     <div id="webrtc-client-section" style="display: none; flex-direction: column; gap: 12px;">
                         <div class="webrtc-form-row">
-                            <label style="font-size: 12px; font-weight: 800; color: #cbd5e1;">1. PASTE HOST'S OFFER CODE</label>
+                            <label style="font-size: 12px; font-weight: 800; color: #cbd5e1; margin-bottom: 4px;">1. PASTE HOST'S OFFER CODE</label>
                             <textarea id="webrtc-client-offer" class="webrtc-textarea" placeholder="Paste the Base64 offer code here..."></textarea>
                         </div>
                         <button id="btn-webrtc-import-offer" class="btn-primary" style="font-size: 14px; padding: 10px; width: 100%;">IMPORT OFFER & GENERATE ANSWER</button>
                         <div class="webrtc-form-row" id="webrtc-client-answer-row" style="display: none;">
-                            <label style="font-size: 12px; font-weight: 800; color: #00e5ff;">2. YOUR ANSWER CODE (COPY & SEND TO HOST)</label>
-                            <div class="webrtc-textarea-container">
-                                <textarea id="webrtc-client-answer" class="webrtc-textarea" readonly placeholder="Generating answer..."></textarea>
-                                <button id="btn-webrtc-copy-answer" class="webrtc-copy-btn">COPY</button>
+                            <div class="webrtc-header-row">
+                                <label style="font-size: 12px; font-weight: 800; color: #00e5ff; margin: 0;">2. YOUR ANSWER CODE (SEND TO HOST)</label>
+                                <button id="btn-webrtc-copy-answer" class="webrtc-copy-btn">COPY CODE</button>
                             </div>
+                            <textarea id="webrtc-client-answer" class="webrtc-textarea" readonly placeholder="Generating answer..."></textarea>
                         </div>
+                    </div>
                     </div>
 
                     <div id="webrtc-status" class="webrtc-status-banner">STATUS: IDLE</div>

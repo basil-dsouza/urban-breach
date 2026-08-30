@@ -1191,50 +1191,58 @@ body {
     gap: 6px;
 }
 
+.webrtc-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
 .webrtc-textarea-container {
-    position: relative;
     width: 100%;
 }
 
 .webrtc-textarea {
     width: 100%;
-    height: 90px;
-    background: rgba(6, 10, 15, 0.95);
-    border: 1px solid rgba(0, 229, 255, 0.3);
+    height: 105px;
+    background: #05090f;
+    border: 1.5px solid rgba(0, 229, 255, 0.25);
     border-radius: 6px;
     color: #00e5ff;
     font-family: monospace;
-    font-size: 11px;
-    padding: 10px;
-    padding-right: 50px;
+    font-size: 12px;
+    padding: 12px;
     box-sizing: border-box;
     resize: none;
+    line-height: 1.45;
     scrollbar-width: thin;
+    scrollbar-color: rgba(0, 229, 255, 0.2) transparent;
 }
 
 .webrtc-textarea:focus {
     outline: none;
     border-color: #00e5ff;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
 }
 
 .webrtc-copy-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(0, 229, 255, 0.15);
-    border: 1px solid rgba(0, 229, 255, 0.4);
+    background: rgba(0, 229, 255, 0.12);
+    border: 1.5px solid rgba(0, 229, 255, 0.35);
     color: #00e5ff;
-    padding: 4px 8px;
+    padding: 5px 11px;
     font-size: 11px;
     border-radius: 4px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     transition: all 0.15s ease;
 }
 
 .webrtc-copy-btn:hover {
     background: #00e5ff;
-    color: #0a121c;
+    color: #05090f;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.35);
 }
 
 .webrtc-status-banner {
