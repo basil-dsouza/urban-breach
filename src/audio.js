@@ -952,14 +952,14 @@ class SoundEngine {
         this.currentTrack = 'menu';
         
         try {
-            const audio = new Audio("Background%20Sounds/alexander-nakarada-superepic(chosic.com)%20(1).mp3");
+            const audio = new Audio("Background Sounds/alexander-nakarada-superepic(chosic.com) (1).mp3");
             audio.volume = 0.50; // set to 50% original volume
             audio.loop = true;
             
             this.currentMusic = audio;
             audio.play().catch(err => console.warn("[MUSIC] Autoplay blocked or failed:", err));
         } catch (e) {
-            console.warn("[MUSIC] HTML5 Audio constructor error:", e);
+            console.error("[MUSIC] HTML5 Audio constructor error:", e);
         }
 
         this.showCreditsBanner(`Superepic by Alexander Nakarada | https://creatorchords.com/ | Music promoted by https://www.chosic.com/free-music/all/ | Attribution 4.0 International (CC BY 4.0) https://creativecommons.org/licenses/by/4.0/`);
@@ -982,11 +982,11 @@ class SoundEngine {
 
         if (selection === 'game1') {
             console.log("[MUSIC] Initiating Game Music track: Ultra Lag");
-            src = "Background%20Sounds/Ultra-Lag-chosic.com_.mp3";
+            src = "Background Sounds/Ultra-Lag-chosic.com_.mp3";
             credits = `Ultra Lag by Alex-Productions | https://onsound.eu/ | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 3.0 https://creativecommons.org/licenses/by/3.0/`;
         } else {
             console.log("[MUSIC] Initiating Game Music track: Thunder Unison");
-            src = "Background%20Sounds/Thunder-Unison-Action-Dramatic-Epic-Music-chosic.com_%20(1).mp3";
+            src = "Background Sounds/Thunder-Unison-Action-Dramatic-Epic-Music-chosic.com_ (1).mp3";
             credits = `Thunder Unison by Keys of Moon | https://soundcloud.com/keysofmoon | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 4.0 https://creativecommons.org/licenses/by/4.0/`;
         }
 
@@ -1033,6 +1033,16 @@ class SoundEngine {
      */
     showCreditsBanner(text) {
         if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        
+        // Print message to in-game chat log for instant visual diagnostics
+        try {
+            if (window.uiManager && typeof window.uiManager.addChatMessage === 'function') {
+                window.uiManager.addChatMessage('System', 'Now Playing: ' + text.split('|')[0].trim());
+            }
+        } catch (e) {
+            console.warn("Could not add chat message:", e);
+        }
+
         let banner = document.getElementById('music-credits-banner');
         if (!banner) {
             banner = document.createElement('div');

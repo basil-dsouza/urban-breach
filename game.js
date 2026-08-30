@@ -1312,6 +1312,7 @@ const uiManager = new UIManager({
         location.reload();
     }
 });
+window.uiManager = uiManager;
 
 // Configure multiplayer callbacks on uiManager and multiplayerManager
 uiManager.onHostLobby = (nickname, gameMode) => {
