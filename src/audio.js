@@ -970,77 +970,152 @@ class SoundEngine {
 
     /**
      * Weapon reload sounds: Mag Out click
-     */
+     */    
     playReloadMagOut() {
         this.init();
         this.resume();
         if (!this.ctx) return;
 
         const t = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.setValueAtTime(this.masterVolume * 0.7, t);
 
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(450, t);
-        osc.frequency.exponentialRampToValueAtTime(180, t + 0.08);
+        // 1. Friction sound (magazine rubbing against magwell)
+        const friction = this.ctx.createBufferSource();
+        friction.buffer = this.createNoiseBuffer(0.16);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, t);
+        filter.Q.setValueAtTime(3, t);
+        const frictionGain = this.ctx.createGain();
+        frictionGain.gain.setValueAtTime(0.3, t);
+        frictionGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
 
-        gain.gain.setValueAtTime(0.35 * this.masterVolume, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+        friction.connect(filter);
+        filter.connect(frictionGain);
+        frictionGain.connect(mainGain);
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.1);
+        // 2. Latch release click
+        const click = this.ctx.createOscillator();
+        click.type = 'sine';
+        click.frequency.setValueAtTime(2200, t);
+        const clickGain = this.ctx.createGain();
+        clickGain.gain.setValueAtTime(0.2, t);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+
+        click.connect(clickGain);
+        clickGain.connect(mainGain);
+
+        mainGain.connect(this.ctx.destination);
+
+        friction.start(t);
+        friction.stop(t + 0.16);
+        click.start(t);
+        click.stop(t + 0.06);
     }
 
-    /**
-     * Weapon reload sounds: Mag In slap
-     */
     playReloadMagIn() {
         this.init();
         this.resume();
         if (!this.ctx) return;
 
         const t = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.setValueAtTime(this.masterVolume * 0.75, t);
 
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(180, t);
-        osc.frequency.exponentialRampToValueAtTime(360, t + 0.06);
+        // 1. Sliding slam noise (mag fully seated friction)
+        const slamNoise = this.ctx.createBufferSource();
+        slamNoise.buffer = this.createNoiseBuffer(0.15);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, t);
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.4, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
 
-        gain.gain.setValueAtTime(0.45 * this.masterVolume, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        slamNoise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(mainGain);
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.13);
+        // 2. Locking latch click (metal clack)
+        const click = this.ctx.createOscillator();
+        click.type = 'triangle';
+        click.frequency.setValueAtTime(600, t + 0.04);
+        click.frequency.exponentialRampToValueAtTime(150, t + 0.12);
+        const clickGain = this.ctx.createGain();
+        clickGain.gain.setValueAtTime(0, t);
+        clickGain.gain.setValueAtTime(0.4, t + 0.04);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+        click.connect(clickGain);
+        clickGain.connect(mainGain);
+
+        mainGain.connect(this.ctx.destination);
+
+        slamNoise.start(t);
+        slamNoise.stop(t + 0.15);
+        click.start(t + 0.04);
+        click.stop(t + 0.13);
     }
 
-    /**
-     * Weapon reload sounds: Bolt Release / Charge
-     */
     playBoltRelease() {
         this.init();
         this.resume();
         if (!this.ctx) return;
 
         const t = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.setValueAtTime(this.masterVolume * 0.8, t);
 
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(800, t);
-        osc.frequency.exponentialRampToValueAtTime(220, t + 0.07);
+        // 1. Bolt sliding back (first stage rack)
+        const rackNoise = this.ctx.createBufferSource();
+        rackNoise.buffer = this.createNoiseBuffer(0.1);
+        const filterBack = this.ctx.createBiquadFilter();
+        filterBack.type = 'bandpass';
+        filterBack.frequency.setValueAtTime(1800, t);
+        const gainBack = this.ctx.createGain();
+        gainBack.gain.setValueAtTime(0.25, t);
+        gainBack.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
 
-        gain.gain.setValueAtTime(0.4 * this.masterVolume, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        rackNoise.connect(filterBack);
+        filterBack.connect(gainBack);
+        gainBack.connect(mainGain);
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(t);
-        osc.stop(t + 0.09);
+        // 2. Bolt slamming forward into chamber (battery locking click)
+        const slamNoise = this.ctx.createBufferSource();
+        slamNoise.buffer = this.createNoiseBuffer(0.12);
+        const filterForward = this.ctx.createBiquadFilter();
+        filterForward.type = 'lowpass';
+        filterForward.frequency.setValueAtTime(2000, t + 0.12);
+        const gainForward = this.ctx.createGain();
+        gainForward.gain.setValueAtTime(0, t);
+        gainForward.gain.setValueAtTime(0.4, t + 0.12);
+        gainForward.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+        slamNoise.connect(filterForward);
+        filterForward.connect(gainForward);
+        gainForward.connect(mainGain);
+
+        // Metal lock ring clink
+        const clink = this.ctx.createOscillator();
+        clink.type = 'sine';
+        clink.frequency.setValueAtTime(2400, t + 0.12);
+        const clinkGain = this.ctx.createGain();
+        clinkGain.gain.setValueAtTime(0, t);
+        clinkGain.gain.setValueAtTime(0.25, t + 0.12);
+        clinkGain.gain.exponentialRampToValueAtTime(0.001, t + 0.17);
+
+        clink.connect(clinkGain);
+        clinkGain.connect(mainGain);
+
+        mainGain.connect(this.ctx.destination);
+
+        rackNoise.start(t);
+        rackNoise.stop(t + 0.1);
+        slamNoise.start(t + 0.12);
+        slamNoise.stop(t + 0.24);
+        clink.start(t + 0.12);
+        clink.stop(t + 0.18);
     }
 
     /**
@@ -1098,11 +1173,12 @@ class SoundEngine {
      */
     playGameMusic() {
         if (typeof window === 'undefined' || typeof document === 'undefined') return;
-        if (this.currentTrack === 'game1' || this.currentTrack === 'game2') return;
+        if (this.currentTrack && this.currentTrack.startsWith('game')) return;
         this.stopMusic();
 
         // Select a track at random to rotate game music dynamically
-        const selection = Math.random() < 0.5 ? 'game1' : 'game2';
+        const tracks = ['game1', 'game2', 'game3', 'game4'];
+        const selection = tracks[Math.floor(Math.random() * tracks.length)];
         this.currentTrack = selection;
 
         let src = "";
@@ -1112,16 +1188,24 @@ class SoundEngine {
             console.log("[MUSIC] Initiating Game Music track: Ultra Lag");
             src = "background-sounds/ultra-lag.mp3";
             credits = `Ultra Lag by Alex-Productions | https://onsound.eu/ | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 3.0 https://creativecommons.org/licenses/by/3.0/`;
-        } else {
+        } else if (selection === 'game2') {
             console.log("[MUSIC] Initiating Game Music track: Thunder Unison");
             src = "background-sounds/thunder-unison.mp3";
             credits = `Thunder Unison by Keys of Moon | https://soundcloud.com/keysofmoon | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 4.0 https://creativecommons.org/licenses/by/4.0/`;
+        } else if (selection === 'game3') {
+            console.log("[MUSIC] Initiating Game Music track: Cherry Metal");
+            src = "background-sounds/cherry-metal.mp3";
+            credits = `Cherry Metal by Arthur Vyncke | https://soundcloud.com/arthurvost | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons Attribution-ShareAlike 3.0 Unported https://creativecommons.org/licenses/by-sa/3.0/deed.en_US`;
+        } else {
+            console.log("[MUSIC] Initiating Game Music track: Film");
+            src = "background-sounds/film.mp3";
+            credits = `Film by Alex-Productions | https://onsound.eu/ | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 3.0 https://creativecommons.org/licenses/by/3.0/`;
         }
 
         try {
             console.log("[MUSIC] Loading audio source: " + src);
             const audio = new Audio(src);
-            audio.volume = 0.50; // set to 50% original volume
+            audio.volume = 0.30; // set to 30% original volume
             
             audio.onended = () => {
                 console.log("[MUSIC] Game track ended. Playing next song...");
