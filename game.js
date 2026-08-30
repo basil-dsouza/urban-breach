@@ -1508,23 +1508,36 @@ function startReload() {
     isReloading = true;
     reloadTimer = reloadDuration;
     reloadPhase = 0;
-    soundEngine.playReloadMagOut();
+    if (currentWeapon.id === 'SHOTGUN') {
+        soundEngine.playShotgunShellInsert();
+    } else {
+        soundEngine.playReloadMagOut();
+    }
     uiManager.updateHUD(getHUDState());
 }
 
 function updateReload(delta) {
     if (!isReloading) return;
 
+    const prevTimer = reloadTimer;
     reloadTimer -= delta;
 
-    if (reloadTimer <= 1.2 && reloadPhase === 0) {
-        soundEngine.playReloadMagIn();
-        reloadPhase = 1;
-    }
+    if (currentWeapon.id === 'SHOTGUN') {
+        const prevCount = Math.floor(prevTimer * 2.5);
+        const currentCount = Math.floor(reloadTimer * 2.5);
+        if (currentCount < prevCount && currentCount >= 0) {
+            soundEngine.playShotgunShellInsert();
+        }
+    } else {
+        if (reloadTimer <= 1.2 && reloadPhase === 0) {
+            soundEngine.playReloadMagIn();
+            reloadPhase = 1;
+        }
 
-    if (reloadTimer <= 0.4 && reloadPhase === 1) {
-        soundEngine.playBoltRelease();
-        reloadPhase = 2;
+        if (reloadTimer <= 0.4 && reloadPhase === 1) {
+            soundEngine.playBoltRelease();
+            reloadPhase = 2;
+        }
     }
 
     if (reloadTimer <= 0) {

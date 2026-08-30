@@ -277,88 +277,111 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 1.15, t);
+        mainGain.gain.setValueAtTime(this.masterVolume * 1.5, t); // Boost gain for extra punch!
 
-        // Scatter blast noise
-        const noise = this.ctx.createBufferSource();
-        noise.loop = false;
-        noise.buffer = this.createNoiseBuffer(0.55);
+        // 1. Crisp Muzzle Crack (High-frequency noise burst)
+        const crack = this.ctx.createBufferSource();
+        crack.buffer = this.createNoiseBuffer(0.1);
+        const crackFilter = this.ctx.createBiquadFilter();
+        crackFilter.type = 'highpass';
+        crackFilter.frequency.setValueAtTime(1500, t);
+        const crackGain = this.ctx.createGain();
+        crackGain.gain.setValueAtTime(2.0, t);
+        crackGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
 
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(3200, t);
-        filter.frequency.exponentialRampToValueAtTime(150, t + 0.42);
+        crack.connect(crackFilter);
+        crackFilter.connect(crackGain);
+        crackGain.connect(mainGain);
 
-        const noiseGain = this.ctx.createGain();
-        noiseGain.gain.setValueAtTime(1.5, t);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+        // 2. Main Blast Wave (Wide white noise decay)
+        const blast = this.ctx.createBufferSource();
+        blast.buffer = this.createNoiseBuffer(0.65);
+        const blastFilter = this.ctx.createBiquadFilter();
+        blastFilter.type = 'lowpass';
+        blastFilter.frequency.setValueAtTime(2800, t);
+        blastFilter.frequency.exponentialRampToValueAtTime(80, t + 0.5);
+        const blastGain = this.ctx.createGain();
+        blastGain.gain.setValueAtTime(1.8, t);
+        blastGain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
 
-        noise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(mainGain);
+        blast.connect(blastFilter);
+        blastFilter.connect(blastGain);
+        blastGain.connect(mainGain);
 
-        // Bass thud
-        const thud = this.ctx.createOscillator();
-        const thudGain = this.ctx.createGain();
-        thud.type = 'sawtooth';
-        thud.frequency.setValueAtTime(180, t);
-        thud.frequency.exponentialRampToValueAtTime(30, t + 0.22);
+        // 3. Ultra Sub-Bass Punch (Clean low frequency sine sweep)
+        const sub = this.ctx.createOscillator();
+        sub.type = 'triangle'; // triangle is punchier than sine but cleaner than sawtooth
+        sub.frequency.setValueAtTime(130, t);
+        sub.frequency.exponentialRampToValueAtTime(15, t + 0.18);
+        const subGain = this.ctx.createGain();
+        subGain.gain.setValueAtTime(2.2, t);
+        subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
 
-        thudGain.gain.setValueAtTime(1.4, t);
-        thudGain.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+        sub.connect(subGain);
+        subGain.connect(mainGain);
 
-        thud.connect(thudGain);
-        thudGain.connect(mainGain);
+        // 4. Action Metal Resonance (Detuned mechanical clatters)
+        // High frequency mechanical ring
+        const ring1 = this.ctx.createOscillator();
+        ring1.type = 'sine';
+        ring1.frequency.setValueAtTime(1800, t);
+        const ringGain1 = this.ctx.createGain();
+        ringGain1.gain.setValueAtTime(0.15, t);
+        ringGain1.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        ring1.connect(ringGain1);
+        ringGain1.connect(mainGain);
 
-        // Metallic slide pull resonance clink
-        const metalOsc = this.ctx.createOscillator();
-        const metalGain = this.ctx.createGain();
-        metalOsc.type = 'sine';
-        metalOsc.frequency.setValueAtTime(2400, t);
-        metalGain.gain.setValueAtTime(0.18, t);
-        metalGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-        metalOsc.connect(metalGain);
-        metalGain.connect(mainGain);
+        // Mid frequency mechanical slam
+        const ring2 = this.ctx.createOscillator();
+        ring2.type = 'triangle';
+        ring2.frequency.setValueAtTime(650, t);
+        const ringGain2 = this.ctx.createGain();
+        ringGain2.gain.setValueAtTime(0.25, t);
+        ringGain2.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        ring2.connect(ringGain2);
+        ringGain2.connect(mainGain);
 
-        // Reverb Tail
-        const reverbTail = this.ctx.createBufferSource();
-        reverbTail.loop = false;
-        reverbTail.buffer = this.createNoiseBuffer(0.8);
+        // 5. Environmental Reverb Tail
+        const reverb = this.ctx.createBufferSource();
+        reverb.buffer = this.createNoiseBuffer(1.2);
         const reverbFilter = this.ctx.createBiquadFilter();
-        reverbFilter.type = 'lowpass';
-        reverbFilter.frequency.setValueAtTime(900, t);
-        reverbFilter.frequency.exponentialRampToValueAtTime(60, t + 0.7);
-
+        reverbFilter.type = 'bandpass';
+        reverbFilter.frequency.setValueAtTime(350, t);
+        reverbFilter.frequency.exponentialRampToValueAtTime(90, t + 1.0);
         const reverbGain = this.ctx.createGain();
-        reverbGain.gain.setValueAtTime(0.25, t);
-        reverbGain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+        reverbGain.gain.setValueAtTime(0.35, t);
+        reverbGain.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
 
-        reverbTail.connect(reverbFilter);
+        reverb.connect(reverbFilter);
         reverbFilter.connect(reverbGain);
         reverbGain.connect(mainGain);
 
-        // Routing
+        // Routing & Compression
         const comp = this.ctx.createDynamicsCompressor();
-        comp.threshold.setValueAtTime(-12, t);
-        comp.knee.setValueAtTime(15, t);
-        comp.ratio.setValueAtTime(18, t);
+        comp.threshold.setValueAtTime(-18, t);
+        comp.knee.setValueAtTime(10, t);
+        comp.ratio.setValueAtTime(20, t);
         comp.attack.setValueAtTime(0.001, t);
-        comp.release.setValueAtTime(0.14, t);
+        comp.release.setValueAtTime(0.18, t);
 
-        const dist = this.createDistortion(0.95);
+        const distortion = this.createDistortion(0.25); // Lower distortion for clean chest hit!
 
         mainGain.connect(comp);
-        comp.connect(dist);
-        dist.connect(this.ctx.destination);
+        comp.connect(distortion);
+        distortion.connect(this.ctx.destination);
 
-        noise.start(t);
-        noise.stop(t + 0.55);
-        thud.start(t);
-        thud.stop(t + 0.26);
-        metalOsc.start(t);
-        metalOsc.stop(t + 0.12);
-        reverbTail.start(t);
-        reverbTail.stop(t + 0.8);
+        crack.start(t);
+        crack.stop(t + 0.1);
+        blast.start(t);
+        blast.stop(t + 0.65);
+        sub.start(t);
+        sub.stop(t + 0.22);
+        ring1.start(t);
+        ring1.stop(t + 0.15);
+        ring2.start(t);
+        ring2.stop(t + 0.18);
+        reverb.start(t);
+        reverb.stop(t + 1.25);
     }
 
     playShotgunPump() {
@@ -368,36 +391,141 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 0.8, t);
+        mainGain.gain.setValueAtTime(this.masterVolume * 0.95, t);
 
-        // Slide back (metallic shhhk)
-        const slideBack = this.ctx.createOscillator();
-        const slideBackGain = this.ctx.createGain();
-        slideBack.type = 'triangle';
-        slideBack.frequency.setValueAtTime(800, t);
-        slideBack.frequency.linearRampToValueAtTime(400, t + 0.18);
-        slideBackGain.gain.setValueAtTime(0.5, t);
-        slideBackGain.gain.linearRampToValueAtTime(0.001, t + 0.18);
-        slideBack.connect(slideBackGain);
-        slideBackGain.connect(mainGain);
+        // --- PART 1: Slide Back (t to t + 0.2s) ---
+        // Friction slide noise
+        const slideBackNoise = this.ctx.createBufferSource();
+        slideBackNoise.buffer = this.createNoiseBuffer(0.16);
+        const filterBack = this.ctx.createBiquadFilter();
+        filterBack.type = 'bandpass';
+        filterBack.frequency.setValueAtTime(1400, t);
+        filterBack.Q.setValueAtTime(4, t);
+        const gainBackNoise = this.ctx.createGain();
+        gainBackNoise.gain.setValueAtTime(0.35, t);
+        gainBackNoise.gain.linearRampToValueAtTime(0.001, t + 0.16);
 
-        // Slide forward (metallic clack)
-        const slideForward = this.ctx.createOscillator();
-        const slideForwardGain = this.ctx.createGain();
-        slideForward.type = 'sine';
-        slideForward.frequency.setValueAtTime(1200, t + 0.22);
-        slideForward.frequency.linearRampToValueAtTime(900, t + 0.35);
-        slideForwardGain.gain.setValueAtTime(0.6, t + 0.22);
-        slideForwardGain.gain.linearRampToValueAtTime(0.001, t + 0.35);
-        slideForward.connect(slideForwardGain);
-        slideForwardGain.connect(mainGain);
+        slideBackNoise.connect(filterBack);
+        filterBack.connect(gainBackNoise);
+        gainBackNoise.connect(mainGain);
+
+        // Action opening metallic rattle
+        const metalBack = this.ctx.createOscillator();
+        metalBack.type = 'triangle';
+        metalBack.frequency.setValueAtTime(600, t);
+        metalBack.frequency.linearRampToValueAtTime(350, t + 0.14);
+        const gainBackMetal = this.ctx.createGain();
+        gainBackMetal.gain.setValueAtTime(0.22, t);
+        gainBackMetal.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+
+        metalBack.connect(gainBackMetal);
+        gainBackMetal.connect(mainGain);
+
+        // --- PART 2: Slide Forward (t + 0.22s to t + 0.38s) ---
+        // Slam noise
+        const slideForwardNoise = this.ctx.createBufferSource();
+        slideForwardNoise.buffer = this.createNoiseBuffer(0.14);
+        const filterForward = this.ctx.createBiquadFilter();
+        filterForward.type = 'lowpass';
+        filterForward.frequency.setValueAtTime(1600, t + 0.22);
+        const gainForwardNoise = this.ctx.createGain();
+        gainForwardNoise.gain.setValueAtTime(0, t);
+        gainForwardNoise.gain.setValueAtTime(0.45, t + 0.22);
+        gainForwardNoise.gain.linearRampToValueAtTime(0.001, t + 0.36);
+
+        slideForwardNoise.connect(filterForward);
+        filterForward.connect(gainForwardNoise);
+        gainForwardNoise.connect(mainGain);
+
+        // High mechanical lock click
+        const clickHigh = this.ctx.createOscillator();
+        clickHigh.type = 'sine';
+        clickHigh.frequency.setValueAtTime(2800, t + 0.22);
+        const gainClickHigh = this.ctx.createGain();
+        gainClickHigh.gain.setValueAtTime(0, t);
+        gainClickHigh.gain.setValueAtTime(0.28, t + 0.22);
+        gainClickHigh.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+
+        clickHigh.connect(gainClickHigh);
+        gainClickHigh.connect(mainGain);
+
+        // Low action lock thud
+        const clickLow = this.ctx.createOscillator();
+        clickLow.type = 'triangle';
+        clickLow.frequency.setValueAtTime(800, t + 0.24);
+        clickLow.frequency.exponentialRampToValueAtTime(200, t + 0.34);
+        const gainClickLow = this.ctx.createGain();
+        gainClickLow.gain.setValueAtTime(0, t);
+        gainClickLow.gain.setValueAtTime(0.5, t + 0.24);
+        gainClickLow.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+
+        clickLow.connect(gainClickLow);
+        gainClickLow.connect(mainGain);
 
         mainGain.connect(this.ctx.destination);
 
-        slideBack.start(t);
-        slideBack.stop(t + 0.2);
-        slideForward.start(t + 0.22);
-        slideForward.stop(t + 0.37);
+        // Start source nodes
+        slideBackNoise.start(t);
+        slideBackNoise.stop(t + 0.17);
+        metalBack.start(t);
+        metalBack.stop(t + 0.15);
+
+        slideForwardNoise.start(t + 0.22);
+        slideForwardNoise.stop(t + 0.37);
+        clickHigh.start(t + 0.22);
+        clickHigh.stop(t + 0.29);
+        clickLow.start(t + 0.24);
+        clickLow.stop(t + 0.35);
+    }
+
+    /**
+     * Mechanical clink and spring latch shove for inserting shotgun shells
+     */
+    playShotgunShellInsert() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.setValueAtTime(this.masterVolume * 0.75, t);
+
+        // Friction noise (shuffling the shell shell in)
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer(0.15);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1100, t);
+        filter.Q.setValueAtTime(3.5, t);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.35, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(mainGain);
+
+        // Click / latch lock (metal gate click)
+        const clickOsc = this.ctx.createOscillator();
+        const clickGain = this.ctx.createGain();
+        clickOsc.type = 'triangle';
+        clickOsc.frequency.setValueAtTime(1400, t + 0.07);
+        clickOsc.frequency.exponentialRampToValueAtTime(650, t + 0.12);
+
+        clickGain.gain.setValueAtTime(0, t);
+        clickGain.gain.setValueAtTime(0.55, t + 0.07);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+        clickOsc.connect(clickGain);
+        clickGain.connect(mainGain);
+
+        mainGain.connect(this.ctx.destination);
+
+        noise.start(t);
+        noise.stop(t + 0.15);
+        clickOsc.start(t + 0.07);
+        clickOsc.stop(t + 0.13);
     }
 
     /**
