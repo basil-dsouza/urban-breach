@@ -27,6 +27,7 @@ body {
     z-index: 100;
     pointer-events: auto;
     padding: 24px;
+    overflow-y: auto;
 }
 
 .game-logo {
