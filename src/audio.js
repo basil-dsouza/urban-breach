@@ -991,18 +991,22 @@ class SoundEngine {
         }
 
         try {
+            console.log("[MUSIC] Loading audio source: " + src);
             const audio = new Audio(src);
             audio.volume = 0.50; // set to 50% original volume
             
             audio.onended = () => {
+                console.log("[MUSIC] Game track ended. Playing next song...");
                 this.currentTrack = '';
                 this.playGameMusic(); // Loop/swap to next game track on completion
             };
 
             this.currentMusic = audio;
-            audio.play().catch(err => console.warn("[MUSIC] Autoplay blocked or failed:", err));
+            audio.play()
+                .then(() => console.log("[MUSIC] Game music playback started successfully for: " + src))
+                .catch(err => console.error("[MUSIC] Game music playback promise rejected:", err));
         } catch (e) {
-            console.warn("[MUSIC] HTML5 Audio constructor error:", e);
+            console.error("[MUSIC] HTML5 Audio constructor error:", e);
         }
 
         this.showCreditsBanner(credits);
