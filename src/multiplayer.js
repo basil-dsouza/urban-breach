@@ -3,6 +3,24 @@ import { soundEngine } from './audio.js';
 import { EnemyManager } from './enemies.js';
 import { ManualConnection } from './manual-webrtc.js';
 
+// Pre-created static materials & geometries for remote replication
+const sniperTracerMat = new THREE.MeshBasicMaterial({
+    color: 0xffbb00,
+    transparent: true,
+    opacity: 0.8
+});
+const defaultTracerMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.8
+});
+const tracerGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.8, 4);
+
+const remoteGrenadeGeo = new THREE.SphereGeometry(0.18, 12, 12);
+const remoteGrenadeMat = new THREE.MeshStandardMaterial({ color: 0x22262a, metalness: 0.85, roughness: 0.3 });
+const remoteExplosionGeo = new THREE.SphereGeometry(3.5, 16, 16);
+const remoteExplosionMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.85 });
+
 export class MultiplayerManager {
     constructor(scene, camera) {
         this.scene = scene;
@@ -37,6 +55,22 @@ export class MultiplayerManager {
         // Network update throttling
         this.lastStateSend = 0;
         this.sendInterval = 0.045; // ~22 sends per second
+
+        // High-Performance Remote Tracer Pool
+        this.tracerPool = [];
+        this.tracerPoolIndex = 0;
+        this.TRACER_POOL_SIZE = 128;
+        for (let i = 0; i < this.TRACER_POOL_SIZE; i++) {
+            const mesh = new THREE.Mesh(tracerGeo, defaultTracerMat);
+            mesh.visible = false;
+            this.scene.add(mesh);
+            this.tracerPool.push({
+                mesh,
+                direction: new THREE.Vector3(),
+                speed: 0,
+                life: 0
+            });
+        }
     }
 
     initHost(nickname, gameMode, onReadyCallback) {
@@ -156,7 +190,7 @@ export class MultiplayerManager {
 
         this.peer.on('open', myId => {
             console.log(`Client PeerJS initialized with ID: ${myId}`);
-            const conn = this.peer.connect(this.roomCode);
+            const conn = this.peer.connect(this.roomCode, { reliable: false });
             this.hostConnection = conn;
 
             conn.on('open', () => {
@@ -711,6 +745,22 @@ export class MultiplayerManager {
     }
 
     update(delta) {
+        // Update remote bullet tracers in pool
+        if (this.tracerPool) {
+            for (let i = 0; i < this.TRACER_POOL_SIZE; i++) {
+                const tracer = this.tracerPool[i];
+                if (tracer.mesh.visible) {
+                    tracer.mesh.position.add(
+                        tracer.direction.clone().multiplyScalar(tracer.speed * delta)
+                    );
+                    tracer.life -= delta;
+                    if (tracer.life <= 0) {
+                        tracer.mesh.visible = false;
+                    }
+                }
+            }
+        }
+
         if (!this.isMultiplayer) return;
 
         // Perform client-side interpolation of remote players
@@ -1020,48 +1070,28 @@ export class MultiplayerManager {
             if (Math.random() < 0.3) soundEngine.playShellCasingDrop();
         }
 
-        // Spawn visual bullet tracer
-        const bulletMat = new THREE.MeshBasicMaterial({
-            color: weaponKey === 'SNIPER' ? 0xffbb00 : 0xffffff,
-            transparent: true,
-            opacity: 0.8
-        });
+        // Get tracer from pool
+        const tracerObj = this.tracerPool[this.tracerPoolIndex];
+        this.tracerPoolIndex = (this.tracerPoolIndex + 1) % this.TRACER_POOL_SIZE;
 
         const bulletDir = new THREE.Vector3(direction.x, direction.y, direction.z).normalize();
-        const tracerGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.8, 4);
-        const tracer = new THREE.Mesh(tracerGeo, bulletMat);
 
         // Position tracer along the raycast trajectory path
-        tracer.position.copy(shooterPos).add(bulletDir.clone().multiplyScalar(0.9));
-        tracer.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bulletDir);
+        tracerObj.mesh.material = weaponKey === 'SNIPER' ? sniperTracerMat : defaultTracerMat;
+        tracerObj.mesh.position.copy(shooterPos).add(bulletDir.clone().multiplyScalar(0.9));
+        tracerObj.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bulletDir);
+        tracerObj.mesh.visible = true;
 
-        this.scene.add(tracer);
-
-        // Animate tracer forward
-        const speed = weaponKey === 'SNIPER' ? 240 : 160;
-        let life = 0.45;
-
-        const updateTracer = () => {
-            if (life <= 0) {
-                this.scene.remove(tracer);
-                tracerGeo.dispose();
-                bulletMat.dispose();
-            } else {
-                tracer.position.add(bulletDir.clone().multiplyScalar(speed * 0.016));
-                life -= 0.016;
-                requestAnimationFrame(updateTracer);
-            }
-        };
-        updateTracer();
+        tracerObj.direction.copy(bulletDir);
+        tracerObj.speed = weaponKey === 'SNIPER' ? 240 : 160;
+        tracerObj.life = 0.45;
     }
 
     spawnRemoteGrenade(peerId, pos, velocity) {
         console.log(`Replicating grenade throw from peer: ${peerId}`);
         soundEngine.playGrenadeBounce();
 
-        const grenadeGeo = new THREE.SphereGeometry(0.18, 12, 12);
-        const grenadeMat = new THREE.MeshStandardMaterial({ color: 0x22262a, metalness: 0.85, roughness: 0.3 });
-        const grenadeMesh = new THREE.Mesh(grenadeGeo, grenadeMat);
+        const grenadeMesh = new THREE.Mesh(remoteGrenadeGeo, remoteGrenadeMat);
         grenadeMesh.position.set(pos.x, pos.y, pos.z);
         this.scene.add(grenadeMesh);
 
@@ -1073,20 +1103,14 @@ export class MultiplayerManager {
         const updateGrenade = () => {
             if (life <= 0) {
                 this.scene.remove(grenadeMesh);
-                grenadeGeo.dispose();
-                grenadeMat.dispose();
 
                 // Trigger client explosion effect locally
                 soundEngine.playGrenadeExplosion();
-                const flashGeo = new THREE.SphereGeometry(3.5, 16, 16);
-                const flashMat = new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.85 });
-                const flash = new THREE.Mesh(flashGeo, flashMat);
+                const flash = new THREE.Mesh(remoteExplosionGeo, remoteExplosionMat);
                 flash.position.copy(localPos);
                 this.scene.add(flash);
                 setTimeout(() => {
                     this.scene.remove(flash);
-                    flashGeo.dispose();
-                    flashMat.dispose();
                 }, 180);
             } else {
                 localVel.y -= 9.8 * 0.016 * 1.5; // Custom gravity match

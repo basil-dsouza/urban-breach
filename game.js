@@ -56,9 +56,37 @@ const trees = [];
 const stealthBushes = [];
 const obstacles = [];
 const ladders = [];
-const bullets = [];
-const bulletHoles = [];
 const activeGrenades = [];
+
+// High-Performance Object Pools & Static Caching Globals
+const staticRaycastTargets = [];
+const shootRaycaster = new THREE.Raycaster();
+const centerScreenVec = new THREE.Vector2(0, 0);
+const targetMap = new Map();
+
+// Pre-created geometries and materials
+const defaultBulletGeo = new THREE.SphereGeometry(0.045, 8, 8);
+const sniperBulletGeo = new THREE.SphereGeometry(0.09, 8, 8);
+const hitFlashGeo = new THREE.SphereGeometry(0.16, 8, 8);
+const bulletHoleGeo = new THREE.CircleGeometry(0.08, 8);
+const bulletHoleMat = new THREE.MeshBasicMaterial({
+    color: 0x111111,
+    side: THREE.DoubleSide,
+    depthWrite: false
+});
+
+// Object Pools Configuration
+const BULLET_POOL_SIZE = 128;
+const bulletPool = [];
+let bulletPoolIndex = 0;
+
+const FLASH_POOL_SIZE = 32;
+const flashPool = [];
+let flashPoolIndex = 0;
+
+const HOLE_POOL_SIZE = 128;
+const holePool = [];
+let holePoolIndex = 0;
 
 const groundMat = new THREE.MeshStandardMaterial({ color: 0x47693e, roughness: 1 });
 const roadMat = new THREE.MeshStandardMaterial({ color: 0x24282c, roughness: 0.92 });
@@ -80,6 +108,36 @@ const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), groundMat);
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
+staticRaycastTargets.push(ground);
+
+// Initialize Pools
+function initObjectPools() {
+    for (let i = 0; i < BULLET_POOL_SIZE; i++) {
+        const mesh = new THREE.Mesh(defaultBulletGeo, bulletMat);
+        mesh.name = 'bullet';
+        mesh.visible = false;
+        mesh.userData.isBullet = true;
+        scene.add(mesh);
+        bulletPool.push(mesh);
+    }
+
+    for (let i = 0; i < FLASH_POOL_SIZE; i++) {
+        const mesh = new THREE.Mesh(hitFlashGeo, new THREE.MeshBasicMaterial({ color: 0xff3300 }));
+        mesh.name = 'hit-flash';
+        mesh.visible = false;
+        scene.add(mesh);
+        flashPool.push(mesh);
+    }
+
+    for (let i = 0; i < HOLE_POOL_SIZE; i++) {
+        const mesh = new THREE.Mesh(bulletHoleGeo, bulletHoleMat);
+        mesh.name = 'bullet-hole';
+        mesh.visible = false;
+        scene.add(mesh);
+        holePool.push(mesh);
+    }
+}
+initObjectPools();
 
 // 5. Multi-Lane Road System with Clean Non-Intersecting Markings
 function makeRoad(x, z, width, length, rotation = 0) {
@@ -147,6 +205,7 @@ function makeRoad(x, z, width, length, rotation = 0) {
     }
 
     scene.add(roadGroup);
+    staticRaycastTargets.push(roadGroup);
 }
 
 // Build Grand Road Grid
@@ -368,6 +427,7 @@ function createBuilding({ x, z, width, depth, height, style = 'flat' }) {
     }
 
     scene.add(group);
+    staticRaycastTargets.push(group);
 }
 
 // Generate Massive Urban Grid (Downtown High-Rises & Residential Slanted-Roof Houses)
@@ -560,6 +620,7 @@ function createDiverseTree(x, z, species = 0) {
 
     trees.push(group);
     scene.add(group);
+    staticRaycastTargets.push(group);
 }
 
 // Plant Stealth Foliage Bushes (Allows player to hide in foliage)
@@ -641,6 +702,7 @@ function createLadder(x, z, buildingHeight, rotY = 0, building = null) {
     });
 
     scene.add(group);
+    staticRaycastTargets.push(group);
 }
 
 for (const b of buildings) {
@@ -1475,17 +1537,16 @@ document.addEventListener('contextmenu', e => e.preventDefault());
 // 16.5. Center-Screen Raycasting Hitscan Helper
 function performShootRaycast(bulletDir) {
     camera.updateMatrixWorld();
-    const raycaster = new THREE.Raycaster();
     
     // Bind raycaster to center-screen (0, 0)
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-    raycaster.camera = camera;
+    shootRaycaster.setFromCamera(centerScreenVec, camera);
+    shootRaycaster.camera = camera;
     
     // Apply calculated weapon spread to the ray direction
-    raycaster.ray.direction.copy(bulletDir).normalize();
+    shootRaycaster.ray.direction.copy(bulletDir).normalize();
 
-    const targets = [];
-    const targetMap = new Map();
+    const targets = [...staticRaycastTargets];
+    targetMap.clear();
 
     // 1. Enemies
     for (const enemy of enemyManager.enemies) {
@@ -1510,25 +1571,7 @@ function performShootRaycast(bulletDir) {
         }
     }
 
-    // 4. Solid Obstacles
-    const obstaclesInScene = scene.children.filter(c => 
-        c !== muzzleFlashLight && 
-        !c.isCamera && 
-        !c.isLight && 
-        c.isMesh && 
-        !c.isSprite &&
-        c.type !== 'Sprite' &&
-        !c.userData?.isMedkit &&
-        !c.userData?.isBullet
-    );
-    for (const obj of obstaclesInScene) {
-        if (!targets.includes(obj)) {
-            targets.push(obj);
-            targetMap.set(obj, { type: 'obstacle', object: obj });
-        }
-    }
-
-    const hits = raycaster.intersectObjects(targets, true);
+    const hits = shootRaycaster.intersectObjects(targets, true);
     if (hits.length > 0) {
         const firstHit = hits[0];
         
@@ -1680,56 +1723,46 @@ function shoot() {
     }
 
     // Spawn cosmetic tracer bullet
-    const bullet = new THREE.Mesh(
-        new THREE.SphereGeometry(currentWeapon.id === 'SNIPER' ? 0.09 : 0.045, 8, 8),
-        bulletMat
-    );
-    bullet.name = 'bullet';
-    bullet.userData.isBullet = true;
+    const bullet = bulletPool[bulletPoolIndex];
+    bulletPoolIndex = (bulletPoolIndex + 1) % BULLET_POOL_SIZE;
+
+    bullet.geometry = currentWeapon.id === 'SNIPER' ? sniperBulletGeo : defaultBulletGeo;
     bullet.position.copy(camera.position);
+    bullet.visible = true;
 
     const bulletSpeed = currentWeapon.id === 'SNIPER' ? 340 : 175;
     bullet.userData.velocity = bulletDir.clone().multiplyScalar(bulletSpeed);
     bullet.userData.life = hitData.hit ? (hitData.distance / bulletSpeed) : 2.5;
-
-    scene.add(bullet);
-    bullets.push(bullet);
 
     if (multiplayerManager.isMultiplayer) {
         multiplayerManager.sendLocalShoot(camera.position, bulletDir, currentWeapon.id);
     }
 
     muzzleFlashLight.intensity = currentWeapon.id === 'SNIPER' ? 16 : 8;
-    setTimeout(() => { muzzleFlashLight.intensity = 0; }, 40);
+    muzzleFlashLight.userData.timer = 0.04;
 
     gunRecoil = aiming ? currentWeapon.recoilKick * 0.35 : currentWeapon.recoilKick;
 }
 
 // 18. Bullet Holes & Impacts
 function createBulletHole(position, normal) {
-    const hole = new THREE.Mesh(
-        new THREE.CircleGeometry(0.08, 8),
-        new THREE.MeshBasicMaterial({
-            color: 0x111111,
-            side: THREE.DoubleSide,
-            depthWrite: false
-        })
-    );
+    const hole = holePool[holePoolIndex];
+    holePoolIndex = (holePoolIndex + 1) % HOLE_POOL_SIZE;
+
     hole.position.copy(position).add(normal.clone().multiplyScalar(0.015));
     hole.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
-
-    scene.add(hole);
-    bulletHoles.push({ mesh: hole, life: 40 });
+    hole.visible = true;
+    hole.userData.life = 40.0;
 }
 
 function createHitEffect(position, color = 0xff3300) {
-    const flash = new THREE.Mesh(
-        new THREE.SphereGeometry(0.16, 8, 8),
-        new THREE.MeshBasicMaterial({ color })
-    );
+    const flash = flashPool[flashPoolIndex];
+    flashPoolIndex = (flashPoolIndex + 1) % FLASH_POOL_SIZE;
+
+    flash.material.color.setHex(color);
     flash.position.copy(position);
-    scene.add(flash);
-    setTimeout(() => scene.remove(flash), 90);
+    flash.visible = true;
+    flash.userData.life = 0.09;
 }
 
 // 19. Grenades System (Capped at 5, Replenishes every 5s)
@@ -2114,16 +2147,16 @@ function updateWaves(delta) {
 
 // 23. Bullets Update Loop
 function updateBullets(delta) {
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        const bullet = bullets[i];
-        bullet.position.add(
-            bullet.userData.velocity.clone().multiplyScalar(delta)
-        );
-
-        bullet.userData.life -= delta;
-        if (bullet.userData.life <= 0) {
-            scene.remove(bullet);
-            bullets.splice(i, 1);
+    for (let i = 0; i < BULLET_POOL_SIZE; i++) {
+        const bullet = bulletPool[i];
+        if (bullet.visible) {
+            bullet.position.add(
+                bullet.userData.velocity.clone().multiplyScalar(delta)
+            );
+            bullet.userData.life -= delta;
+            if (bullet.userData.life <= 0) {
+                bullet.visible = false;
+            }
         }
     }
 }
@@ -2155,11 +2188,32 @@ function updateActiveGrenades(delta) {
 
 // 25. Bullet Holes Cleanup
 function updateBulletHoles(delta) {
-    for (let i = bulletHoles.length - 1; i >= 0; i--) {
-        bulletHoles[i].life -= delta;
-        if (bulletHoles[i].life <= 0) {
-            scene.remove(bulletHoles[i].mesh);
-            bulletHoles.splice(i, 1);
+    for (let i = 0; i < HOLE_POOL_SIZE; i++) {
+        const hole = holePool[i];
+        if (hole.visible) {
+            hole.userData.life -= delta;
+            if (hole.userData.life <= 0) {
+                hole.visible = false;
+            }
+        }
+    }
+
+    // Update Hit Flashes in Pool
+    for (let i = 0; i < FLASH_POOL_SIZE; i++) {
+        const flash = flashPool[i];
+        if (flash.visible) {
+            flash.userData.life -= delta;
+            if (flash.userData.life <= 0) {
+                flash.visible = false;
+            }
+        }
+    }
+
+    // Update Muzzle Flash Light Timer
+    if (muzzleFlashLight && muzzleFlashLight.userData.timer > 0) {
+        muzzleFlashLight.userData.timer -= delta;
+        if (muzzleFlashLight.userData.timer <= 0) {
+            muzzleFlashLight.intensity = 0;
         }
     }
 }
