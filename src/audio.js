@@ -8,6 +8,10 @@ class SoundEngine {
         this.ctx = null;
         this.masterVolume = 0.65;
         this.initialized = false;
+        
+        // Background Music track state properties
+        this.currentMusic = null;
+        this.currentTrack = '';
     }
 
     init() {
@@ -21,6 +25,9 @@ class SoundEngine {
         } catch (e) {
             console.warn('Web Audio API not supported', e);
         }
+        
+        // Trigger menu music play on first user interaction
+        this.playMenuMusic();
     }
 
     resume() {
@@ -931,6 +938,122 @@ class SoundEngine {
         gain.connect(this.ctx.destination);
         osc.start(t);
         osc.stop(t + 0.05);
+    }
+
+    /**
+     * Start playing menu background music
+     */
+    playMenuMusic() {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        if (this.currentTrack === 'menu') return;
+        this.stopMusic();
+
+        console.log("[MUSIC] Initiating Menu Music...");
+        this.currentTrack = 'menu';
+        
+        try {
+            const audio = new Audio("Background Sounds/alexander-nakarada-superepic(chosic.com) (1).mp3");
+            audio.volume = 0.50; // set to 50% original volume
+            audio.loop = true;
+            
+            this.currentMusic = audio;
+            audio.play().catch(err => console.warn("[MUSIC] Autoplay blocked or failed:", err));
+        } catch (e) {
+            console.warn("[MUSIC] HTML5 Audio constructor error:", e);
+        }
+
+        this.showCreditsBanner(`Superepic by Alexander Nakarada | https://creatorchords.com/ | Music promoted by https://www.chosic.com/free-music/all/ | Attribution 4.0 International (CC BY 4.0) https://creativecommons.org/licenses/by/4.0/`);
+    }
+
+    /**
+     * Start playing gameplay background music
+     */
+    playGameMusic() {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        if (this.currentTrack === 'game1' || this.currentTrack === 'game2') return;
+        this.stopMusic();
+
+        // Select a track at random to rotate game music dynamically
+        const selection = Math.random() < 0.5 ? 'game1' : 'game2';
+        this.currentTrack = selection;
+
+        let src = "";
+        let credits = "";
+
+        if (selection === 'game1') {
+            console.log("[MUSIC] Initiating Game Music track: Ultra Lag");
+            src = "Background Sounds/Ultra-Lag-chosic.com_.mp3";
+            credits = `Ultra Lag by Alex-Productions | https://onsound.eu/ | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 3.0 https://creativecommons.org/licenses/by/3.0/`;
+        } else {
+            console.log("[MUSIC] Initiating Game Music track: Thunder Unison");
+            src = "Background Sounds/Thunder-Unison-Action-Dramatic-Epic-Music-chosic.com_ (1).mp3";
+            credits = `Thunder Unison by Keys of Moon | https://soundcloud.com/keysofmoon | Music promoted by https://www.chosic.com/free-music/all/ | Creative Commons CC BY 4.0 https://creativecommons.org/licenses/by/4.0/`;
+        }
+
+        try {
+            const audio = new Audio(src);
+            audio.volume = 0.50; // set to 50% original volume
+            
+            audio.onended = () => {
+                this.currentTrack = '';
+                this.playGameMusic(); // Loop/swap to next game track on completion
+            };
+
+            this.currentMusic = audio;
+            audio.play().catch(err => console.warn("[MUSIC] Autoplay blocked or failed:", err));
+        } catch (e) {
+            console.warn("[MUSIC] HTML5 Audio constructor error:", e);
+        }
+
+        this.showCreditsBanner(credits);
+    }
+
+    /**
+     * Terminate active music stream and clear banner display
+     */
+    stopMusic() {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        if (this.currentMusic) {
+            try {
+                this.currentMusic.pause();
+            } catch (e) {}
+            this.currentMusic.onended = null;
+            this.currentMusic = null;
+        }
+        this.currentTrack = '';
+        this.hideCreditsBanner();
+    }
+
+    /**
+     * Display scrolling credits marquee ticker on starting/gameplay overlays
+     */
+    showCreditsBanner(text) {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        let banner = document.getElementById('music-credits-banner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'music-credits-banner';
+            banner.className = 'music-credits-banner';
+            banner.innerHTML = `<div id="music-credits-text" class="music-credits-text"></div>`;
+            document.body.appendChild(banner);
+        }
+
+        const textEl = banner.querySelector('#music-credits-text');
+        if (textEl) {
+            textEl.textContent = `${text}       ★       ${text}       ★       ${text}`;
+        }
+        banner.style.display = 'block';
+    }
+
+    /**
+     * Remove credits banner from viewport
+     */
+    hideCreditsBanner() {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        const banner = document.getElementById('music-credits-banner');
+        if (banner) {
+            banner.style.display = 'none';
+        }
     }
 }
 

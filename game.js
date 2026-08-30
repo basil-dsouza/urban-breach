@@ -1306,6 +1306,7 @@ const uiManager = new UIManager({
             spawnWave(selectedDifficulty);
         }
         uiManager.updateHUD(getHUDState());
+        soundEngine.playGameMusic();
     },
     onRestart: () => {
         location.reload();
@@ -2313,6 +2314,7 @@ function damagePlayer(amount, source = 'generic') {
         gameStarted = false;
         if (document.pointerLockElement) document.exitPointerLock();
         uiManager.showGameOver({ kills, wave, difficulty: getDifficulty() });
+        soundEngine.stopMusic();
     }
 }
 
