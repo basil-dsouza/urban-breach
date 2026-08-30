@@ -70,9 +70,12 @@ const sniperBulletGeo = new THREE.SphereGeometry(0.09, 8, 8);
 const hitFlashGeo = new THREE.SphereGeometry(0.16, 8, 8);
 const bulletHoleGeo = new THREE.CircleGeometry(0.08, 8);
 const bulletHoleMat = new THREE.MeshBasicMaterial({
-    color: 0x111111,
+    color: 0x1a1a1a,
     side: THREE.DoubleSide,
-    depthWrite: false
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -1.0,
+    polygonOffsetUnits: -4.0
 });
 
 // Object Pools Configuration
@@ -1859,10 +1862,11 @@ function shoot() {
                     playerHits.set(hitData.peerId, (playerHits.get(hitData.peerId) || 0) + currentWeapon.damage);
                 }
             } else if (hitData.type === 'obstacle') {
-                createBulletHole(
-                    hitData.point,
-                    hitData.face ? hitData.face.normal.clone() : new THREE.Vector3(0, 1, 0)
-                );
+                let worldNormal = new THREE.Vector3(0, 1, 0);
+                if (hitData.face && hitData.object) {
+                    worldNormal.copy(hitData.face.normal).transformDirection(hitData.object.matrixWorld);
+                }
+                createBulletHole(hitData.point, worldNormal);
             }
         }
 
@@ -1957,7 +1961,7 @@ function createBulletHole(position, normal) {
     const hole = holePool[holePoolIndex];
     holePoolIndex = (holePoolIndex + 1) % HOLE_POOL_SIZE;
 
-    hole.position.copy(position).add(normal.clone().multiplyScalar(0.015));
+    hole.position.copy(position).add(normal.clone().multiplyScalar(0.02));
     hole.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
     hole.visible = true;
     hole.userData.life = 40.0;
