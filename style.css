@@ -971,7 +971,7 @@ body {
    ========================================================= */
 
 #chat-box, .hud-chat-panel {
-    position: absolute;
+    position: fixed;
     bottom: 24px;
     left: 24px;
     width: 340px;

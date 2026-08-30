@@ -1611,7 +1611,12 @@ window.addEventListener('keydown', e => {
         return;
     }
 
-    if ((e.code === 'Enter' || e.code === 'KeyT') && chatPanel && (multiplayerManager.isMultiplayer || gameStarted)) {
+    // Prevent opening chat if player is typing in another input field (e.g. host code)
+    if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') && document.activeElement !== chatInput) {
+        return;
+    }
+
+    if ((e.code === 'Enter' || e.code === 'KeyT') && chatPanel) {
         e.preventDefault();
         if (chatInput) {
             console.log("[CHAT] Key pressed to open chat input.");
