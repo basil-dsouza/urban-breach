@@ -1015,14 +1015,31 @@ function applyWeaponModel(weaponKey = 'AK47') {
         barrel.position.set(0, 0.054, -0.48);
         gunGroup.add(barrel);
 
-        // Raised Receiver Sighting Channel (Left and Right Ridges to break flat profile)
-        const leftRidge = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.012, 0.46), matReceiver);
-        leftRidge.position.set(-0.028, 0.076, 0.02);
-        gunGroup.add(leftRidge);
+        // Picatinny Rail on top of Receiver
+        const picatinnyBase = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.016, 0.32), matReceiver);
+        picatinnyBase.position.set(0, 0.078, 0.02);
+        gunGroup.add(picatinnyBase);
 
-        const rightRidge = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.012, 0.46), matReceiver);
-        rightRidge.position.set(0.028, 0.076, 0.02);
-        gunGroup.add(rightRidge);
+        // Machined cross slots for the rail
+        for (let rz = -0.12; rz <= 0.16; rz += 0.04) {
+            const slot = new THREE.Mesh(new THREE.BoxGeometry(0.046, 0.008, 0.018), matSteelDark);
+            slot.position.set(0, 0.086, rz);
+            gunGroup.add(slot);
+        }
+
+        // Tactical Rear Orientation Sights (Ghost Ring Sight on Picatinny)
+        const rearSightBlock = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.028, 0.02), matSteelDark);
+        rearSightBlock.position.set(0, 0.098, 0.12);
+        gunGroup.add(rearSightBlock);
+
+        // Green fiber-optic dots on rear sight block for visual alignment reference
+        const greenMat = new THREE.MeshBasicMaterial({ color: 0x33ff33 });
+        for (const side of [-1, 1]) {
+            const dot = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.008, 6), greenMat);
+            dot.rotation.x = Math.PI / 2;
+            dot.position.set(side * 0.012, 0.106, 0.12);
+            gunGroup.add(dot);
+        }
 
         // Raised Ventilated Rib on top of the barrel
         const ventRib = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.008, 0.72), matSteelDark);
@@ -1036,10 +1053,16 @@ function applyWeaponModel(weaponKey = 'AK47') {
             gunGroup.add(post);
         }
 
-        // Front Brass Bead Sight (mounted on top of ventilated rib)
-        const beadSight = new THREE.Mesh(new THREE.SphereGeometry(0.008, 6, 6), matSteelSatin);
-        beadSight.position.set(0, 0.086, -0.82);
-        gunGroup.add(beadSight);
+        // Red fiber-optic front post sight (instead of just brass bead)
+        const frontSightBase = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.024, 0.02), matSteelDark);
+        frontSightBase.position.set(0, 0.09, -0.80);
+        gunGroup.add(frontSightBase);
+
+        const redMat = new THREE.MeshBasicMaterial({ color: 0xff3333 });
+        const fiberOpticRod = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.024, 6), redMat);
+        fiberOpticRod.rotation.x = Math.PI / 2;
+        fiberOpticRod.position.set(0, 0.102, -0.80);
+        gunGroup.add(fiberOpticRod);
 
         // 3. Under-barrel Magazine Tube
         const magTube = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.58, 12), matSteelDark);
@@ -1100,6 +1123,27 @@ function applyWeaponModel(weaponKey = 'AK47') {
         trigger.position.set(0, -0.045, 0.06);
         trigger.rotation.x = -0.25;
         gunGroup.add(trigger);
+
+        // 7. Red Shotgun Shell for reload animation
+        const matShellRed = new THREE.MeshStandardMaterial({ color: 0xcc1111, roughness: 0.5 });
+        const matShellBrass = new THREE.MeshStandardMaterial({ color: 0xccaa33, metalness: 0.8, roughness: 0.2 });
+
+        const shellGroup = new THREE.Group();
+        shellGroup.name = 'shell';
+
+        const shellBody = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.045, 8), matShellRed);
+        shellBody.rotation.x = Math.PI / 2;
+        shellGroup.add(shellBody);
+
+        const shellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.010, 8), matShellBrass);
+        shellBase.rotation.x = Math.PI / 2;
+        shellBase.position.z = 0.025;
+        shellGroup.add(shellBase);
+
+        // Hide it by default
+        shellGroup.position.set(0.0, -0.15, 0.0);
+        shellGroup.visible = false;
+        gunGroup.add(shellGroup);
 
         muzzleFlashLight.position.set(0, 0.054, -0.85);
 
@@ -2427,6 +2471,9 @@ function updateAimAndGun(delta, moving, sprint) {
                 child.position.copy(child.userData.basePos);
                 child.rotation.copy(child.userData.baseRot);
             }
+            if (child.name === 'shell') {
+                child.visible = false;
+            }
         }
     });
 
@@ -2512,19 +2559,29 @@ function updateAimAndGun(delta, moving, sprint) {
                 });
             }
         } else if (currentWeapon.id === 'SHOTGUN') {
-            targetRotZ += 0.85;
-            targetRotX -= 0.15;
+            targetRotZ -= 0.85; // Tilt the other way so bottom port is highly visible!
+            targetRotX -= 0.12;
             targetGunY -= 0.05;
-            targetGunX -= 0.05;
+            targetGunX += 0.08; // Adjust side centering
 
             const cycle = (reloadTimer * 2.5) % 1.0;
-            const shellSlide = Math.sin(cycle * Math.PI) * 0.08;
-            gunGroup.traverse(child => {
-                if (child.name === 'handLeft') {
-                    child.position.z = child.userData.basePos.z + shellSlide;
-                    child.position.y = child.userData.basePos.y - shellSlide * 0.5;
+            
+            // Find shell and make it slide into the receiver
+            const shell = gunGroup.getObjectByName('shell');
+            if (shell) {
+                shell.visible = true;
+                // Slide red shell from below/behind into the receiver load gate
+                const t = cycle;
+                shell.position.y = -0.16 + t * 0.12;
+                shell.position.z = 0.18 - t * 0.22;
+                
+                // Animate left hand following the shell
+                const handLeft = gunGroup.getObjectByName('handLeft');
+                if (handLeft) {
+                    handLeft.position.copy(shell.position);
+                    handLeft.position.x += 0.01;
                 }
-            });
+            }
         }
     }
 
