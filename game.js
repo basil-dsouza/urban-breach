@@ -220,8 +220,8 @@ makeRoad(-120, 0, 14, 960, 0);              // West Avenue
 makeRoad(0, 120, 14, 960, Math.PI / 2);     // North Boulevard
 makeRoad(0, -120, 14, 960, Math.PI / 2);    // South Boulevard
 
-// 6. Enterable Low-Poly Architecture: Yellow Cottages, Alpine Log Cabins, Modern Pool Villas & High-Rises
-function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
+// 6. Diverse Low-Poly Architecture: Yellow Cottages, Alpine Log Cabins, Modern Pool Villas & High-Rises
+function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 6.0 }) {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
@@ -229,101 +229,29 @@ function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
     const stonePlinthMat = new THREE.MeshStandardMaterial({ color: 0x718093, roughness: 0.95 });
     const coralRoofMat = new THREE.MeshStandardMaterial({ color: 0xe55039, roughness: 0.8 });
     const trimWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.7 });
-    const woodFloorMat = new THREE.MeshStandardMaterial({ color: 0xc49660, roughness: 0.85 });
-    const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.85 });
-    const cyanGlassMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff, roughness: 0.15, metalness: 0.3, transparent: true, opacity: 0.55 });
+    const darkWoodDoorMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.85 });
+    const cyanWindowMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff, roughness: 0.2, metalness: 0.4, transparent: true, opacity: 0.85 });
     const brickChimneyMat = new THREE.MeshStandardMaterial({ color: 0xd63031, roughness: 0.9 });
     const smokeMat = new THREE.MeshStandardMaterial({ color: 0xecf0f1, transparent: true, opacity: 0.65, flatShading: true });
     const fenceMat = new THREE.MeshStandardMaterial({ color: 0x8a6240, roughness: 0.9 });
     const pathMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c, roughness: 0.95 });
 
-    const wallThick = 0.38;
-    const doorW = 2.2;
-    const doorH = 2.8;
-    const doorX = -2.2;
+    const plinthH = 1.2;
+    const wallH = height - plinthH;
 
-    // 1. Interior Hardwood Floor
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(width - 0.2, 0.08, depth - 0.2), woodFloorMat);
-    floor.position.set(0, 0.04, 0);
-    floor.receiveShadow = true;
-    group.add(floor);
+    // 1. Stone Foundation Skirting
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, plinthH, depth + 0.2), stonePlinthMat);
+    plinth.position.y = plinthH / 2;
+    plinth.castShadow = true;
+    plinth.receiveShadow = true;
+    group.add(plinth);
 
-    // 2. Outer Hollow Walls
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(width, height, wallThick), yellowWallMat);
-    backWall.position.set(0, height / 2, -depth / 2 + wallThick / 2);
-    backWall.castShadow = true;
-    backWall.receiveShadow = true;
-    group.add(backWall);
-
-    const backPlinth = new THREE.Mesh(new THREE.BoxGeometry(width + 0.15, 1.2, wallThick + 0.15), stonePlinthMat);
-    backPlinth.position.set(0, 0.6, -depth / 2 + wallThick / 2);
-    group.add(backPlinth);
-
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, height, depth - wallThick * 2), yellowWallMat);
-    leftWall.position.set(-width / 2 + wallThick / 2, height / 2, 0);
-    leftWall.castShadow = true;
-    leftWall.receiveShadow = true;
-    group.add(leftWall);
-
-    const leftPlinth = new THREE.Mesh(new THREE.BoxGeometry(wallThick + 0.15, 1.2, depth), stonePlinthMat);
-    leftPlinth.position.set(-width / 2 + wallThick / 2, 0.6, 0);
-    group.add(leftPlinth);
-
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, height, depth - wallThick * 2), yellowWallMat);
-    rightWall.position.set(width / 2 - wallThick / 2, height / 2, 0);
-    rightWall.castShadow = true;
-    rightWall.receiveShadow = true;
-    group.add(rightWall);
-
-    const rightPlinth = new THREE.Mesh(new THREE.BoxGeometry(wallThick + 0.15, 1.2, depth), stonePlinthMat);
-    rightPlinth.position.set(width / 2 - wallThick / 2, 0.6, 0);
-    group.add(rightPlinth);
-
-    const frontLeftW = (width / 2 + doorX - doorW / 2);
-    const frontLeftX = -width / 2 + frontLeftW / 2;
-    const frontLeftWall = new THREE.Mesh(new THREE.BoxGeometry(frontLeftW, height, wallThick), yellowWallMat);
-    frontLeftWall.position.set(frontLeftX, height / 2, depth / 2 - wallThick / 2);
-    frontLeftWall.castShadow = true;
-    group.add(frontLeftWall);
-
-    const frontLeftPlinth = new THREE.Mesh(new THREE.BoxGeometry(frontLeftW, 1.2, wallThick + 0.15), stonePlinthMat);
-    frontLeftPlinth.position.set(frontLeftX, 0.6, depth / 2 - wallThick / 2);
-    group.add(frontLeftPlinth);
-
-    const frontRightW = (width / 2 - (doorX + doorW / 2));
-    const frontRightX = width / 2 - frontRightW / 2;
-    const frontRightWall = new THREE.Mesh(new THREE.BoxGeometry(frontRightW, height, wallThick), yellowWallMat);
-    frontRightWall.position.set(frontRightX, height / 2, depth / 2 - wallThick / 2);
-    frontRightWall.castShadow = true;
-    group.add(frontRightWall);
-
-    const frontRightPlinth = new THREE.Mesh(new THREE.BoxGeometry(frontRightW, 1.2, wallThick + 0.15), stonePlinthMat);
-    frontRightPlinth.position.set(frontRightX, 0.6, depth / 2 - wallThick / 2);
-    group.add(frontRightPlinth);
-
-    const lintelH = height - doorH;
-    const lintel = new THREE.Mesh(new THREE.BoxGeometry(doorW, lintelH, wallThick), yellowWallMat);
-    lintel.position.set(doorX, doorH + lintelH / 2, depth / 2 - wallThick / 2);
-    lintel.castShadow = true;
-    group.add(lintel);
-
-    const awning = new THREE.Mesh(new THREE.BoxGeometry(doorW + 0.6, 0.16, 1.3), coralRoofMat);
-    awning.position.set(doorX, doorH + 0.2, depth / 2 + 0.55);
-    awning.rotation.x = 0.2;
-    awning.castShadow = true;
-    group.add(awning);
-
-    const doorFrameL = new THREE.Mesh(new THREE.BoxGeometry(0.12, doorH, 0.12), trimWhiteMat);
-    doorFrameL.position.set(doorX - doorW / 2, doorH / 2, depth / 2 + 0.02);
-    group.add(doorFrameL);
-    const doorFrameR = new THREE.Mesh(new THREE.BoxGeometry(0.12, doorH, 0.12), trimWhiteMat);
-    doorFrameR.position.set(doorX + doorW / 2, doorH / 2, depth / 2 + 0.02);
-    group.add(doorFrameR);
-
-    const step = new THREE.Mesh(new THREE.BoxGeometry(doorW + 0.4, 0.15, 0.8), stonePlinthMat);
-    step.position.set(doorX, 0.075, depth / 2 + 0.4);
-    step.receiveShadow = true;
-    group.add(step);
+    // 2. Yellow Upper Walls
+    const body = new THREE.Mesh(new THREE.BoxGeometry(width, wallH, depth), yellowWallMat);
+    body.position.y = plinthH + wallH / 2;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
 
     // 3. Coral Red Pitched Gable Roof
     const roofH = 3.6;
@@ -334,7 +262,7 @@ function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
     roofShape.closePath();
 
     const extrudeSettings = {
-        depth: depth + 1.0,
+        depth: depth + 0.9,
         bevelEnabled: true,
         bevelSegments: 1,
         steps: 1,
@@ -343,11 +271,12 @@ function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
     };
     const roofGeo = new THREE.ExtrudeGeometry(roofShape, extrudeSettings);
     const roof = new THREE.Mesh(roofGeo, coralRoofMat);
-    roof.position.set(0, height, -depth / 2 - 0.5);
+    roof.position.set(0, height, -depth / 2 - 0.45);
     roof.castShadow = true;
     roof.receiveShadow = true;
     group.add(roof);
 
+    // Triangular Gable Infill Walls
     const gableShape = new THREE.Shape();
     gableShape.moveTo(-width / 2, 0);
     gableShape.lineTo(0, roofH - 0.1);
@@ -364,81 +293,93 @@ function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
     backGable.position.z = -depth / 2 + 0.02;
     group.add(backGable);
 
-    const atticWin = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 0.1), cyanGlassMat);
+    // Upper Gable Attic Window
+    const atticWin = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 0.1), cyanWindowMat);
     atticWin.position.set(0, height + roofH * 0.45, depth / 2 + 0.05);
     group.add(atticWin);
+    const atticFrame = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 0.06), trimWhiteMat);
+    atticFrame.position.set(0, height + roofH * 0.45, depth / 2 + 0.02);
+    group.add(atticFrame);
 
-    // 4. Windows with Transparent Glass & White Framing
-    const winFX = frontRightX;
-    const winF = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.8, 0.08), cyanGlassMat);
-    winF.position.set(winFX, 2.8, depth / 2);
-    group.add(winF);
+    // 4. Front Door & Canopy
+    const doorW = 1.4;
+    const doorH = 2.4;
+    const doorX = -width / 4;
+    const door = new THREE.Mesh(new THREE.BoxGeometry(doorW, doorH, 0.12), darkWoodDoorMat);
+    door.position.set(doorX, plinthH + doorH / 2, depth / 2 + 0.06);
+    group.add(door);
 
-    const frameF = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.1, 0.04), trimWhiteMat);
-    frameF.position.set(winFX, 2.8, depth / 2 + 0.02);
-    group.add(frameF);
+    const doorGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 10), cyanWindowMat);
+    doorGlass.rotation.x = Math.PI / 2;
+    doorGlass.position.set(doorX, plinthH + doorH * 0.75, depth / 2 + 0.12);
+    group.add(doorGlass);
 
+    const awning = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.14, 1.1), coralRoofMat);
+    awning.position.set(doorX, plinthH + doorH + 0.2, depth / 2 + 0.55);
+    awning.rotation.x = 0.2;
+    awning.castShadow = true;
+    group.add(awning);
+
+    const step = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.4, 0.9), stonePlinthMat);
+    step.position.set(doorX, 0.2, depth / 2 + 0.5);
+    step.receiveShadow = true;
+    group.add(step);
+
+    // 5. Windows with Cross Grids
+    const winX = width / 4;
+    const win = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.8, 0.1), cyanWindowMat);
+    win.position.set(winX, plinthH + 1.6, depth / 2 + 0.06);
+    group.add(win);
+
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.1, 0.06), trimWhiteMat);
+    frame.position.set(winX, plinthH + 1.6, depth / 2 + 0.03);
+    group.add(frame);
+
+    const hBar = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.08, 0.12), trimWhiteMat);
+    hBar.position.set(winX, plinthH + 1.6, depth / 2 + 0.07);
+    group.add(hBar);
+    const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 0.12), trimWhiteMat);
+    vBar.position.set(winX, plinthH + 1.6, depth / 2 + 0.07);
+    group.add(vBar);
+
+    // Side Windows
     for (let side = -1; side <= 1; side += 2) {
-        const sWin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 2.2), cyanGlassMat);
-        sWin.position.set(side * (width / 2), 2.8, 0);
+        const sWin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.6, 1.8), cyanWindowMat);
+        sWin.position.set(side * (width / 2 + 0.06), plinthH + 1.6, 0);
         group.add(sWin);
-        const sFrame = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.1, 2.5), trimWhiteMat);
-        sFrame.position.set(side * (width / 2 + 0.02), 2.8, 0);
+        const sFrame = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.9, 2.1), trimWhiteMat);
+        sFrame.position.set(side * (width / 2 + 0.03), plinthH + 1.6, 0);
         group.add(sFrame);
     }
 
-    // 5. Interior Furnishings & Tactical Cover
-    const tableTop = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 1.3), darkWoodMat);
-    tableTop.position.set(1.8, 0.85, -1.5);
-    tableTop.castShadow = true;
-    group.add(tableTop);
-
-    const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.85, 0.12), darkWoodMat);
-    leg1.position.set(1.8 - 1.0, 0.425, -1.5 - 0.5);
-    group.add(leg1);
-    const leg2 = leg1.clone();
-    leg2.position.set(1.8 + 1.0, 0.425, -1.5 - 0.5);
-    group.add(leg2);
-    const leg3 = leg1.clone();
-    leg3.position.set(1.8 - 1.0, 0.425, -1.5 + 0.5);
-    group.add(leg3);
-    const leg4 = leg1.clone();
-    leg4.position.set(1.8 + 1.0, 0.425, -1.5 + 0.5);
-    group.add(leg4);
-
-    const crate = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.1, 1.2), fenceMat);
-    crate.position.set(-2.6, 0.55, -2.4);
-    crate.castShadow = true;
-    group.add(crate);
-
-    const ceilingLamp = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffd32a }));
-    ceilingLamp.position.set(0, height - 0.4, 0);
-    group.add(ceilingLamp);
-
-    // 6. Chimney & Smoke
+    // 6. Brick Chimney & Low-Poly Smoke Puffs
     const chX = width / 3.2;
     const chZ = -depth / 4;
     const chH = 4.8;
-    const chimney = new THREE.Mesh(new THREE.BoxGeometry(1.2, chH, 1.2), brickChimneyMat);
+    const chimney = new THREE.Mesh(new THREE.BoxGeometry(1.1, chH, 1.1), brickChimneyMat);
     chimney.position.set(chX, height + roofH * 0.45, chZ);
     chimney.castShadow = true;
     group.add(chimney);
 
-    const chimneyCap = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.2, 1.4), stonePlinthMat);
+    const chimneyCap = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.2, 1.35), stonePlinthMat);
     chimneyCap.position.set(chX, height + roofH * 0.45 + chH / 2, chZ);
     group.add(chimneyCap);
 
-    for (let p = 0; p < 3; p++) {
-        const puff = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35 + p * 0.15, 1), smokeMat);
-        puff.position.set(chX + p * 0.18, height + roofH * 0.45 + chH / 2 + 0.5 + p * 0.7, chZ - p * 0.15);
-        group.add(puff);
-    }
+    const puff1 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 1), smokeMat);
+    puff1.position.set(chX, height + roofH * 0.45 + chH / 2 + 0.5, chZ);
+    group.add(puff1);
+    const puff2 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), smokeMat);
+    puff2.position.set(chX + 0.2, height + roofH * 0.45 + chH / 2 + 1.1, chZ - 0.15);
+    group.add(puff2);
+    const puff3 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.65, 1), smokeMat);
+    puff3.position.set(chX + 0.4, height + roofH * 0.45 + chH / 2 + 1.9, chZ - 0.3);
+    group.add(puff3);
 
     // 7. Stone Walkway
     const pathOffsets = [
-        [doorX, depth / 2 + 1.2, 1.6, 0.9],
-        [doorX - 0.3, depth / 2 + 2.2, 1.5, 0.9],
-        [doorX - 0.1, depth / 2 + 3.2, 1.6, 0.9]
+        [doorX, depth / 2 + 1.2, 1.4, 0.8],
+        [doorX - 0.3, depth / 2 + 2.1, 1.3, 0.9],
+        [doorX - 0.1, depth / 2 + 3.0, 1.5, 0.9]
     ];
     for (const [px, pz, pw, pd] of pathOffsets) {
         const paver = new THREE.Mesh(new THREE.BoxGeometry(pw, 0.06, pd), pathMat);
@@ -447,7 +388,7 @@ function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
         group.add(paver);
     }
 
-    // 8. Garden Fence
+    // 8. Garden Picket Fence
     const fenceStartX = width / 2 + 0.3;
     const fenceZ = depth / 2 + 0.3;
     for (let f = 0; f < 5; f++) {
@@ -459,71 +400,16 @@ function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
     fenceRail.position.set(fenceStartX - 1.0, 0.7, fenceZ);
     group.add(fenceRail);
 
-    // 9. Obstacles Registration
+    // Obstacle Registration
     obstacles.push({
-        x: x,
-        z: z - depth / 2 + wallThick / 2,
-        w: width,
-        d: wallThick + 0.1,
+        x,
+        z,
+        w: width + 0.4,
+        d: depth + 0.4,
         bottom: 0,
-        top: height
+        top: height + roofH
     });
-    obstacles.push({
-        x: x - width / 2 + wallThick / 2,
-        z: z,
-        w: wallThick + 0.1,
-        d: depth,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x + width / 2 - wallThick / 2,
-        z: z,
-        w: wallThick + 0.1,
-        d: depth,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x + frontLeftX,
-        z: z + depth / 2 - wallThick / 2,
-        w: frontLeftW,
-        d: wallThick + 0.1,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x + frontRightX,
-        z: z + depth / 2 - wallThick / 2,
-        w: frontRightW,
-        d: wallThick + 0.1,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x + doorX,
-        z: z + depth / 2 - wallThick / 2,
-        w: doorW,
-        d: wallThick + 0.1,
-        bottom: doorH,
-        top: height
-    });
-    obstacles.push({
-        x: x + 1.8,
-        z: z - 1.5,
-        w: 2.5,
-        d: 1.4,
-        bottom: 0,
-        top: 0.95
-    });
-    obstacles.push({
-        x: x - 2.6,
-        z: z - 2.4,
-        w: 1.3,
-        d: 1.3,
-        bottom: 0,
-        top: 1.15
-    });
+
     const chimneyTop = height + roofH * 0.45 + chH / 2 + 0.25;
     obstacles.push({
         x: x + chX,
@@ -541,8 +427,6 @@ function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
         d: depth,
         h: height,
         style: 'cottage',
-        isEnterable: true,
-        floorY: 0.05,
         roofHeight: roofH,
         chimney: { x: x + chX, z: z + chZ, w: 1.4, d: 1.4, top: chimneyTop }
     });
@@ -551,7 +435,7 @@ function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 5.8 }) {
     staticRaycastTargets.push(group);
 }
 
-function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.6 }) {
+function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.8 }) {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
@@ -559,84 +443,62 @@ function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.6 }) {
     const logMat2 = new THREE.MeshStandardMaterial({ color: 0x6e3b18, roughness: 0.95 });
     const slateShingleMat = new THREE.MeshStandardMaterial({ color: 0x3d444b, roughness: 0.88 });
     const woodTrimMat = new THREE.MeshStandardMaterial({ color: 0xb87333, roughness: 0.85 });
-    const woodFloorMat = new THREE.MeshStandardMaterial({ color: 0x7c4e2a, roughness: 0.9 });
     const stoneBoulderMat = new THREE.MeshStandardMaterial({ color: 0x57606f, roughness: 0.96, flatShading: true });
-    const cabinGlassMat = new THREE.MeshStandardMaterial({ color: 0xf6e58d, roughness: 0.2, metalness: 0.2, transparent: true, opacity: 0.6 });
+    const cabinDoorMat = new THREE.MeshStandardMaterial({ color: 0x4a2810, roughness: 0.9 });
+    const cabinGlassMat = new THREE.MeshStandardMaterial({ color: 0xf6e58d, roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.8 });
 
-    const logRadius = 0.28;
-    const numLogs = 9;
-    const logH = height / numLogs;
-    const doorW = 2.2;
-    const doorH = 2.8;
-
-    // 1. Rustic Timber Floor
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(width - 0.2, 0.08, depth - 0.2), woodFloorMat);
-    floor.position.set(0, 0.04, 0);
-    floor.receiveShadow = true;
-    group.add(floor);
-
-    // 2. Base Boulder Ring
+    // 1. Base Boulder Ring
     const boulderCoords = [
         [-width / 2, depth / 2, 0.9],
         [width / 2, depth / 2, 1.1],
         [-width / 2, -depth / 2, 1.0],
         [width / 2, -depth / 2, 0.95],
-        [-width / 2 - 0.2, 0, 0.85],
-        [width / 2 + 0.2, 0, 0.9]
+        [0, depth / 2 + 0.2, 0.85]
     ];
     for (const [bx, bz, br] of boulderCoords) {
         const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(br, 1), stoneBoulderMat);
-        rock.position.set(bx, br * 0.45, bz);
+        rock.position.set(bx, br * 0.5, bz);
         rock.rotation.set(Math.random() * 2, Math.random() * 2, Math.random() * 2);
         rock.castShadow = true;
         rock.receiveShadow = true;
         group.add(rock);
     }
 
-    // 3. Hollow Stacked Log Walls
+    // 2. Stacked Logs
+    const numLogs = 9;
+    const logRadius = 0.32;
+    const logH = height / numLogs;
+
     for (let i = 0; i < numLogs; i++) {
         const logY = 0.3 + i * logH;
         const curMat = i % 2 === 0 ? logMat1 : logMat2;
 
-        const backLog = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, width + 1.0, 7), curMat);
-        backLog.rotation.z = Math.PI / 2;
-        backLog.position.set(0, logY, -depth / 2 + logRadius);
-        backLog.castShadow = true;
+        const frontLog = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, width + 1.2, 7), curMat);
+        frontLog.rotation.z = Math.PI / 2;
+        frontLog.position.set(0, logY, depth / 2);
+        frontLog.castShadow = true;
+        group.add(frontLog);
+
+        const backLog = frontLog.clone();
+        backLog.position.z = -depth / 2;
         group.add(backLog);
 
-        const leftLog = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, depth + 1.0, 7), curMat);
-        leftLog.rotation.x = Math.PI / 2;
-        leftLog.position.set(-width / 2 + logRadius, logY + logH * 0.5, 0);
-        leftLog.castShadow = true;
-        group.add(leftLog);
+        const sideLog1 = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, depth + 1.2, 7), curMat);
+        sideLog1.rotation.x = Math.PI / 2;
+        sideLog1.position.set(-width / 2, logY + logH * 0.5, 0);
+        sideLog1.castShadow = true;
+        group.add(sideLog1);
 
-        const rightLog = leftLog.clone();
-        rightLog.position.x = width / 2 - logRadius;
-        group.add(rightLog);
-
-        if (logY < doorH) {
-            const frontSegW = (width - doorW) / 2;
-            const frontLogL = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, frontSegW + 0.5, 7), curMat);
-            frontLogL.rotation.z = Math.PI / 2;
-            frontLogL.position.set(-width / 2 + frontSegW / 2, logY, depth / 2 - logRadius);
-            frontLogL.castShadow = true;
-            group.add(frontLogL);
-
-            const frontLogR = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, frontSegW + 0.5, 7), curMat);
-            frontLogR.rotation.z = Math.PI / 2;
-            frontLogR.position.set(width / 2 - frontSegW / 2, logY, depth / 2 - logRadius);
-            frontLogR.castShadow = true;
-            group.add(frontLogR);
-        } else {
-            const headerLog = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, width + 1.0, 7), curMat);
-            headerLog.rotation.z = Math.PI / 2;
-            headerLog.position.set(0, logY, depth / 2 - logRadius);
-            headerLog.castShadow = true;
-            group.add(headerLog);
-        }
+        const sideLog2 = sideLog1.clone();
+        sideLog2.position.x = width / 2;
+        group.add(sideLog2);
     }
 
-    // 4. Steep A-Frame Roof
+    const innerBody = new THREE.Mesh(new THREE.BoxGeometry(width - 0.2, height, depth - 0.2), logMat2);
+    innerBody.position.y = height / 2;
+    group.add(innerBody);
+
+    // 3. Steep A-Frame Roof
     const roofH = 4.4;
     const roofShape = new THREE.Shape();
     roofShape.moveTo(-width / 2 - 0.8, 0);
@@ -664,6 +526,7 @@ function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.6 }) {
     ridgeBeam.position.set(0, height + roofH - 0.1, 0);
     group.add(ridgeBeam);
 
+    // Front/Back Gables
     const gableShape = new THREE.Shape();
     gableShape.moveTo(-width / 2, 0);
     gableShape.lineTo(0, roofH - 0.2);
@@ -680,22 +543,22 @@ function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.6 }) {
     backGable.position.z = -depth / 2 + 0.05;
     group.add(backGable);
 
-    // 5. Porch Platform & Steps
-    const porch = new THREE.Mesh(new THREE.BoxGeometry(doorW + 1.2, 0.22, 1.8), woodTrimMat);
-    porch.position.set(0, 0.11, depth / 2 + 0.9);
+    // 4. Door & Porch
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.4, 0.18), cabinDoorMat);
+    door.position.set(0, 1.5, depth / 2 + 0.1);
+    group.add(door);
+
+    const porch = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.35, 1.8), woodTrimMat);
+    porch.position.set(0, 0.18, depth / 2 + 0.9);
     porch.receiveShadow = true;
     group.add(porch);
 
-    const porchStep = new THREE.Mesh(new THREE.BoxGeometry(doorW + 0.8, 0.11, 0.6), woodTrimMat);
-    porchStep.position.set(0, 0.055, depth / 2 + 1.9);
-    group.add(porchStep);
-
-    const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(doorW + 1.4, 0.14, 1.5), slateShingleMat);
-    porchRoof.position.set(0, doorH + 0.4, depth / 2 + 0.85);
-    porchRoof.rotation.x = 0.28;
+    const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.14, 1.4), slateShingleMat);
+    porchRoof.position.set(0, 3.2, depth / 2 + 0.8);
+    porchRoof.rotation.x = 0.3;
     group.add(porchRoof);
 
-    // 6. Windows
+    // 5. Windows
     for (let side = -1; side <= 1; side += 2) {
         const win = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 0.12), cabinGlassMat);
         win.position.set(side * (width / 3), 2.4, depth / 2 + 0.1);
@@ -705,22 +568,7 @@ function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.6 }) {
         group.add(frame);
     }
 
-    // 7. Interior Fireplace & Cover Crate
-    const fireplace = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.2, 1.1), stoneBoulderMat);
-    fireplace.position.set(0, 1.6, -depth / 2 + 0.7);
-    fireplace.castShadow = true;
-    group.add(fireplace);
-
-    const hearthEmber = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 0.6), new THREE.MeshBasicMaterial({ color: 0xff6348 }));
-    hearthEmber.position.set(0, 0.25, -depth / 2 + 0.95);
-    group.add(hearthEmber);
-
-    const crate = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 1.2), woodTrimMat);
-    crate.position.set(-2.4, 0.5, 0);
-    crate.castShadow = true;
-    group.add(crate);
-
-    // 8. Chimney
+    // 6. Stone Chimney
     const chX = -width / 3.2;
     const chZ = -depth / 4;
     const chH = 5.2;
@@ -729,74 +577,16 @@ function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.6 }) {
     chimney.castShadow = true;
     group.add(chimney);
 
-    // 9. Precision Obstacles
-    const wallThick = 0.55;
-    const frontSegW = (width - doorW) / 2;
+    // Obstacle Registration
+    obstacles.push({
+        x,
+        z,
+        w: width + 0.6,
+        d: depth + 0.6,
+        bottom: 0,
+        top: height + roofH
+    });
 
-    obstacles.push({
-        x: x,
-        z: z - depth / 2 + wallThick / 2,
-        w: width,
-        d: wallThick,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x - width / 2 + wallThick / 2,
-        z: z,
-        w: wallThick,
-        d: depth,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x + width / 2 - wallThick / 2,
-        z: z,
-        w: wallThick,
-        d: depth,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x - width / 2 + frontSegW / 2,
-        z: z + depth / 2 - wallThick / 2,
-        w: frontSegW,
-        d: wallThick,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x + width / 2 - frontSegW / 2,
-        z: z + depth / 2 - wallThick / 2,
-        w: frontSegW,
-        d: wallThick,
-        bottom: 0,
-        top: height
-    });
-    obstacles.push({
-        x: x,
-        z: z + depth / 2 - wallThick / 2,
-        w: doorW,
-        d: wallThick,
-        bottom: doorH,
-        top: height
-    });
-    obstacles.push({
-        x: x,
-        z: z - depth / 2 + 0.7,
-        w: 2.3,
-        d: 1.2,
-        bottom: 0,
-        top: 3.2
-    });
-    obstacles.push({
-        x: x - 2.4,
-        z: z,
-        w: 1.3,
-        d: 1.3,
-        bottom: 0,
-        top: 1.05
-    });
     const chimneyTop = height + roofH * 0.45 + chH / 2;
     obstacles.push({
         x: x + chX,
@@ -814,8 +604,6 @@ function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.6 }) {
         d: depth,
         h: height,
         style: 'cabin',
-        isEnterable: true,
-        floorY: 0.05,
         roofHeight: roofH,
         chimney: { x: x + chX, z: z + chZ, w: 1.6, d: 1.6, top: chimneyTop }
     });
@@ -831,105 +619,70 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.6 }
     const whiteWallMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.65 });
     const slateWallMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, roughness: 0.7 });
     const darkTrimMat = new THREE.MeshStandardMaterial({ color: 0x1e272e, roughness: 0.8 });
-    const tileFloorMat = new THREE.MeshStandardMaterial({ color: 0xdcdde1, roughness: 0.5 });
     const deckWoodMat = new THREE.MeshStandardMaterial({ color: 0xc89666, roughness: 0.78 });
     const poolWaterMat = new THREE.MeshStandardMaterial({ color: 0x00d2d3, roughness: 0.08, metalness: 0.6, transparent: true, opacity: 0.88 });
     const poolBorderMat = new THREE.MeshStandardMaterial({ color: 0xdcdde1, roughness: 0.8 });
-    const panoramicGlassMat = new THREE.MeshStandardMaterial({ color: 0x4a69bd, roughness: 0.1, metalness: 0.45, transparent: true, opacity: 0.5 });
-    const couchMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, roughness: 0.8 });
+    const panoramicGlassMat = new THREE.MeshStandardMaterial({ color: 0x4a69bd, roughness: 0.1, metalness: 0.45, transparent: true, opacity: 0.75 });
     const loungerMat = new THREE.MeshStandardMaterial({ color: 0x718093, roughness: 0.8 });
     const palmLeafMat = new THREE.MeshStandardMaterial({ color: 0x2ed573, roughness: 0.75, flatShading: true });
     const palmTrunkMat = new THREE.MeshStandardMaterial({ color: 0x573b23, roughness: 0.9 });
 
-    const groundH = 3.8;
-    const upperH = height - groundH;
-    const wallThick = 0.4;
+    const groundH = height * 0.52;
+    const upperH = height * 0.48;
 
-    // 1. Polished Ground Floor Interior Tile
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(width * 0.7, 0.08, depth * 0.8), tileFloorMat);
-    floor.position.set(-width * 0.12, 0.04, 0);
-    floor.receiveShadow = true;
-    group.add(floor);
+    // 1. Ground Floor White Volume
+    const groundBody = new THREE.Mesh(new THREE.BoxGeometry(width * 0.65, groundH, depth * 0.8), whiteWallMat);
+    groundBody.position.set(-width * 0.15, groundH / 2, 0);
+    groundBody.castShadow = true;
+    groundBody.receiveShadow = true;
+    group.add(groundBody);
 
-    // 2. Ground Floor Hollow Walls
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(width * 0.7, groundH, wallThick), whiteWallMat);
-    backWall.position.set(-width * 0.12, groundH / 2, -depth * 0.4 + wallThick / 2);
-    backWall.castShadow = true;
-    group.add(backWall);
+    // Ground Floor Dark Slate Volume
+    const groundAccent = new THREE.Mesh(new THREE.BoxGeometry(width * 0.35, groundH, depth * 0.65), slateWallMat);
+    groundAccent.position.set(width * 0.3, groundH / 2, -depth * 0.07);
+    groundAccent.castShadow = true;
+    group.add(groundAccent);
 
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, groundH, depth * 0.8), whiteWallMat);
-    leftWall.position.set(-width * 0.47 + wallThick / 2, groundH / 2, 0);
-    leftWall.castShadow = true;
-    group.add(leftWall);
+    // 2. Cantilevered Upper Second Floor
+    const upperBody = new THREE.Mesh(new THREE.BoxGeometry(width * 0.75, upperH, depth * 0.85), slateWallMat);
+    upperBody.position.set(0, groundH + upperH / 2, depth * 0.05);
+    upperBody.castShadow = true;
+    group.add(upperBody);
 
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallThick, groundH, depth * 0.8), slateWallMat);
-    rightWall.position.set(width * 0.23 - wallThick / 2, groundH / 2, 0);
-    rightWall.castShadow = true;
-    group.add(rightWall);
+    const roofCap = new THREE.Mesh(new THREE.BoxGeometry(width * 0.78, 0.3, depth * 0.88), darkTrimMat);
+    roofCap.position.set(0, height + 0.15, depth * 0.05);
+    group.add(roofCap);
 
-    const doorW = 3.6;
-    const doorH = 3.2;
-    const frontSegW = width * 0.7 - doorW;
-    const frontWallLeft = new THREE.Mesh(new THREE.BoxGeometry(frontSegW, groundH, wallThick), whiteWallMat);
-    frontWallLeft.position.set(-width * 0.47 + frontSegW / 2, groundH / 2, depth * 0.4 - wallThick / 2);
-    frontWallLeft.castShadow = true;
-    group.add(frontWallLeft);
+    // 3. Panoramic Windows
+    const glassW = width * 0.45;
+    const glassH = groundH * 0.8;
+    const groundGlass = new THREE.Mesh(new THREE.BoxGeometry(glassW, glassH, 0.1), panoramicGlassMat);
+    groundGlass.position.set(-width * 0.15, groundH * 0.5, depth * 0.4 + 0.06);
+    group.add(groundGlass);
 
-    const lintel = new THREE.Mesh(new THREE.BoxGeometry(doorW, groundH - doorH, wallThick), darkTrimMat);
-    lintel.position.set(width * 0.23 - doorW / 2, doorH + (groundH - doorH) / 2, depth * 0.4 - wallThick / 2);
-    group.add(lintel);
-
-    // 3. Interior Modern Couch & Coffee Table
-    const couch = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.8, 1.4), couchMat);
-    couch.position.set(-width * 0.2, 0.4, -depth * 0.15);
-    couch.castShadow = true;
-    group.add(couch);
-
-    const table = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.45, 1.0), darkTrimMat);
-    table.position.set(-width * 0.2, 0.225, depth * 0.1);
-    group.add(table);
-
-    // 4. Cantilevered Upper Second Floor (Balcony Deck + Room)
-    const upperDeck = new THREE.Mesh(new THREE.BoxGeometry(width * 0.75, 0.25, depth * 0.85), deckWoodMat);
-    upperDeck.position.set(0, groundH + 0.125, depth * 0.05);
-    upperDeck.receiveShadow = true;
-    group.add(upperDeck);
-
-    const upperRoom = new THREE.Mesh(new THREE.BoxGeometry(width * 0.5, upperH, depth * 0.6), slateWallMat);
-    upperRoom.position.set(-width * 0.1, groundH + upperH / 2, -depth * 0.05);
-    upperRoom.castShadow = true;
-    group.add(upperRoom);
-
-    const upperGlass = new THREE.Mesh(new THREE.BoxGeometry(width * 0.45, upperH * 0.75, 0.08), panoramicGlassMat);
-    upperGlass.position.set(-width * 0.1, groundH + upperH * 0.5, depth * 0.25 + 0.04);
+    const upperGlass = new THREE.Mesh(new THREE.BoxGeometry(width * 0.5, upperH * 0.75, 0.1), panoramicGlassMat);
+    upperGlass.position.set(-width * 0.05, groundH + upperH * 0.5, depth * 0.47 + 0.06);
     group.add(upperGlass);
 
-    const railing = new THREE.Mesh(new THREE.BoxGeometry(width * 0.75, 1.1, 0.06), panoramicGlassMat);
-    railing.position.set(0, groundH + 0.65, depth * 0.47);
-    group.add(railing);
-
+    // 4. Vertical Louver Slats
     for (let s = 0; s < 6; s++) {
         const slat = new THREE.Mesh(new THREE.BoxGeometry(0.12, upperH * 0.9, 0.35), whiteWallMat);
-        slat.position.set(width * 0.18 + s * 0.35, groundH + upperH * 0.5, depth * 0.47);
+        slat.position.set(width * 0.22 + s * 0.35, groundH + upperH * 0.5, depth * 0.47 + 0.15);
         group.add(slat);
     }
 
-    // 5. Raised Teak Sundeck Patio
-    const deckW = width * 0.52;
+    // 5. Wooden Sundeck Patio
+    const deckW = width * 0.55;
     const deckD = depth * 0.7;
     const deckH = 0.35;
-    const deckX = width * 0.42;
+    const deckX = width * 0.45;
     const deckZ = depth * 0.35;
     const sundeck = new THREE.Mesh(new THREE.BoxGeometry(deckW, deckH, deckD), deckWoodMat);
     sundeck.position.set(deckX, deckH / 2, deckZ);
     sundeck.receiveShadow = true;
     group.add(sundeck);
 
-    const deckStep = new THREE.Mesh(new THREE.BoxGeometry(deckW, deckH * 0.5, 0.8), deckWoodMat);
-    deckStep.position.set(deckX, deckH * 0.25, deckZ + deckD / 2 + 0.4);
-    group.add(deckStep);
-
-    // 6. Crystal-Blue Swimming Pool
+    // 6. Swimming Pool
     const poolW = 4.5;
     const poolD = 6.5;
     const poolX = deckX + 0.2;
@@ -943,12 +696,14 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.6 }
     poolWater.position.set(poolX, 0.32, poolZ);
     group.add(poolWater);
 
+    // 7. Sun Loungers
     for (let l = 0; l < 2; l++) {
         const lounger = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 1.8), loungerMat);
         lounger.position.set(deckX - deckW / 2 + 1.2 + l * 1.1, deckH + 0.12, deckZ + deckD / 2 - 1.2);
         group.add(lounger);
     }
 
+    // Pergola
     const pergolaPost = new THREE.Mesh(new THREE.BoxGeometry(0.15, 3.2, 0.15), darkTrimMat);
     pergolaPost.position.set(deckX - deckW / 2 + 0.3, 1.6, deckZ - deckD / 2 + 0.3);
     group.add(pergolaPost);
@@ -957,7 +712,7 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.6 }
     pergolaRoof.position.set(deckX, 3.2, deckZ - deckD / 4);
     group.add(pergolaRoof);
 
-    // Palm Tree
+    // 8. Palm Tree
     const palm = new THREE.Group();
     palm.position.set(deckX - deckW / 2 + 0.8, deckH, deckZ - deckD / 2 + 0.8);
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 3.2, 6), palmTrunkMat);
@@ -974,62 +729,32 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.6 }
     }
     group.add(palm);
 
-    // 7. Obstacles Registration
+    // Obstacle Registration
     obstacles.push({
-        x: x - width * 0.12,
-        z: z - depth * 0.4 + wallThick / 2,
-        w: width * 0.7,
-        d: wallThick,
-        bottom: 0,
-        top: groundH
-    });
-    obstacles.push({
-        x: x - width * 0.47 + wallThick / 2,
+        x: x - width * 0.15,
         z: z,
-        w: wallThick,
+        w: width * 0.65,
         d: depth * 0.8,
         bottom: 0,
-        top: groundH
-    });
-    obstacles.push({
-        x: x + width * 0.23 - wallThick / 2,
-        z: z,
-        w: wallThick,
-        d: depth * 0.8,
-        bottom: 0,
-        top: groundH
-    });
-    obstacles.push({
-        x: x - width * 0.47 + frontSegW / 2,
-        z: z + depth * 0.4 - wallThick / 2,
-        w: frontSegW,
-        d: wallThick,
-        bottom: 0,
-        top: groundH
-    });
-    obstacles.push({
-        x: x + width * 0.23 - doorW / 2,
-        z: z + depth * 0.4 - wallThick / 2,
-        w: doorW,
-        d: wallThick,
-        bottom: doorH,
-        top: groundH
-    });
-    obstacles.push({
-        x: x - width * 0.1,
-        z: z - depth * 0.05,
-        w: width * 0.5,
-        d: depth * 0.6,
-        bottom: groundH,
         top: height
     });
+
     obstacles.push({
-        x: x - width * 0.2,
-        z: z - depth * 0.15,
-        w: 2.9,
-        d: 1.5,
+        x: x + width * 0.3,
+        z: z - depth * 0.07,
+        w: width * 0.35,
+        d: depth * 0.65,
         bottom: 0,
-        top: 0.85
+        top: groundH
+    });
+
+    obstacles.push({
+        x: x + deckX,
+        z: z + deckZ,
+        w: deckW,
+        d: deckD,
+        bottom: 0,
+        top: deckH
     });
 
     buildings.push({
@@ -1039,10 +764,6 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.6 }
         d: depth,
         h: height,
         style: 'villa',
-        isEnterable: true,
-        floorY: 0.05,
-        upperDeck: { x: x, z: z + depth * 0.05, w: width * 0.75, d: depth * 0.85, y: groundH + 0.25 },
-        sundeck: { x: x + deckX, z: z + deckZ, w: deckW, d: deckD, y: deckH },
         roofHeight: 0
     });
 
@@ -1549,8 +1270,8 @@ window.damageVehicleLocal = (vehicleId, damage) => {
     }
 };
 
-// Ground, Multi-Level & Slanted Roof Surface Height Calculation
-function getSimpleGround(x, z, currentFeetY = (typeof camera !== 'undefined' && camera ? (camera.position.y - eyeHeight) : 0)) {
+// Ground & Slanted Roof Surface Height Calculation
+function getSimpleGround(x, z) {
     let highest = 0;
     for (const b of buildings) {
         if (
@@ -1559,46 +1280,28 @@ function getSimpleGround(x, z, currentFeetY = (typeof camera !== 'undefined' && 
             z >= b.z - b.d / 2 - 0.2 &&
             z <= b.z + b.d / 2 + 0.2
         ) {
-            if (b.isEnterable) {
-                // If standing on roof / upper level:
-                if (currentFeetY >= b.h - 1.2) {
-                    if (b.style === 'cottage' || b.style === 'cabin') {
-                        if (b.chimney &&
-                            Math.abs(x - b.chimney.x) <= b.chimney.w / 2 &&
-                            Math.abs(z - b.chimney.z) <= b.chimney.d / 2) {
-                            highest = Math.max(highest, b.chimney.top);
-                        } else {
-                            const distFromRidge = Math.abs(x - b.x);
-                            const halfW = b.w / 2;
-                            const slopeFactor = Math.max(0, 1 - (distFromRidge / halfW));
-                            const surfaceY = b.h + b.roofHeight * slopeFactor;
-                            highest = Math.max(highest, surfaceY);
-                        }
-                    } else if (b.style === 'villa') {
-                        highest = Math.max(highest, b.h + 0.2);
-                    }
-                } else if (b.style === 'villa' && b.upperDeck &&
-                           x >= b.upperDeck.x - b.upperDeck.w / 2 && x <= b.upperDeck.x + b.upperDeck.w / 2 &&
-                           z >= b.upperDeck.z - b.upperDeck.d / 2 && z <= b.upperDeck.z + b.upperDeck.d / 2 &&
-                           currentFeetY >= b.upperDeck.y - 0.6) {
-                    highest = Math.max(highest, b.upperDeck.y);
-                } else if (b.sundeck &&
-                           x >= b.sundeck.x - b.sundeck.w / 2 && x <= b.sundeck.x + b.sundeck.w / 2 &&
-                           z >= b.sundeck.z - b.sundeck.d / 2 && z <= b.sundeck.z + b.sundeck.d / 2 &&
-                           currentFeetY < 2.0) {
-                    highest = Math.max(highest, b.sundeck.y);
+            if (b.style === 'slanted-gable') {
+                // If standing on chimney top
+                if (b.chimney &&
+                    Math.abs(x - b.chimney.x) <= b.chimney.w / 2 &&
+                    Math.abs(z - b.chimney.z) <= b.chimney.d / 2) {
+                    highest = Math.max(highest, b.chimney.top);
                 } else {
-                    // Inside ground floor room
-                    highest = Math.max(highest, b.floorY || 0.05);
+                    const distFromRidge = Math.abs(x - b.x);
+                    const halfW = b.w / 2;
+                    const slopeFactor = Math.max(0, 1 - (distFromRidge / halfW));
+                    const surfaceY = b.h + b.roofHeight * slopeFactor;
+                    highest = Math.max(highest, surfaceY);
                 }
             } else {
-                // Downtown Flat High-Rise Rooftops
                 let roofFloor = b.h + 0.35;
+                // If standing on HVAC top
                 if (b.hvac &&
                     Math.abs(x - b.hvac.x) <= b.hvac.w / 2 &&
                     Math.abs(z - b.hvac.z) <= b.hvac.d / 2) {
                     roofFloor = Math.max(roofFloor, b.hvac.top);
                 }
+                // If standing on brown water tower top
                 if (b.tower &&
                     Math.hypot(x - b.tower.x, z - b.tower.z) <= b.tower.radius) {
                     roofFloor = Math.max(roofFloor, b.tower.top);
@@ -3021,24 +2724,21 @@ function updatePlayer(delta) {
             moveVector.normalize();
             moveVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
 
-            const playerHeight = crouch ? 1.15 : 1.75;
             const nextX = camera.position.x + moveVector.x * speed * delta;
             const nextZ = camera.position.z + moveVector.z * speed * delta;
             const playerFeetY = camera.position.y - eyeHeight;
-            const currentGround = getSimpleGround(camera.position.x, camera.position.z, playerFeetY);
+            const currentGround = getSimpleGround(camera.position.x, camera.position.z);
 
             // Check X Movement
             let collidesX = false;
             for (const obs of obstacles) {
                 const halfW = obs.w / 2 + playerRadius;
                 const halfD = obs.d / 2 + playerRadius;
-                const obsBottom = obs.bottom !== undefined ? obs.bottom : 0;
-                const obsTop = obs.top;
                 if (
                     nextX >= obs.x - halfW && nextX <= obs.x + halfW &&
                     camera.position.z >= obs.z - halfD && camera.position.z <= obs.z + halfD &&
-                    playerFeetY < obsTop - 0.08 &&
-                    (playerFeetY + playerHeight) > obsBottom + 0.08
+                    playerFeetY < obs.top - 0.15 &&
+                    playerFeetY >= (obs.bottom || 0) - 0.5
                 ) {
                     collidesX = true;
                     break;
@@ -3048,7 +2748,7 @@ function updatePlayer(delta) {
             // Crouch Edge Protection along X (Prevents walking off rooftops, ledges & heights)
             if (!collidesX && crouch && grounded) {
                 const probeDistX = Math.sign(moveVector.x) * 0.28;
-                const groundNextX = getSimpleGround(nextX + probeDistX, camera.position.z, playerFeetY);
+                const groundNextX = getSimpleGround(nextX + probeDistX, camera.position.z);
                 if (currentGround - groundNextX > 0.85) {
                     collidesX = true;
                 }
@@ -3061,13 +2761,11 @@ function updatePlayer(delta) {
             for (const obs of obstacles) {
                 const halfW = obs.w / 2 + playerRadius;
                 const halfD = obs.d / 2 + playerRadius;
-                const obsBottom = obs.bottom !== undefined ? obs.bottom : 0;
-                const obsTop = obs.top;
                 if (
                     camera.position.x >= obs.x - halfW && camera.position.x <= obs.x + halfW &&
                     nextZ >= obs.z - halfD && nextZ <= obs.z + halfD &&
-                    playerFeetY < obsTop - 0.08 &&
-                    (playerFeetY + playerHeight) > obsBottom + 0.08
+                    playerFeetY < obs.top - 0.15 &&
+                    playerFeetY >= (obs.bottom || 0) - 0.5
                 ) {
                     collidesZ = true;
                     break;
@@ -3077,7 +2775,7 @@ function updatePlayer(delta) {
             // Crouch Edge Protection along Z (Prevents walking off rooftops, ledges & heights)
             if (!collidesZ && crouch && grounded) {
                 const probeDistZ = Math.sign(moveVector.z) * 0.28;
-                const groundNextZ = getSimpleGround(camera.position.x, nextZ + probeDistZ, playerFeetY);
+                const groundNextZ = getSimpleGround(camera.position.x, nextZ + probeDistZ);
                 if (currentGround - groundNextZ > 0.85) {
                     collidesZ = true;
                 }
@@ -3086,7 +2784,7 @@ function updatePlayer(delta) {
             if (!collidesZ) camera.position.z = nextZ;
         }
 
-        const groundLevel = getSimpleGround(camera.position.x, camera.position.z, camera.position.y - eyeHeight);
+        const groundLevel = getSimpleGround(camera.position.x, camera.position.z);
         const targetY = groundLevel + eyeHeight;
 
         if (keys["Space"] && grounded) {
