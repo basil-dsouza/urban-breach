@@ -1504,6 +1504,7 @@ multiplayerManager.onGameStartSync = (difficultyKey) => {
 
 // 13. Reload Mechanics
 function startReload() {
+    soundEngine.stopRifleBurst();
     if (isReloading || ammo >= maxAmmo) return;
     isReloading = true;
     reloadTimer = reloadDuration;
@@ -1735,7 +1736,10 @@ document.addEventListener('mousedown', e => {
 });
 
 document.addEventListener('mouseup', e => {
-    if (e.button === 0) mouseHeld = false;
+    if (e.button === 0) {
+        mouseHeld = false;
+        soundEngine.stopRifleBurst();
+    }
     if (e.button === 2) aiming = false;
 });
 
@@ -1821,6 +1825,7 @@ function shoot() {
     if (fireCooldown > 0 || isReloading) return;
 
     if (ammo <= 0) {
+        soundEngine.stopRifleBurst();
         soundEngine.playDryFire();
         startReload();
         fireCooldown = 0.3;
@@ -1838,20 +1843,17 @@ function shoot() {
     const isShotgun = currentWeapon.id === 'SHOTGUN';
     const pellets = isShotgun ? 8 : 1;
 
-    // Multi-Weapon Sound Effects
+    // Multi-Weapon Sound Effects (Clean, dedicated weapon samples without extraneous noise)
     if (currentWeapon.id === 'SNIPER') {
         soundEngine.playSniperFire(aiming);
-        soundEngine.playShellCasingDrop();
     } else if (isShotgun) {
         soundEngine.playShotgunFire(aiming);
         pumpTimer = 0.50; // Trigger procedural pump-action cocking slide animation
         setTimeout(() => {
             soundEngine.playShotgunPump();
-            soundEngine.playShellCasingDrop();
-        }, 220); // Sync slide-pull sound and shell drop to the pump back sequence
+        }, 220);
     } else {
         soundEngine.playRifleShot(aiming);
-        if (Math.random() < 0.35) soundEngine.playShellCasingDrop();
     }
 
     const forward = new THREE.Vector3();
@@ -2658,6 +2660,8 @@ function animate() {
 
         if (mouseHeld && !window.chatInputActive) {
             shoot();
+        } else {
+            soundEngine.stopRifleBurst();
         }
 
         if (fireCooldown > 0) {
