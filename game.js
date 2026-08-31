@@ -220,8 +220,573 @@ makeRoad(-120, 0, 14, 960, 0);              // West Avenue
 makeRoad(0, 120, 14, 960, Math.PI / 2);     // North Boulevard
 makeRoad(0, -120, 14, 960, Math.PI / 2);    // South Boulevard
 
-// 6. Diverse Architecture: Pitched/Slanted Roof Houses & High-Rises with Solid Chimneys
+// 6. Diverse Low-Poly Architecture: Yellow Cottages, Alpine Log Cabins, Modern Pool Villas & High-Rises
+function createLowPolyCottage({ x, z, width = 12, depth = 11, height = 6.0 }) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+
+    const yellowWallMat = new THREE.MeshStandardMaterial({ color: 0xf5cd79, roughness: 0.82 });
+    const stonePlinthMat = new THREE.MeshStandardMaterial({ color: 0x718093, roughness: 0.95 });
+    const coralRoofMat = new THREE.MeshStandardMaterial({ color: 0xe55039, roughness: 0.8 });
+    const trimWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.7 });
+    const darkWoodDoorMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.85 });
+    const cyanWindowMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff, roughness: 0.2, metalness: 0.4, transparent: true, opacity: 0.85 });
+    const brickChimneyMat = new THREE.MeshStandardMaterial({ color: 0xd63031, roughness: 0.9 });
+    const smokeMat = new THREE.MeshStandardMaterial({ color: 0xecf0f1, transparent: true, opacity: 0.65, flatShading: true });
+    const fenceMat = new THREE.MeshStandardMaterial({ color: 0x8a6240, roughness: 0.9 });
+    const pathMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c, roughness: 0.95 });
+
+    const plinthH = 1.2;
+    const wallH = height - plinthH;
+
+    // 1. Stone Foundation Skirting
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, plinthH, depth + 0.2), stonePlinthMat);
+    plinth.position.y = plinthH / 2;
+    plinth.castShadow = true;
+    plinth.receiveShadow = true;
+    group.add(plinth);
+
+    // 2. Yellow Upper Walls
+    const body = new THREE.Mesh(new THREE.BoxGeometry(width, wallH, depth), yellowWallMat);
+    body.position.y = plinthH + wallH / 2;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
+
+    // 3. Coral Red Pitched Gable Roof
+    const roofH = 3.6;
+    const roofShape = new THREE.Shape();
+    roofShape.moveTo(-width / 2 - 0.5, 0);
+    roofShape.lineTo(0, roofH);
+    roofShape.lineTo(width / 2 + 0.5, 0);
+    roofShape.closePath();
+
+    const extrudeSettings = {
+        depth: depth + 0.9,
+        bevelEnabled: true,
+        bevelSegments: 1,
+        steps: 1,
+        bevelSize: 0.12,
+        bevelThickness: 0.12
+    };
+    const roofGeo = new THREE.ExtrudeGeometry(roofShape, extrudeSettings);
+    const roof = new THREE.Mesh(roofGeo, coralRoofMat);
+    roof.position.set(0, height, -depth / 2 - 0.45);
+    roof.castShadow = true;
+    roof.receiveShadow = true;
+    group.add(roof);
+
+    // Triangular Gable Infill Walls
+    const gableShape = new THREE.Shape();
+    gableShape.moveTo(-width / 2, 0);
+    gableShape.lineTo(0, roofH - 0.1);
+    gableShape.lineTo(width / 2, 0);
+    gableShape.closePath();
+    const gableGeo = new THREE.ShapeGeometry(gableShape);
+
+    const frontGable = new THREE.Mesh(gableGeo, yellowWallMat);
+    frontGable.position.set(0, height, depth / 2 - 0.02);
+    group.add(frontGable);
+
+    const backGable = frontGable.clone();
+    backGable.rotation.y = Math.PI;
+    backGable.position.z = -depth / 2 + 0.02;
+    group.add(backGable);
+
+    // Upper Gable Attic Window
+    const atticWin = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 0.1), cyanWindowMat);
+    atticWin.position.set(0, height + roofH * 0.45, depth / 2 + 0.05);
+    group.add(atticWin);
+    const atticFrame = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 0.06), trimWhiteMat);
+    atticFrame.position.set(0, height + roofH * 0.45, depth / 2 + 0.02);
+    group.add(atticFrame);
+
+    // 4. Front Door & Canopy
+    const doorW = 1.4;
+    const doorH = 2.4;
+    const doorX = -width / 4;
+    const door = new THREE.Mesh(new THREE.BoxGeometry(doorW, doorH, 0.12), darkWoodDoorMat);
+    door.position.set(doorX, plinthH + doorH / 2, depth / 2 + 0.06);
+    group.add(door);
+
+    const doorGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 10), cyanWindowMat);
+    doorGlass.rotation.x = Math.PI / 2;
+    doorGlass.position.set(doorX, plinthH + doorH * 0.75, depth / 2 + 0.12);
+    group.add(doorGlass);
+
+    const awning = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.14, 1.1), coralRoofMat);
+    awning.position.set(doorX, plinthH + doorH + 0.2, depth / 2 + 0.55);
+    awning.rotation.x = 0.2;
+    awning.castShadow = true;
+    group.add(awning);
+
+    const step = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.4, 0.9), stonePlinthMat);
+    step.position.set(doorX, 0.2, depth / 2 + 0.5);
+    step.receiveShadow = true;
+    group.add(step);
+
+    // 5. Windows with Cross Grids
+    const winX = width / 4;
+    const win = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.8, 0.1), cyanWindowMat);
+    win.position.set(winX, plinthH + 1.6, depth / 2 + 0.06);
+    group.add(win);
+
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.1, 0.06), trimWhiteMat);
+    frame.position.set(winX, plinthH + 1.6, depth / 2 + 0.03);
+    group.add(frame);
+
+    const hBar = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.08, 0.12), trimWhiteMat);
+    hBar.position.set(winX, plinthH + 1.6, depth / 2 + 0.07);
+    group.add(hBar);
+    const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 0.12), trimWhiteMat);
+    vBar.position.set(winX, plinthH + 1.6, depth / 2 + 0.07);
+    group.add(vBar);
+
+    // Side Windows
+    for (let side = -1; side <= 1; side += 2) {
+        const sWin = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.6, 1.8), cyanWindowMat);
+        sWin.position.set(side * (width / 2 + 0.06), plinthH + 1.6, 0);
+        group.add(sWin);
+        const sFrame = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.9, 2.1), trimWhiteMat);
+        sFrame.position.set(side * (width / 2 + 0.03), plinthH + 1.6, 0);
+        group.add(sFrame);
+    }
+
+    // 6. Brick Chimney & Low-Poly Smoke Puffs
+    const chX = width / 3.2;
+    const chZ = -depth / 4;
+    const chH = 4.8;
+    const chimney = new THREE.Mesh(new THREE.BoxGeometry(1.1, chH, 1.1), brickChimneyMat);
+    chimney.position.set(chX, height + roofH * 0.45, chZ);
+    chimney.castShadow = true;
+    group.add(chimney);
+
+    const chimneyCap = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.2, 1.35), stonePlinthMat);
+    chimneyCap.position.set(chX, height + roofH * 0.45 + chH / 2, chZ);
+    group.add(chimneyCap);
+
+    const puff1 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 1), smokeMat);
+    puff1.position.set(chX, height + roofH * 0.45 + chH / 2 + 0.5, chZ);
+    group.add(puff1);
+    const puff2 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 1), smokeMat);
+    puff2.position.set(chX + 0.2, height + roofH * 0.45 + chH / 2 + 1.1, chZ - 0.15);
+    group.add(puff2);
+    const puff3 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.65, 1), smokeMat);
+    puff3.position.set(chX + 0.4, height + roofH * 0.45 + chH / 2 + 1.9, chZ - 0.3);
+    group.add(puff3);
+
+    // 7. Stone Walkway
+    const pathOffsets = [
+        [doorX, depth / 2 + 1.2, 1.4, 0.8],
+        [doorX - 0.3, depth / 2 + 2.1, 1.3, 0.9],
+        [doorX - 0.1, depth / 2 + 3.0, 1.5, 0.9]
+    ];
+    for (const [px, pz, pw, pd] of pathOffsets) {
+        const paver = new THREE.Mesh(new THREE.BoxGeometry(pw, 0.06, pd), pathMat);
+        paver.position.set(px, 0.03, pz);
+        paver.receiveShadow = true;
+        group.add(paver);
+    }
+
+    // 8. Garden Picket Fence
+    const fenceStartX = width / 2 + 0.3;
+    const fenceZ = depth / 2 + 0.3;
+    for (let f = 0; f < 5; f++) {
+        const picket = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.1, 0.06), fenceMat);
+        picket.position.set(fenceStartX - f * 0.45, 0.55, fenceZ);
+        group.add(picket);
+    }
+    const fenceRail = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.04), fenceMat);
+    fenceRail.position.set(fenceStartX - 1.0, 0.7, fenceZ);
+    group.add(fenceRail);
+
+    // Obstacle Registration
+    obstacles.push({
+        x,
+        z,
+        w: width + 0.4,
+        d: depth + 0.4,
+        bottom: 0,
+        top: height + roofH
+    });
+
+    const chimneyTop = height + roofH * 0.45 + chH / 2 + 0.25;
+    obstacles.push({
+        x: x + chX,
+        z: z + chZ,
+        w: 1.4,
+        d: 1.4,
+        bottom: height,
+        top: chimneyTop
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        h: height,
+        style: 'cottage',
+        roofHeight: roofH,
+        chimney: { x: x + chX, z: z + chZ, w: 1.4, d: 1.4, top: chimneyTop }
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
+function createLowPolyLogCabin({ x, z, width = 11, depth = 11, height = 5.8 }) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+
+    const logMat1 = new THREE.MeshStandardMaterial({ color: 0x8b4513, roughness: 0.92 });
+    const logMat2 = new THREE.MeshStandardMaterial({ color: 0x6e3b18, roughness: 0.95 });
+    const slateShingleMat = new THREE.MeshStandardMaterial({ color: 0x3d444b, roughness: 0.88 });
+    const woodTrimMat = new THREE.MeshStandardMaterial({ color: 0xb87333, roughness: 0.85 });
+    const stoneBoulderMat = new THREE.MeshStandardMaterial({ color: 0x57606f, roughness: 0.96, flatShading: true });
+    const cabinDoorMat = new THREE.MeshStandardMaterial({ color: 0x4a2810, roughness: 0.9 });
+    const cabinGlassMat = new THREE.MeshStandardMaterial({ color: 0xf6e58d, roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.8 });
+
+    // 1. Base Boulder Ring
+    const boulderCoords = [
+        [-width / 2, depth / 2, 0.9],
+        [width / 2, depth / 2, 1.1],
+        [-width / 2, -depth / 2, 1.0],
+        [width / 2, -depth / 2, 0.95],
+        [0, depth / 2 + 0.2, 0.85]
+    ];
+    for (const [bx, bz, br] of boulderCoords) {
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(br, 1), stoneBoulderMat);
+        rock.position.set(bx, br * 0.5, bz);
+        rock.rotation.set(Math.random() * 2, Math.random() * 2, Math.random() * 2);
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        group.add(rock);
+    }
+
+    // 2. Stacked Logs
+    const numLogs = 9;
+    const logRadius = 0.32;
+    const logH = height / numLogs;
+
+    for (let i = 0; i < numLogs; i++) {
+        const logY = 0.3 + i * logH;
+        const curMat = i % 2 === 0 ? logMat1 : logMat2;
+
+        const frontLog = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, width + 1.2, 7), curMat);
+        frontLog.rotation.z = Math.PI / 2;
+        frontLog.position.set(0, logY, depth / 2);
+        frontLog.castShadow = true;
+        group.add(frontLog);
+
+        const backLog = frontLog.clone();
+        backLog.position.z = -depth / 2;
+        group.add(backLog);
+
+        const sideLog1 = new THREE.Mesh(new THREE.CylinderGeometry(logRadius, logRadius, depth + 1.2, 7), curMat);
+        sideLog1.rotation.x = Math.PI / 2;
+        sideLog1.position.set(-width / 2, logY + logH * 0.5, 0);
+        sideLog1.castShadow = true;
+        group.add(sideLog1);
+
+        const sideLog2 = sideLog1.clone();
+        sideLog2.position.x = width / 2;
+        group.add(sideLog2);
+    }
+
+    const innerBody = new THREE.Mesh(new THREE.BoxGeometry(width - 0.2, height, depth - 0.2), logMat2);
+    innerBody.position.y = height / 2;
+    group.add(innerBody);
+
+    // 3. Steep A-Frame Roof
+    const roofH = 4.4;
+    const roofShape = new THREE.Shape();
+    roofShape.moveTo(-width / 2 - 0.8, 0);
+    roofShape.lineTo(0, roofH);
+    roofShape.lineTo(width / 2 + 0.8, 0);
+    roofShape.closePath();
+
+    const extrudeSettings = {
+        depth: depth + 1.4,
+        bevelEnabled: true,
+        bevelSegments: 1,
+        steps: 1,
+        bevelSize: 0.15,
+        bevelThickness: 0.15
+    };
+    const roofGeo = new THREE.ExtrudeGeometry(roofShape, extrudeSettings);
+    const roof = new THREE.Mesh(roofGeo, slateShingleMat);
+    roof.position.set(0, height - 0.2, -depth / 2 - 0.7);
+    roof.castShadow = true;
+    roof.receiveShadow = true;
+    group.add(roof);
+
+    const ridgeBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, depth + 1.8, 6), woodTrimMat);
+    ridgeBeam.rotation.x = Math.PI / 2;
+    ridgeBeam.position.set(0, height + roofH - 0.1, 0);
+    group.add(ridgeBeam);
+
+    // Front/Back Gables
+    const gableShape = new THREE.Shape();
+    gableShape.moveTo(-width / 2, 0);
+    gableShape.lineTo(0, roofH - 0.2);
+    gableShape.lineTo(width / 2, 0);
+    gableShape.closePath();
+    const gableGeo = new THREE.ShapeGeometry(gableShape);
+
+    const frontGable = new THREE.Mesh(gableGeo, logMat1);
+    frontGable.position.set(0, height - 0.2, depth / 2 - 0.05);
+    group.add(frontGable);
+
+    const backGable = frontGable.clone();
+    backGable.rotation.y = Math.PI;
+    backGable.position.z = -depth / 2 + 0.05;
+    group.add(backGable);
+
+    // 4. Door & Porch
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.4, 0.18), cabinDoorMat);
+    door.position.set(0, 1.5, depth / 2 + 0.1);
+    group.add(door);
+
+    const porch = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.35, 1.8), woodTrimMat);
+    porch.position.set(0, 0.18, depth / 2 + 0.9);
+    porch.receiveShadow = true;
+    group.add(porch);
+
+    const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.14, 1.4), slateShingleMat);
+    porchRoof.position.set(0, 3.2, depth / 2 + 0.8);
+    porchRoof.rotation.x = 0.3;
+    group.add(porchRoof);
+
+    // 5. Windows
+    for (let side = -1; side <= 1; side += 2) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.4, 0.12), cabinGlassMat);
+        win.position.set(side * (width / 3), 2.4, depth / 2 + 0.1);
+        group.add(win);
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(1.65, 1.65, 0.08), woodTrimMat);
+        frame.position.set(side * (width / 3), 2.4, depth / 2 + 0.06);
+        group.add(frame);
+    }
+
+    // 6. Stone Chimney
+    const chX = -width / 3.2;
+    const chZ = -depth / 4;
+    const chH = 5.2;
+    const chimney = new THREE.Mesh(new THREE.BoxGeometry(1.3, chH, 1.3), stoneBoulderMat);
+    chimney.position.set(chX, height + roofH * 0.45, chZ);
+    chimney.castShadow = true;
+    group.add(chimney);
+
+    // Obstacle Registration
+    obstacles.push({
+        x,
+        z,
+        w: width + 0.6,
+        d: depth + 0.6,
+        bottom: 0,
+        top: height + roofH
+    });
+
+    const chimneyTop = height + roofH * 0.45 + chH / 2;
+    obstacles.push({
+        x: x + chX,
+        z: z + chZ,
+        w: 1.6,
+        d: 1.6,
+        bottom: height,
+        top: chimneyTop
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        h: height,
+        style: 'cabin',
+        roofHeight: roofH,
+        chimney: { x: x + chX, z: z + chZ, w: 1.6, d: 1.6, top: chimneyTop }
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
+function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.6 }) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+
+    const whiteWallMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.65 });
+    const slateWallMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, roughness: 0.7 });
+    const darkTrimMat = new THREE.MeshStandardMaterial({ color: 0x1e272e, roughness: 0.8 });
+    const deckWoodMat = new THREE.MeshStandardMaterial({ color: 0xc89666, roughness: 0.78 });
+    const poolWaterMat = new THREE.MeshStandardMaterial({ color: 0x00d2d3, roughness: 0.08, metalness: 0.6, transparent: true, opacity: 0.88 });
+    const poolBorderMat = new THREE.MeshStandardMaterial({ color: 0xdcdde1, roughness: 0.8 });
+    const panoramicGlassMat = new THREE.MeshStandardMaterial({ color: 0x4a69bd, roughness: 0.1, metalness: 0.45, transparent: true, opacity: 0.75 });
+    const loungerMat = new THREE.MeshStandardMaterial({ color: 0x718093, roughness: 0.8 });
+    const palmLeafMat = new THREE.MeshStandardMaterial({ color: 0x2ed573, roughness: 0.75, flatShading: true });
+    const palmTrunkMat = new THREE.MeshStandardMaterial({ color: 0x573b23, roughness: 0.9 });
+
+    const groundH = height * 0.52;
+    const upperH = height * 0.48;
+
+    // 1. Ground Floor White Volume
+    const groundBody = new THREE.Mesh(new THREE.BoxGeometry(width * 0.65, groundH, depth * 0.8), whiteWallMat);
+    groundBody.position.set(-width * 0.15, groundH / 2, 0);
+    groundBody.castShadow = true;
+    groundBody.receiveShadow = true;
+    group.add(groundBody);
+
+    // Ground Floor Dark Slate Volume
+    const groundAccent = new THREE.Mesh(new THREE.BoxGeometry(width * 0.35, groundH, depth * 0.65), slateWallMat);
+    groundAccent.position.set(width * 0.3, groundH / 2, -depth * 0.07);
+    groundAccent.castShadow = true;
+    group.add(groundAccent);
+
+    // 2. Cantilevered Upper Second Floor
+    const upperBody = new THREE.Mesh(new THREE.BoxGeometry(width * 0.75, upperH, depth * 0.85), slateWallMat);
+    upperBody.position.set(0, groundH + upperH / 2, depth * 0.05);
+    upperBody.castShadow = true;
+    group.add(upperBody);
+
+    const roofCap = new THREE.Mesh(new THREE.BoxGeometry(width * 0.78, 0.3, depth * 0.88), darkTrimMat);
+    roofCap.position.set(0, height + 0.15, depth * 0.05);
+    group.add(roofCap);
+
+    // 3. Panoramic Windows
+    const glassW = width * 0.45;
+    const glassH = groundH * 0.8;
+    const groundGlass = new THREE.Mesh(new THREE.BoxGeometry(glassW, glassH, 0.1), panoramicGlassMat);
+    groundGlass.position.set(-width * 0.15, groundH * 0.5, depth * 0.4 + 0.06);
+    group.add(groundGlass);
+
+    const upperGlass = new THREE.Mesh(new THREE.BoxGeometry(width * 0.5, upperH * 0.75, 0.1), panoramicGlassMat);
+    upperGlass.position.set(-width * 0.05, groundH + upperH * 0.5, depth * 0.47 + 0.06);
+    group.add(upperGlass);
+
+    // 4. Vertical Louver Slats
+    for (let s = 0; s < 6; s++) {
+        const slat = new THREE.Mesh(new THREE.BoxGeometry(0.12, upperH * 0.9, 0.35), whiteWallMat);
+        slat.position.set(width * 0.22 + s * 0.35, groundH + upperH * 0.5, depth * 0.47 + 0.15);
+        group.add(slat);
+    }
+
+    // 5. Wooden Sundeck Patio
+    const deckW = width * 0.55;
+    const deckD = depth * 0.7;
+    const deckH = 0.35;
+    const deckX = width * 0.45;
+    const deckZ = depth * 0.35;
+    const sundeck = new THREE.Mesh(new THREE.BoxGeometry(deckW, deckH, deckD), deckWoodMat);
+    sundeck.position.set(deckX, deckH / 2, deckZ);
+    sundeck.receiveShadow = true;
+    group.add(sundeck);
+
+    // 6. Swimming Pool
+    const poolW = 4.5;
+    const poolD = 6.5;
+    const poolX = deckX + 0.2;
+    const poolZ = deckZ - 0.2;
+
+    const poolRim = new THREE.Mesh(new THREE.BoxGeometry(poolW + 0.8, 0.38, poolD + 0.8), poolBorderMat);
+    poolRim.position.set(poolX, 0.19, poolZ);
+    group.add(poolRim);
+
+    const poolWater = new THREE.Mesh(new THREE.BoxGeometry(poolW, 0.1, poolD), poolWaterMat);
+    poolWater.position.set(poolX, 0.32, poolZ);
+    group.add(poolWater);
+
+    // 7. Sun Loungers
+    for (let l = 0; l < 2; l++) {
+        const lounger = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 1.8), loungerMat);
+        lounger.position.set(deckX - deckW / 2 + 1.2 + l * 1.1, deckH + 0.12, deckZ + deckD / 2 - 1.2);
+        group.add(lounger);
+    }
+
+    // Pergola
+    const pergolaPost = new THREE.Mesh(new THREE.BoxGeometry(0.15, 3.2, 0.15), darkTrimMat);
+    pergolaPost.position.set(deckX - deckW / 2 + 0.3, 1.6, deckZ - deckD / 2 + 0.3);
+    group.add(pergolaPost);
+
+    const pergolaRoof = new THREE.Mesh(new THREE.BoxGeometry(deckW, 0.12, deckD * 0.45), darkTrimMat);
+    pergolaRoof.position.set(deckX, 3.2, deckZ - deckD / 4);
+    group.add(pergolaRoof);
+
+    // 8. Palm Tree
+    const palm = new THREE.Group();
+    palm.position.set(deckX - deckW / 2 + 0.8, deckH, deckZ - deckD / 2 + 0.8);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 3.2, 6), palmTrunkMat);
+    trunk.position.y = 1.6;
+    palm.add(trunk);
+
+    for (let p = 0; p < 5; p++) {
+        const ang = (p * Math.PI * 2) / 5;
+        const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.08, 1.6), palmLeafMat);
+        leaf.position.set(Math.cos(ang) * 0.7, 3.2, Math.sin(ang) * 0.7);
+        leaf.rotation.y = ang;
+        leaf.rotation.x = 0.5;
+        palm.add(leaf);
+    }
+    group.add(palm);
+
+    // Obstacle Registration
+    obstacles.push({
+        x: x - width * 0.15,
+        z: z,
+        w: width * 0.65,
+        d: depth * 0.8,
+        bottom: 0,
+        top: height
+    });
+
+    obstacles.push({
+        x: x + width * 0.3,
+        z: z - depth * 0.07,
+        w: width * 0.35,
+        d: depth * 0.65,
+        bottom: 0,
+        top: groundH
+    });
+
+    obstacles.push({
+        x: x + deckX,
+        z: z + deckZ,
+        w: deckW,
+        d: deckD,
+        bottom: 0,
+        top: deckH
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        h: height,
+        style: 'villa',
+        roofHeight: 0
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
+// Master Building Creator
 function createBuilding({ x, z, width, depth, height, style = 'flat' }) {
+    if (style === 'cottage') {
+        createLowPolyCottage({ x, z, width, depth, height });
+        return;
+    }
+    if (style === 'cabin') {
+        createLowPolyLogCabin({ x, z, width, depth, height });
+        return;
+    }
+    if (style === 'villa') {
+        createLowPolyModernVilla({ x, z, width, depth, height });
+        return;
+    }
+
+    // Downtown Flat High-Rises
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
@@ -232,144 +797,58 @@ function createBuilding({ x, z, width, depth, height, style = 'flat' }) {
     );
     const bodyMat = new THREE.MeshStandardMaterial({ color: houseColor, roughness: 0.85 });
 
-    // Main Building Body
     const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), bodyMat);
     body.position.y = height / 2;
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
 
-    let roofHeight = 0;
+    const roofBorder = new THREE.Mesh(new THREE.BoxGeometry(width + 0.4, 0.4, depth + 0.4), darkMat);
+    roofBorder.position.y = height + 0.2;
+    roofBorder.castShadow = true;
+    group.add(roofBorder);
 
-    if (style === 'slanted-gable') {
-        // SLANTED / PITCHED GABLE ROOF
-        roofHeight = 3.8 + Math.random() * 1.5;
-        const roofMat = Math.random() > 0.5 ? slateRoofMat : terracottaRoofMat;
+    const hvac = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.6, 2.4), darkMat);
+    hvac.position.set(width / 4, height + 0.8, depth / 4);
+    hvac.castShadow = true;
+    group.add(hvac);
 
-        const roofShape = new THREE.Shape();
-        roofShape.moveTo(-width / 2 - 0.4, 0);
-        roofShape.lineTo(0, roofHeight);
-        roofShape.lineTo(width / 2 + 0.4, 0);
-        roofShape.closePath();
+    const hvacTop = height + 1.6;
+    obstacles.push({
+        x: x + width / 4,
+        z: z + depth / 4,
+        w: 2.6,
+        d: 2.6,
+        bottom: height - 0.5,
+        top: hvacTop
+    });
 
-        const extrudeSettings = {
-            depth: depth + 0.8,
-            bevelEnabled: true,
-            bevelSegments: 2,
-            steps: 1,
-            bevelSize: 0.15,
-            bevelThickness: 0.15
-        };
-
-        const roofGeo = new THREE.ExtrudeGeometry(roofShape, extrudeSettings);
-        const roof = new THREE.Mesh(roofGeo, roofMat);
-        roof.position.set(0, height, -depth / 2 - 0.4);
-        roof.castShadow = true;
-        roof.receiveShadow = true;
-        group.add(roof);
-
-        // Dormer Window
-        const dormer = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.4, 1.4), bodyMat);
-        dormer.position.set(width / 4, height + roofHeight * 0.4, depth / 4);
-        dormer.castShadow = true;
-        group.add(dormer);
-
-        const dormerGlass = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.08), glassMat);
-        dormerGlass.position.set(width / 4, height + roofHeight * 0.4, depth / 4 + 0.72);
-        group.add(dormerGlass);
-
-        // FIRMLY ANCHORED CHIMNEY
-        const chimneyH = 4.6;
-        const chimneyX = -width / 3.5;
-        const chimneyZ = -depth / 4;
-
-        const chimney = new THREE.Mesh(new THREE.BoxGeometry(1.2, chimneyH, 1.2), darkMat);
-        chimney.position.set(chimneyX, height + roofHeight * 0.45, chimneyZ);
-        chimney.castShadow = true;
-        group.add(chimney);
-
-        const chimneyCap = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.25, 1.4), darkMat);
-        chimneyCap.position.set(chimneyX, height + roofHeight * 0.45 + chimneyH / 2, chimneyZ);
-        group.add(chimneyCap);
-
-        const chimneyCapTop = height + roofHeight * 0.45 + chimneyH / 2 + 0.25;
-
-        // Chimney Solid Collision Box (Impenetrable rooftop obstacle)
-        obstacles.push({
-            x: x + chimneyX,
-            z: z + chimneyZ,
-            w: 1.6,
-            d: 1.6,
-            bottom: height - 1.0,
-            top: chimneyCapTop
-        });
-
-        // Dormer Window Collision Box
-        const dormerTop = height + roofHeight * 0.4 + 1.4;
-        obstacles.push({
-            x: x + width / 4,
-            z: z + depth / 4,
-            w: 2.2,
-            d: 1.8,
-            bottom: height,
-            top: dormerTop
-        });
-
-    } else {
-        // FLAT ROOF WITH TERRACE, HVAC UNITS & WATER TOWER
-        const roofBorder = new THREE.Mesh(
-            new THREE.BoxGeometry(width + 0.4, 0.4, depth + 0.4),
-            darkMat
+    let towerData = null;
+    if (height > 16) {
+        const tower = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.8, 1.8, 2.8, 10),
+            new THREE.MeshStandardMaterial({ color: 0x5a483a, roughness: 0.9 })
         );
-        roofBorder.position.y = height + 0.2;
-        roofBorder.castShadow = true;
-        roofBorder.receiveShadow = true;
-        group.add(roofBorder);
+        tower.position.set(-width / 4, height + 2.2, -depth / 4);
+        tower.castShadow = true;
+        group.add(tower);
 
-        const hvac = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.6, 2.4), darkMat);
-        hvac.position.set(width / 4, height + 0.8, depth / 4);
-        hvac.castShadow = true;
-        group.add(hvac);
-
-        // HVAC Solid Collision Box
-        const hvacTop = height + 1.6;
+        const towerTop = height + 2.2 + 1.4;
         obstacles.push({
-            x: x + width / 4,
-            z: z + depth / 4,
-            w: 2.6,
-            d: 2.6,
+            x: x - width / 4,
+            z: z - depth / 4,
+            w: 3.8,
+            d: 3.8,
             bottom: height - 0.5,
-            top: hvacTop
+            top: towerTop
         });
 
-        var towerData = null;
-        if (height > 16) {
-            const tower = new THREE.Mesh(
-                new THREE.CylinderGeometry(1.8, 1.8, 2.8, 10),
-                new THREE.MeshStandardMaterial({ color: 0x5a483a, roughness: 0.9 })
-            );
-            tower.position.set(-width / 4, height + 2.2, -depth / 4);
-            tower.castShadow = true;
-            group.add(tower);
-
-            // Water Tower Solid Collision Box
-            const towerTop = height + 2.2 + 1.4;
-            obstacles.push({
-                x: x - width / 4,
-                z: z - depth / 4,
-                w: 3.8,
-                d: 3.8,
-                bottom: height - 0.5,
-                top: towerTop
-            });
-
-            towerData = {
-                x: x - width / 4,
-                z: z - depth / 4,
-                radius: 1.9,
-                top: towerTop
-            };
-        }
+        towerData = {
+            x: x - width / 4,
+            z: z - depth / 4,
+            radius: 1.9,
+            top: towerTop
+        };
     }
 
     const bldgData = {
@@ -378,23 +857,10 @@ function createBuilding({ x, z, width, depth, height, style = 'flat' }) {
         w: width,
         d: depth,
         h: height,
-        style,
-        roofHeight,
-        chimney: style === 'slanted-gable' ? {
-            x: x - width / 3.5,
-            z: z - depth / 4,
-            w: 1.6,
-            d: 1.6,
-            top: height + roofHeight * 0.45 + 4.6 / 2 + 0.25
-        } : null,
-        hvac: style === 'flat' ? {
-            x: x + width / 4,
-            z: z + depth / 4,
-            w: 2.6,
-            d: 2.6,
-            top: height + 1.6
-        } : null,
-        tower: typeof towerData !== 'undefined' ? towerData : null
+        style: 'flat',
+        roofHeight: 0,
+        hvac: { x: x + width / 4, z: z + depth / 4, w: 2.6, d: 2.6, top: height + 1.6 },
+        tower: towerData
     };
 
     obstacles.push({
@@ -408,16 +874,12 @@ function createBuilding({ x, z, width, depth, height, style = 'flat' }) {
 
     buildings.push(bldgData);
 
-    // Windows
     const floors = Math.max(1, Math.floor(height / 3.2));
     const columns = Math.max(2, Math.floor(width / 3.2));
 
     for (let floor = 0; floor < floors; floor++) {
         for (let col = 0; col < columns; col++) {
-            const win = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 1.4, 0.08),
-                glassMat
-            );
+            const win = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 0.08), glassMat);
             const wx = -width / 2 + (col + 0.6) * (width / columns);
             const wy = 2 + floor * 3.2;
             const wz = depth / 2 + 0.04;
@@ -434,26 +896,30 @@ function createBuilding({ x, z, width, depth, height, style = 'flat' }) {
     staticRaycastTargets.push(group);
 }
 
-// Generate Massive Urban Grid (Downtown High-Rises & Residential Slanted-Roof Houses)
+// Generate Massive Urban & Suburban Districts
 function generateMassiveCity() {
     const blockRanges = [
-        // Inner Downtown Blocks (Flat High-Rises)
+        // Inner Downtown Blocks (High-Rises)
         { xs: [28, 56, 84], zs: [28, 56, 84], style: 'flat', minH: 14, maxH: 34 },
         { xs: [-84, -56, -28], zs: [28, 56, 84], style: 'flat', minH: 14, maxH: 34 },
         { xs: [28, 56, 84], zs: [-84, -56, -28], style: 'flat', minH: 14, maxH: 34 },
         { xs: [-84, -56, -28], zs: [-84, -56, -28], style: 'flat', minH: 14, maxH: 34 },
 
-        // Mid-Town / Suburbia Blocks with Slanted Roof Houses
-        { xs: [148, 178, 208, 238], zs: [28, 58, 88], style: 'slanted-gable', minH: 6, maxH: 11 },
-        { xs: [-238, -208, -178, -148], zs: [28, 58, 88], style: 'slanted-gable', minH: 6, maxH: 11 },
-        { xs: [148, 178, 208, 238], zs: [-88, -58, -28], style: 'slanted-gable', minH: 6, maxH: 11 },
-        { xs: [-238, -208, -178, -148], zs: [-88, -58, -28], style: 'slanted-gable', minH: 6, maxH: 11 },
+        // North Suburb District (Modern Luxury Pool Villas)
+        { xs: [28, 68, 148, 192], zs: [148, 188, 228], style: 'villa', minH: 7.2, maxH: 8.4 },
+        { xs: [-192, -148, -68, -28], zs: [148, 188, 228], style: 'villa', minH: 7.2, maxH: 8.4 },
 
-        // Outer Suburbia Blocks (Slanted Gable Roofs)
-        { xs: [28, 62, 96, 148, 188], zs: [148, 182, 216], style: 'slanted-gable', minH: 6, maxH: 12 },
-        { xs: [-188, -148, -96, -62, -28], zs: [148, 182, 216], style: 'slanted-gable', minH: 6, maxH: 12 },
-        { xs: [28, 62, 96, 148, 188], zs: [-216, -182, -148], style: 'slanted-gable', minH: 6, maxH: 12 },
-        { xs: [-188, -148, -96, -62, -28], zs: [-216, -182, -148], style: 'slanted-gable', minH: 6, maxH: 12 },
+        // West Suburb District (Yellow Suburban Cottages)
+        { xs: [-238, -204, -170, -136], zs: [28, 58, 88], style: 'cottage', minH: 5.6, maxH: 6.8 },
+        { xs: [-238, -204, -170, -136], zs: [-88, -58, -28], style: 'cottage', minH: 5.6, maxH: 6.8 },
+
+        // East Alpine District (Alpine Timber Log Cabins)
+        { xs: [136, 170, 204, 238], zs: [28, 58, 88], style: 'cabin', minH: 5.4, maxH: 6.4 },
+        { xs: [136, 170, 204, 238], zs: [-88, -58, -28], style: 'cabin', minH: 5.4, maxH: 6.4 },
+
+        // South Suburb District (Mixed Cottages & Cabins)
+        { xs: [28, 64, 148, 188], zs: [-228, -188, -148], style: 'cottage', minH: 5.6, maxH: 6.8 },
+        { xs: [-188, -148, -64, -28], zs: [-228, -188, -148], style: 'cabin', minH: 5.4, maxH: 6.4 }
     ];
 
     for (const range of blockRanges) {
@@ -463,8 +929,15 @@ function generateMassiveCity() {
                 const isNearRoadZ = Math.abs(z) < 14 || Math.abs(z - 120) < 12 || Math.abs(z + 120) < 12;
                 if (isNearRoadX || isNearRoadZ) continue;
 
-                const w = range.style === 'slanted-gable' ? (12 + Math.random() * 4) : (14 + Math.random() * 6);
-                const d = range.style === 'slanted-gable' ? (12 + Math.random() * 4) : (14 + Math.random() * 6);
+                let w = 12;
+                let d = 11;
+                if (range.style === 'villa') {
+                    w = 16;
+                    d = 15;
+                } else if (range.style === 'flat') {
+                    w = 14 + Math.random() * 6;
+                    d = 14 + Math.random() * 6;
+                }
                 const h = range.minH + Math.random() * (range.maxH - range.minH);
 
                 createBuilding({
@@ -481,7 +954,7 @@ function generateMassiveCity() {
 }
 generateMassiveCity();
 
-// 7. Guaranteed Non-Overlapping Procedural Trees & Stealth Bushes
+// 7. Dense Low-Poly Forest Ecosystems & Wilderness Biomes
 function isValidTreeLocation(x, z) {
     const roadClearMargin = 11.5;
     if (Math.abs(x) < roadClearMargin || Math.abs(z) < roadClearMargin) return false;
@@ -489,7 +962,7 @@ function isValidTreeLocation(x, z) {
     if (Math.abs(z - 120) < roadClearMargin || Math.abs(z + 120) < roadClearMargin) return false;
 
     for (const b of buildings) {
-        const buffer = 3.5;
+        const buffer = 4.0;
         if (
             x >= b.x - b.w / 2 - buffer &&
             x <= b.x + b.w / 2 + buffer &&
@@ -503,123 +976,47 @@ function isValidTreeLocation(x, z) {
     return true;
 }
 
-function createDiverseTree(x, z, species = 0) {
+// Low-Poly Coniferous Pine Tree (Image 5)
+function createLowPolyPine(x, z, h = 9.5) {
     if (!isValidTreeLocation(x, z)) return;
 
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
-    if (species === 0) {
-        // Pine / Conifer
-        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x332014, roughness: 0.95 });
-        const pineMat1 = new THREE.MeshStandardMaterial({ color: 0x163820, roughness: 0.8 });
-        const pineMat2 = new THREE.MeshStandardMaterial({ color: 0x1f4728, roughness: 0.8 });
-        const pineMat3 = new THREE.MeshStandardMaterial({ color: 0x295832, roughness: 0.8 });
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x332014, roughness: 0.95 });
+    const pineMats = [
+        new THREE.MeshStandardMaterial({ color: 0x143d24, roughness: 0.8, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: 0x1f5431, roughness: 0.8, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: 0x296e3b, roughness: 0.8, flatShading: true })
+    ];
 
-        const trunkH = 8.5;
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.42, trunkH, 7), trunkMat);
-        trunk.position.y = trunkH / 2;
-        trunk.castShadow = true;
-        group.add(trunk);
+    const trunkH = h * 0.9;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.44, trunkH, 6), trunkMat);
+    trunk.position.y = trunkH / 2;
+    trunk.castShadow = true;
+    group.add(trunk);
 
-        const skirtTiers = [
-            { y: 3.8, r: 2.5, h: 3.2, mat: pineMat1 },
-            { y: 5.6, r: 2.0, h: 2.8, mat: pineMat2 },
-            { y: 7.2, r: 1.5, h: 2.4, mat: pineMat3 },
-            { y: 8.6, r: 0.9, h: 1.8, mat: pineMat2 }
-        ];
+    const numTiers = 4;
+    for (let t = 0; t < numTiers; t++) {
+        const tierY = h * 0.38 + t * (h * 0.18);
+        const tierR = (h * 0.28) * (1.0 - t * 0.2);
+        const tierH = h * 0.32;
+        const mat = pineMats[t % pineMats.length];
 
-        for (const s of skirtTiers) {
-            const skirt = new THREE.Mesh(new THREE.ConeGeometry(s.r, s.h, 7), s.mat);
-            skirt.position.y = s.y;
-            skirt.castShadow = true;
-            group.add(skirt);
-        }
-    } else if (species === 1) {
-        // Broadleaf Deciduous Oak
-        const oakBarkMat = new THREE.MeshStandardMaterial({ color: 0x422d1d, roughness: 0.9 });
-        const oakLeaf1 = new THREE.MeshStandardMaterial({ color: 0x2d6a2e, roughness: 0.8 });
-        const oakLeaf2 = new THREE.MeshStandardMaterial({ color: 0x3d823e, roughness: 0.8 });
-
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.58, 4.5, 8), oakBarkMat);
-        trunk.position.y = 2.25;
-        trunk.castShadow = true;
-        group.add(trunk);
-
-        for (let b = 0; b < 3; b++) {
-            const ang = (b * Math.PI * 2) / 3 + 0.3;
-            const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.16, 2.2, 6), oakBarkMat);
-            branch.position.set(Math.cos(ang) * 0.5, 3.2, Math.sin(ang) * 0.5);
-            branch.rotation.z = Math.cos(ang) * 0.5;
-            branch.rotation.x = Math.sin(ang) * 0.5;
-            branch.castShadow = true;
-            group.add(branch);
-
-            const cluster = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6, 1), b % 2 === 0 ? oakLeaf1 : oakLeaf2);
-            cluster.position.set(Math.cos(ang) * 1.8, 4.4, Math.sin(ang) * 1.8);
-            cluster.castShadow = true;
-            group.add(cluster);
-        }
-
-        const topCanopy = new THREE.Mesh(new THREE.IcosahedronGeometry(2.4, 1), oakLeaf1);
-        topCanopy.position.y = 5.6;
-        topCanopy.castShadow = true;
-        group.add(topCanopy);
-    } else if (species === 2) {
-        // White Birch Tree
-        const birchBarkMat = new THREE.MeshStandardMaterial({ color: 0xdbe0e5, roughness: 0.75 });
-        const birchLeafMat = new THREE.MeshStandardMaterial({ color: 0x58b03e, roughness: 0.8 });
-        const birchLeafLight = new THREE.MeshStandardMaterial({ color: 0x78cb4d, roughness: 0.8 });
-
-        const trunkH = 8.0;
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.26, trunkH, 8), birchBarkMat);
-        trunk.position.y = trunkH / 2;
-        trunk.castShadow = true;
-        group.add(trunk);
-
-        for (let y = 1.2; y < 6.5; y += 1.1) {
-            const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.05, 8), darkMat);
-            ring.position.y = y;
-            group.add(ring);
-        }
-
-        for (let c = 0; c < 4; c++) {
-            const cY = 5.2 + c * 0.9;
-            const cR = 1.5 - c * 0.25;
-            const canopy = new THREE.Mesh(new THREE.IcosahedronGeometry(cR, 1), c % 2 === 0 ? birchLeafMat : birchLeafLight);
-            canopy.position.set((Math.random() - 0.5) * 0.5, cY, (Math.random() - 0.5) * 0.5);
-            canopy.castShadow = true;
-            group.add(canopy);
-        }
-    } else {
-        // Autumn Maple / Shrub
-        const mapleBarkMat = new THREE.MeshStandardMaterial({ color: 0x4a3424, roughness: 0.9 });
-        const mapleAmber1 = new THREE.MeshStandardMaterial({ color: 0xb85d26, roughness: 0.85 });
-        const mapleAmber2 = new THREE.MeshStandardMaterial({ color: 0xc97530, roughness: 0.85 });
-
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.45, 3.2, 7), mapleBarkMat);
-        trunk.position.y = 1.6;
-        trunk.castShadow = true;
-        group.add(trunk);
-
-        const bush1 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.0, 1), mapleAmber1);
-        bush1.position.set(0, 3.4, 0);
-        bush1.castShadow = true;
-        group.add(bush1);
-
-        const bush2 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5, 1), mapleAmber2);
-        bush2.position.set(0.6, 3.8, -0.4);
-        bush2.castShadow = true;
-        group.add(bush2);
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(tierR, tierH, 6), mat);
+        cone.position.y = tierY;
+        cone.rotation.y = (t * 0.6);
+        cone.castShadow = true;
+        group.add(cone);
     }
 
     obstacles.push({
         x,
         z,
-        w: 0.9,
-        d: 0.9,
+        w: 1.0,
+        d: 1.0,
         bottom: 0,
-        top: 3.5
+        top: h
     });
 
     trees.push(group);
@@ -627,15 +1024,98 @@ function createDiverseTree(x, z, species = 0) {
     staticRaycastTargets.push(group);
 }
 
-// Plant Stealth Foliage Bushes (Allows player to hide in foliage)
+// Low-Poly Deciduous Oak / Birch Tree (Image 4)
+function createLowPolyDeciduous(x, z, scale = 1.0) {
+    if (!isValidTreeLocation(x, z)) return;
+
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+
+    const barkMat = new THREE.MeshStandardMaterial({ color: 0x6e472a, roughness: 0.9 });
+    const leafMat1 = new THREE.MeshStandardMaterial({ color: 0x608038, roughness: 0.8, flatShading: true });
+    const leafMat2 = new THREE.MeshStandardMaterial({ color: 0x3e7a34, roughness: 0.8, flatShading: true });
+    const leafMat3 = new THREE.MeshStandardMaterial({ color: 0x78a832, roughness: 0.8, flatShading: true });
+
+    const trunkH = 4.2 * scale;
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28 * scale, 0.52 * scale, trunkH, 7), barkMat);
+    trunk.position.y = trunkH / 2;
+    trunk.castShadow = true;
+    group.add(trunk);
+
+    for (let b = 0; b < 3; b++) {
+        const ang = (b * Math.PI * 2) / 3 + 0.2;
+        const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.1 * scale, 0.18 * scale, 2.4 * scale, 6), barkMat);
+        branch.position.set(Math.cos(ang) * 0.6 * scale, trunkH * 0.75, Math.sin(ang) * 0.6 * scale);
+        branch.rotation.z = Math.cos(ang) * 0.55;
+        branch.rotation.x = Math.sin(ang) * 0.55;
+        branch.castShadow = true;
+        group.add(branch);
+
+        const mats = [leafMat1, leafMat2, leafMat3];
+        const cluster = new THREE.Mesh(new THREE.DodecahedronGeometry(1.8 * scale, 1), mats[b % mats.length]);
+        cluster.position.set(Math.cos(ang) * 1.9 * scale, trunkH * 0.9 + 1.2 * scale, Math.sin(ang) * 1.9 * scale);
+        cluster.castShadow = true;
+        group.add(cluster);
+    }
+
+    const topCanopy = new THREE.Mesh(new THREE.IcosahedronGeometry(2.6 * scale, 1), leafMat2);
+    topCanopy.position.y = trunkH + 1.8 * scale;
+    topCanopy.castShadow = true;
+    group.add(topCanopy);
+
+    obstacles.push({
+        x,
+        z,
+        w: 1.1 * scale,
+        d: 1.1 * scale,
+        bottom: 0,
+        top: trunkH + 2.5 * scale
+    });
+
+    trees.push(group);
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
+// Low-Poly Faceted Granite Boulder (Tactical Combat Cover)
+function createLowPolyBoulder(x, z, radius = 1.4) {
+    if (!isValidTreeLocation(x, z)) return;
+
+    const rockMat = new THREE.MeshStandardMaterial({
+        color: Math.random() > 0.5 ? 0x57606f : 0x718093,
+        roughness: 0.95,
+        flatShading: true
+    });
+
+    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(radius, 1), rockMat);
+    rock.position.set(x, radius * 0.45, z);
+    rock.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+    rock.scale.set(1.0 + Math.random() * 0.3, 0.75 + Math.random() * 0.3, 1.0 + Math.random() * 0.3);
+    rock.castShadow = true;
+    rock.receiveShadow = true;
+    scene.add(rock);
+
+    obstacles.push({
+        x,
+        z,
+        w: radius * 1.8,
+        d: radius * 1.8,
+        bottom: 0,
+        top: radius * 1.2
+    });
+
+    staticRaycastTargets.push(rock);
+}
+
+// Plant Stealth Foliage Bushes
 function createStealthBush(x, z) {
     if (!isValidTreeLocation(x, z)) return;
 
     const group = new THREE.Group();
     group.position.set(x, 0, z);
 
-    const bushMat1 = new THREE.MeshStandardMaterial({ color: 0x1f5425, roughness: 0.9 });
-    const bushMat2 = new THREE.MeshStandardMaterial({ color: 0x2b6e32, roughness: 0.9 });
+    const bushMat1 = new THREE.MeshStandardMaterial({ color: 0x1f5425, roughness: 0.9, flatShading: true });
+    const bushMat2 = new THREE.MeshStandardMaterial({ color: 0x2b6e32, roughness: 0.9, flatShading: true });
 
     const cluster1 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.9, 1), bushMat1);
     cluster1.position.set(0, 1.1, 0);
@@ -656,16 +1136,44 @@ function createStealthBush(x, z) {
     stealthBushes.push({ x, z, radius: 2.3 });
 }
 
-// Plant certified non-overlapping trees and stealth bushes
-for (let i = 0; i < 70; i++) {
-    const tx = THREE.MathUtils.randFloatSpread(460);
-    const tz = THREE.MathUtils.randFloatSpread(460);
-    createDiverseTree(tx, tz, i % 4);
+// 1. North-West Dense Alpine Pine Forest Biome
+for (let i = 0; i < 55; i++) {
+    const px = -280 + Math.random() * 150;
+    const pz = 130 + Math.random() * 160;
+    createLowPolyPine(px, pz, 8.5 + Math.random() * 6.5);
+}
+for (let i = 0; i < 20; i++) {
+    const bx = -270 + Math.random() * 140;
+    const bz = 140 + Math.random() * 150;
+    createLowPolyBoulder(bx, bz, 1.2 + Math.random() * 1.2);
 }
 
-for (let i = 0; i < 30; i++) {
-    const bx = THREE.MathUtils.randFloatSpread(420);
-    const bz = THREE.MathUtils.randFloatSpread(420);
+// 2. South-East Sunlit Deciduous Woodland Biome
+for (let i = 0; i < 50; i++) {
+    const dx = 130 + Math.random() * 160;
+    const dz = -280 + Math.random() * 150;
+    createLowPolyDeciduous(dx, dz, 0.9 + Math.random() * 0.4);
+}
+for (let i = 0; i < 18; i++) {
+    const rx = 140 + Math.random() * 150;
+    const rz = -270 + Math.random() * 140;
+    createLowPolyBoulder(rx, rz, 1.0 + Math.random() * 1.0);
+}
+
+// 3. Suburban Tree & Stealth Bush Fringes
+for (let i = 0; i < 45; i++) {
+    const tx = THREE.MathUtils.randFloatSpread(460);
+    const tz = THREE.MathUtils.randFloatSpread(460);
+    if (i % 2 === 0) {
+        createLowPolyPine(tx, tz, 8.0 + Math.random() * 4.0);
+    } else {
+        createLowPolyDeciduous(tx, tz, 0.85 + Math.random() * 0.3);
+    }
+}
+
+for (let i = 0; i < 40; i++) {
+    const bx = THREE.MathUtils.randFloatSpread(440);
+    const bz = THREE.MathUtils.randFloatSpread(440);
     createStealthBush(bx, bz);
 }
 
