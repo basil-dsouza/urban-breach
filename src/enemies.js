@@ -699,7 +699,7 @@ export class EnemyManager {
         shoeR.castShadow = true;
         legRShin.add(shoeR);
 
-        // 6. Two-Handed Tactical Weapon Grip (Rifle held by BOTH hands)
+        // 6. Two-Handed Tactical Weapon Grip (Rifle / Knife held facing forward)
         if (isGunner) {
             const rifle = this.createRifleMesh();
             rifle.position.set(0.04, -0.22, 0.42);
@@ -707,23 +707,23 @@ export class EnemyManager {
             armRGroup.add(rifle);
             enemy.userData.rifle = rifle;
 
-            // Right Arm holds trigger & stock
-            armRGroup.rotation.set(-0.35, -0.10, -0.05);
+            // Right Arm holds trigger & stock aimed forward
+            armRGroup.rotation.set(-0.15, -0.05, -0.05);
 
             // Left Arm reaches across chest to hold handguard underneath with two hands
-            armLGroup.rotation.set(-0.45, 0.50, 0.18);
+            armLGroup.rotation.set(-0.35, 0.45, 0.15);
             foreArmL.position.set(0, -0.30, 0.18);
             foreArmL.rotation.set(-0.50, 0.22, 0);
             handL.position.set(0.06, -0.40, 0.42);
         } else {
             const knife = this.createKnifeMesh();
-            knife.position.set(0, -0.52, 0.22);
-            knife.rotation.set(-Math.PI / 2, 0, 0);
+            knife.position.set(0, -0.42, 0.20);
+            knife.rotation.set(0, 0, 0); // Blade points forward (+Z) directly at targets
             armRGroup.add(knife);
             enemy.userData.knife = knife;
 
-            armRGroup.rotation.set(-0.2, 0.05, -0.05);
-            armLGroup.rotation.set(-0.2, -0.05, 0.05);
+            armRGroup.rotation.set(-0.30, 0.05, -0.05);
+            armLGroup.rotation.set(-0.20, -0.05, 0.05);
         }
 
         // Stats & Animation State
@@ -737,6 +737,7 @@ export class EnemyManager {
         enemy.userData.shootTimer = THREE.MathUtils.randFloat(1.0, 2.5);
         enemy.userData.attackCooldown = 0;
         enemy.userData.attackAnim = 0;
+        enemy.userData.alertTimer = 0;
         enemy.userData.time = Math.random() * 10;
 
         enemy.traverse(child => {
@@ -765,6 +766,14 @@ export class EnemyManager {
         this.scene.add(enemy);
         this.enemies.push(enemy);
         return enemy;
+    }
+
+    alertEnemiesNear(pos, radius = 50) {
+        for (const enemy of this.enemies) {
+            if (enemy.position.distanceTo(pos) <= radius) {
+                enemy.userData.alertTimer = Math.max(enemy.userData.alertTimer || 0, 9.0);
+            }
+        }
     }
 
     update(delta, players, getGroundHeight, onPlayerDamaged, isPlayerHidden = false, obstacles = [], ladders = []) {
@@ -803,6 +812,11 @@ export class EnemyManager {
                 continue;
             }
 
+            if (enemy.userData.alertTimer > 0) {
+                enemy.userData.alertTimer -= delta;
+            }
+            const isAlerted = (enemy.userData.alertTimer || 0) > 0;
+
             // Find closest visible player
             let closestPlayer = null;
             let minDistance = Infinity;
@@ -819,7 +833,9 @@ export class EnemyManager {
                 playerChestPos.y -= 0.5;
 
                 const hasLOS = hasLineOfSight(enemyEyePos, playerChestPos, obstacles);
-                const detectionRange = p.isPlayerHidden ? (enemy.userData.archetype === 'gunner' ? 5.0 : 4.0) : 75.0;
+                // When alerted (e.g. from taking damage or gunfire), enemies maintain active pursuit even if player enters a bush
+                const effectiveHidden = p.isPlayerHidden && !isAlerted;
+                const detectionRange = effectiveHidden ? (enemy.userData.archetype === 'gunner' ? 5.0 : 4.0) : 75.0;
 
                 if (dist <= detectionRange && hasLOS) {
                     if (dist < minDistance) {
@@ -827,6 +843,10 @@ export class EnemyManager {
                         closestPlayer = p;
                     }
                 }
+            }
+
+            if (closestPlayer) {
+                enemy.userData.alertTimer = 9.0;
             }
 
             const targetPlayer = closestPlayer || playersList[0] || { pos: new THREE.Vector3(0, 1.6, 20), isCrouching: false, damageFn: () => {} };
@@ -840,7 +860,8 @@ export class EnemyManager {
             const dyToPlayer = playerPos.y - enemy.position.y;
 
             const isGunner = enemy.userData.archetype === 'gunner';
-            const inDetectionRange = canSeePlayer || distToPlayer <= (targetPlayer.isPlayerHidden ? (isGunner ? 5.0 : 4.0) : 75.0);
+            const effectiveTargetHidden = targetPlayer.isPlayerHidden && !isAlerted;
+            const inDetectionRange = canSeePlayer || isAlerted || distToPlayer <= (effectiveTargetHidden ? (isGunner ? 5.0 : 4.0) : 75.0);
 
             // Decrement ladder cooldown
             if (enemy.userData.ladderCooldown > 0) {
@@ -938,17 +959,17 @@ export class EnemyManager {
                     let diffAngle = targetFacingYaw - enemy.rotation.y;
                     while (diffAngle < -Math.PI) diffAngle += Math.PI * 2;
                     while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
-                    enemy.rotation.y += diffAngle * Math.min(delta * 8.0, 1.0);
+                    enemy.rotation.y += diffAngle * Math.min(delta * 14.0, 1.0);
 
                     moveEnemyWithCollision(enemy, ladDirX * moveSpeed * delta, ladDirZ * moveSpeed * delta, obstacles);
                 }
             } else {
-                // Normal Ground / Roof Pursuit & Aiming
+                // Normal Ground / Roof Pursuit & Direct Face Tracking
                 const targetFacingYaw = Math.atan2(dx, dz);
                 let diffAngle = targetFacingYaw - enemy.rotation.y;
                 while (diffAngle < -Math.PI) diffAngle += Math.PI * 2;
                 while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
-                enemy.rotation.y += diffAngle * Math.min(delta * 6.0, 1.0);
+                enemy.rotation.y += diffAngle * Math.min(delta * 14.0, 1.0); // Fast responsive tracking directly facing player
 
                 if (inDetectionRange) {
                     let shouldMove = true;
@@ -1013,7 +1034,7 @@ export class EnemyManager {
                 enemy.userData.torsoGroup.rotation.y = -stride * 0.08;
                 enemy.userData.torsoGroup.position.y = 0.12 + Math.abs(strideCos) * 0.03;
 
-                if (!isGunner && enemy.userData.attackAnim <= 0) {
+                if (!isGunner && enemy.userData.attackAnim <= 0 && !canSeePlayer && !isAlerted) {
                     enemy.userData.armL.rotation.x = -stride * 0.45;
                     enemy.userData.armR.rotation.x = stride * 0.45 - 0.2;
                 }
@@ -1029,24 +1050,23 @@ export class EnemyManager {
                 enemy.userData.torsoGroup.position.y = 0.12 + breath * 0.4;
             }
 
-            // Head Dynamic Pitch Tracking
-            if (enemy.userData.head && canSeePlayer) {
-                const pitchToPlayer = Math.atan2(playerPos.y - (enemy.position.y + 1.8), distToPlayer);
-                enemy.userData.head.rotation.x = THREE.MathUtils.clamp(-pitchToPlayer, -0.4, 0.4);
+            // Dynamic Pitch Tracking (Head & Weapon point directly at player chest, NOT upwards!)
+            const pitchToPlayer = Math.atan2(playerPos.y - (enemy.position.y + 1.4), Math.max(0.5, distToPlayer));
+            if (enemy.userData.head && (canSeePlayer || isAlerted)) {
+                enemy.userData.head.rotation.x = THREE.MathUtils.clamp(-pitchToPlayer, -0.6, 0.6);
             }
 
             // Gunner Ranged Aim & Two-Handed Hold (Only when not climbing)
             if (isGunner && !isClimbing) {
-                if (canSeePlayer) {
-                    const pitchToPlayer = Math.atan2(playerPos.y - (enemy.position.y + 1.4), distToPlayer);
-
-                    enemy.userData.armR.rotation.x = THREE.MathUtils.lerp(enemy.userData.armR.rotation.x, -pitchToPlayer - 0.35, delta * 12);
-                    enemy.userData.armR.rotation.y = -0.10;
-                    enemy.userData.armL.rotation.x = THREE.MathUtils.lerp(enemy.userData.armL.rotation.x, -pitchToPlayer - 0.45, delta * 12);
-                    enemy.userData.armL.rotation.y = 0.50;
+                if (canSeePlayer || isAlerted) {
+                    // Right arm aims weapon dead-on at player's chest (pitchToPlayer)
+                    enemy.userData.armR.rotation.x = THREE.MathUtils.lerp(enemy.userData.armR.rotation.x, -pitchToPlayer, delta * 14);
+                    enemy.userData.armR.rotation.y = -0.05;
+                    enemy.userData.armL.rotation.x = THREE.MathUtils.lerp(enemy.userData.armL.rotation.x, -pitchToPlayer - 0.15, delta * 14);
+                    enemy.userData.armL.rotation.y = 0.45;
 
                     enemy.userData.shootTimer -= delta;
-                    if (distToPlayer < 55 && enemy.userData.shootTimer <= 0) {
+                    if (distToPlayer < 55 && enemy.userData.shootTimer <= 0 && (canSeePlayer || isAlerted)) {
                         const accuracy = enemy.userData.accuracy || 0.6;
                         const spreadAmount = (1 - accuracy) * 0.18;
 
@@ -1086,14 +1106,22 @@ export class EnemyManager {
                         enemy.userData.shootTimer = enemy.userData.shootInterval + (Math.random() - 0.5) * 0.4;
                     }
                 } else {
-                    enemy.userData.armR.rotation.x = THREE.MathUtils.lerp(enemy.userData.armR.rotation.x, -0.35, delta * 6);
-                    enemy.userData.armL.rotation.x = THREE.MathUtils.lerp(enemy.userData.armL.rotation.x, -0.45, delta * 6);
+                    enemy.userData.armR.rotation.x = THREE.MathUtils.lerp(enemy.userData.armR.rotation.x, -0.15, delta * 6);
+                    enemy.userData.armL.rotation.x = THREE.MathUtils.lerp(enemy.userData.armL.rotation.x, -0.35, delta * 6);
                 }
             }
 
-            // Knife Rusher Melee Attack (Only when not climbing and having clear LOS)
+            // Knife Rusher Melee Attack & Stance (Only when not climbing)
             if (!isGunner && !isClimbing) {
                 enemy.userData.attackCooldown -= delta;
+
+                if (canSeePlayer || isAlerted) {
+                    // Point knife arm forward directly towards player
+                    if (enemy.userData.attackAnim <= 0) {
+                        enemy.userData.armR.rotation.x = THREE.MathUtils.lerp(enemy.userData.armR.rotation.x, -pitchToPlayer - 0.15, delta * 12);
+                        enemy.userData.armR.rotation.y = 0.05;
+                    }
+                }
 
                 if (canSeePlayer && distToPlayer < 2.2 && enemy.userData.attackCooldown <= 0) {
                     soundEngine.playKnifeSlash();
@@ -1109,7 +1137,7 @@ export class EnemyManager {
                 if (enemy.userData.attackAnim > 0) {
                     enemy.userData.attackAnim -= delta * 3.2;
                     const slashPhase = Math.sin(Math.max(0, enemy.userData.attackAnim) * Math.PI);
-                    enemy.userData.armR.rotation.x = -0.2 - slashPhase * 1.1;
+                    enemy.userData.armR.rotation.x = -0.3 - slashPhase * 1.2;
                     enemy.userData.armR.rotation.y = 0.05 - slashPhase * 0.4;
                 }
             }
