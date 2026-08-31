@@ -143,22 +143,23 @@ function initObjectPools() {
 }
 initObjectPools();
 
-// 5. Multi-Lane Road System with Clean Non-Intersecting Markings
+// 5. Multi-Lane Road System with Clean Non-Intersecting Markings & Fog Lines
 function makeRoad(x, z, width, length, rotation = 0) {
     const roadGroup = new THREE.Group();
     roadGroup.position.set(x, 0, z);
     roadGroup.rotation.y = rotation;
 
-    // Pristine dark asphalt surface
+    // Rich Dark Asphalt Surface
+    const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x1f2429, roughness: 0.90 });
     const road = new THREE.Mesh(
         new THREE.BoxGeometry(width, 0.05, length),
-        roadMat
+        asphaltMat
     );
     road.position.set(0, 0.025, 0);
     road.receiveShadow = true;
     roadGroup.add(road);
 
-    // Segmented Non-Intersecting Spans (Stops 12m before intersections to eliminate overlaps)
+    // Segmented Spans between intersections (Leaves clean 24m zone at 0 and ±120 for crosswalks & stop lines)
     const sideW = 2.4;
     const laneSpans = [
         [-length / 2 + 10, -132],
@@ -167,26 +168,38 @@ function makeRoad(x, z, width, length, rotation = 0) {
         [132, length / 2 - 10]
     ];
 
-    const yellowLineMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f });
-    const whiteLineMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const yellowLineMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.7 });
+    const whiteLineMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.7 });
+    const curbStoneMat = new THREE.MeshStandardMaterial({ color: 0x57606f, roughness: 0.92 });
+    const concreteSidewalkMat = new THREE.MeshStandardMaterial({ color: 0x95a5a6, roughness: 0.88 });
 
     for (const [startZ, endZ] of laneSpans) {
         const spanLength = endZ - startZ;
         const centerZ = (startZ + endZ) / 2;
 
-        // Sidewalk Curbs
-        const side1 = new THREE.Mesh(new THREE.BoxGeometry(sideW, 0.14, spanLength), sidewalkMat);
-        side1.position.set(-width / 2 - sideW / 2, 0.07, centerZ);
-        side1.receiveShadow = true;
-        roadGroup.add(side1);
+        // Concrete Sidewalks & Dark Granite Curb Stones
+        for (const side of [-1, 1]) {
+            const sideX = side * (width / 2 + sideW / 2);
+            const sidewalk = new THREE.Mesh(new THREE.BoxGeometry(sideW, 0.14, spanLength), concreteSidewalkMat);
+            sidewalk.position.set(sideX, 0.07, centerZ);
+            sidewalk.receiveShadow = true;
+            roadGroup.add(sidewalk);
 
-        const side2 = new THREE.Mesh(new THREE.BoxGeometry(sideW, 0.14, spanLength), sidewalkMat);
-        side2.position.set(width / 2 + sideW / 2, 0.07, centerZ);
-        side2.receiveShadow = true;
-        roadGroup.add(side2);
+            const curb = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, spanLength), curbStoneMat);
+            curb.position.set(side * (width / 2 + 0.12), 0.08, centerZ);
+            curb.receiveShadow = true;
+            roadGroup.add(curb);
+        }
 
-        // Double Solid Yellow Centerlines (Segmented)
-        for (let offset of [-0.25, 0.25]) {
+        // Solid White Outer Fog Lines (Edge of roadway)
+        for (const side of [-1, 1]) {
+            const fogLine = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.065, spanLength), whiteLineMat);
+            fogLine.position.set(side * (width / 2 - 0.45), 0.06, centerZ);
+            roadGroup.add(fogLine);
+        }
+
+        // Double Solid Yellow Centerlines
+        for (const offset of [-0.25, 0.25]) {
             const doubleYellow = new THREE.Mesh(
                 new THREE.BoxGeometry(0.14, 0.065, spanLength),
                 yellowLineMat
@@ -195,8 +208,8 @@ function makeRoad(x, z, width, length, rotation = 0) {
             roadGroup.add(doubleYellow);
         }
 
-        // White Dashed Lane Dividers (Segmented)
-        for (let laneOffset of [-width / 4, width / 4]) {
+        // White Dashed Lane Dividers
+        for (const laneOffset of [-width / 4, width / 4]) {
             for (let i = startZ + 4; i < endZ - 4; i += 7) {
                 const dash = new THREE.Mesh(
                     new THREE.BoxGeometry(0.18, 0.065, 3.5),
@@ -212,6 +225,133 @@ function makeRoad(x, z, width, length, rotation = 0) {
     staticRaycastTargets.push(roadGroup);
 }
 
+// Realistic Grand Intersection Creator with Zebra Crosswalks, Stop Bars, Corner Plazas & Traffic Signals
+function createIntersection(x, z, widthX = 16, widthZ = 16) {
+    const interGroup = new THREE.Group();
+    interGroup.position.set(x, 0, z);
+
+    const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x1f2429, roughness: 0.90 });
+    const whiteLineMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.7 });
+    const yellowLineMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.7 });
+    const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x95a5a6, roughness: 0.88 });
+    const cornerYellowMat = new THREE.MeshStandardMaterial({ color: 0xeccc68, roughness: 0.8 });
+    const ironMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, metalness: 0.7, roughness: 0.5 });
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, metalness: 0.75, roughness: 0.4 });
+
+    // 1. Center Asphalt Junction Box
+    const asphalt = new THREE.Mesh(new THREE.BoxGeometry(widthX + 4.8, 0.05, widthZ + 4.8), asphaltMat);
+    asphalt.position.set(0, 0.025, 0);
+    asphalt.receiveShadow = true;
+    interGroup.add(asphalt);
+
+    // 2. Central Cast-Iron Utility Manhole
+    const manhole = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.065, 16), ironMat);
+    manhole.position.set(0, 0.035, 0);
+    manhole.receiveShadow = true;
+    interGroup.add(manhole);
+
+    // 3. 4-Corner Sidewalk Pedestrian Plazas with Safety Curbs
+    const cornerW = 2.4;
+    const cornerD = 2.4;
+    const corners = [
+        { cx: widthX / 2 + cornerW / 2, cz: widthZ / 2 + cornerD / 2, pole: true },
+        { cx: -widthX / 2 - cornerW / 2, cz: widthZ / 2 + cornerD / 2, pole: false },
+        { cx: widthX / 2 + cornerW / 2, cz: -widthZ / 2 - cornerD / 2, pole: false },
+        { cx: -widthX / 2 - cornerW / 2, cz: -widthZ / 2 - cornerD / 2, pole: true }
+    ];
+
+    for (const c of corners) {
+        const plaza = new THREE.Mesh(new THREE.BoxGeometry(cornerW, 0.14, cornerD), sidewalkMat);
+        plaza.position.set(c.cx, 0.07, c.cz);
+        plaza.receiveShadow = true;
+        interGroup.add(plaza);
+
+        const curbRim = new THREE.Mesh(new THREE.BoxGeometry(cornerW + 0.1, 0.08, 0.25), cornerYellowMat);
+        curbRim.position.set(c.cx, 0.08, c.cz + (c.cz > 0 ? -cornerD / 2 : cornerD / 2));
+        interGroup.add(curbRim);
+
+        const drain = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.06, 0.5), ironMat);
+        drain.position.set(c.cx + (c.cx > 0 ? -1.0 : 1.0), 0.03, c.cz + (c.cz > 0 ? -1.0 : 1.0));
+        interGroup.add(drain);
+
+        // Traffic Light Mast on designated diagonal corners
+        if (c.pole) {
+            const mastH = 6.2;
+            const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, mastH, 8), poleMat);
+            mast.position.set(c.cx, mastH / 2, c.cz);
+            mast.castShadow = true;
+            interGroup.add(mast);
+
+            const armLen = 5.2;
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, armLen), poleMat);
+            arm.position.set(c.cx, mastH - 0.2, c.cz + (c.cz > 0 ? -armLen / 2 + 0.5 : armLen / 2 - 0.5));
+            interGroup.add(arm);
+
+            const sigHead = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.95, 0.28), poleMat);
+            sigHead.position.set(c.cx, mastH - 0.7, c.cz + (c.cz > 0 ? -armLen * 0.6 : armLen * 0.6));
+            interGroup.add(sigHead);
+
+            const redMat = new THREE.MeshStandardMaterial({ color: 0xff4757, emissive: 0xff4757, emissiveIntensity: 0.8 });
+            const yelMat = new THREE.MeshStandardMaterial({ color: 0xffa502, emissive: 0xffa502, emissiveIntensity: 0.3 });
+            const grnMat = new THREE.MeshStandardMaterial({ color: 0x2ed573, emissive: 0x2ed573, emissiveIntensity: 0.9 });
+
+            const rLens = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), redMat);
+            rLens.position.set(c.cx, mastH - 0.45, sigHead.position.z + 0.14);
+            interGroup.add(rLens);
+
+            const yLens = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), yelMat);
+            yLens.position.set(c.cx, mastH - 0.70, sigHead.position.z + 0.14);
+            interGroup.add(yLens);
+
+            const gLens = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), grnMat);
+            gLens.position.set(c.cx, mastH - 0.95, sigHead.position.z + 0.14);
+            interGroup.add(gLens);
+        }
+    }
+
+    // 4. Continental Zebra Pedestrian Crosswalks & Stop Bars
+    for (const zSign of [-1, 1]) {
+        const crossZ = zSign * (widthZ / 2 + 2.2);
+        const stopZ = zSign * (widthZ / 2 + 4.8);
+        const numStripes = Math.floor((widthX - 2.4) / 1.35);
+
+        for (let i = 0; i < numStripes; i++) {
+            const sX = -widthX / 2 + 1.2 + (i + 0.5) * ((widthX - 2.4) / numStripes);
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.065, 3.2), whiteLineMat);
+            stripe.position.set(sX, 0.055, crossZ);
+            interGroup.add(stripe);
+        }
+
+        const stopBar = new THREE.Mesh(new THREE.BoxGeometry(widthX * 0.44, 0.065, 0.45), whiteLineMat);
+        stopBar.position.set(zSign > 0 ? -widthX * 0.24 : widthX * 0.24, 0.055, stopZ);
+        interGroup.add(stopBar);
+
+        const arrowStem = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.065, 1.8), whiteLineMat);
+        arrowStem.position.set(zSign > 0 ? -widthX * 0.24 : widthX * 0.24, 0.055, stopZ + zSign * 2.6);
+        interGroup.add(arrowStem);
+    }
+
+    for (const xSign of [-1, 1]) {
+        const crossX = xSign * (widthX / 2 + 2.2);
+        const stopX = xSign * (widthX / 2 + 4.8);
+        const numStripes = Math.floor((widthZ - 2.4) / 1.35);
+
+        for (let i = 0; i < numStripes; i++) {
+            const sZ = -widthZ / 2 + 1.2 + (i + 0.5) * ((widthZ - 2.4) / numStripes);
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.065, 0.7), whiteLineMat);
+            stripe.position.set(crossX, 0.055, sZ);
+            interGroup.add(stripe);
+        }
+
+        const stopBar = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.065, widthZ * 0.44), whiteLineMat);
+        stopBar.position.set(stopX, 0.055, xSign > 0 ? widthZ * 0.24 : -widthZ * 0.24);
+        interGroup.add(stopBar);
+    }
+
+    scene.add(interGroup);
+    staticRaycastTargets.push(interGroup);
+}
+
 // Build Grand Road Grid
 makeRoad(0, 0, 16, 960, 0);                 // Main North-South Central Avenue
 makeRoad(0, 0, 16, 960, Math.PI / 2);       // Main East-West Central Boulevard
@@ -219,6 +359,17 @@ makeRoad(120, 0, 14, 960, 0);               // East Avenue
 makeRoad(-120, 0, 14, 960, 0);              // West Avenue
 makeRoad(0, 120, 14, 960, Math.PI / 2);     // North Boulevard
 makeRoad(0, -120, 14, 960, Math.PI / 2);    // South Boulevard
+
+// Build Grand Realistic Intersections at All Grid Crossings
+createIntersection(0, 0, 16, 16);             // Grand Central Crossing
+createIntersection(120, 0, 14, 16);           // East Avenue & Central Boulevard
+createIntersection(-120, 0, 14, 16);          // West Avenue & Central Boulevard
+createIntersection(0, 120, 16, 14);           // Central Avenue & North Boulevard
+createIntersection(0, -120, 16, 14);          // Central Avenue & South Boulevard
+createIntersection(120, 120, 14, 14);         // North-East Crossing
+createIntersection(-120, 120, 14, 14);        // North-West Crossing
+createIntersection(120, -120, 14, 14);        // South-East Crossing
+createIntersection(-120, -120, 14, 14);       // South-West Crossing
 
 // Residential Neighborhood Streets & Driveways
 const residentialRoadSegments = [];
