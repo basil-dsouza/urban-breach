@@ -1510,6 +1510,8 @@ function startReload() {
     reloadPhase = 0;
     if (currentWeapon.id === 'SHOTGUN') {
         soundEngine.playShotgunShellInsert();
+    } else if (currentWeapon.id === 'SNIPER') {
+        soundEngine.playSniperReload();
     } else {
         soundEngine.playReloadMagOut();
     }
@@ -1523,11 +1525,20 @@ function updateReload(delta) {
     reloadTimer -= delta;
 
     if (currentWeapon.id === 'SHOTGUN') {
-        const prevCount = Math.floor(prevTimer * 2.5);
-        const currentCount = Math.floor(reloadTimer * 2.5);
+        // Rhythmic shotgun chambering / tube inserting ("chk-chk-chk-chk-") across 2.5s duration
+        const prevCount = Math.floor(prevTimer / 0.35);
+        const currentCount = Math.floor(reloadTimer / 0.35);
         if (currentCount < prevCount && currentCount >= 0) {
             soundEngine.playShotgunShellInsert();
         }
+
+        // Final chambering slide pump as reload finishes (last 0.4s)
+        if (reloadTimer <= 0.40 && reloadPhase === 0) {
+            soundEngine.playShotgunPump();
+            reloadPhase = 1;
+        }
+    } else if (currentWeapon.id === 'SNIPER') {
+        // Handled via soundEngine.playSniperReload()
     } else {
         if (reloadTimer <= 1.2 && reloadPhase === 0) {
             soundEngine.playReloadMagIn();

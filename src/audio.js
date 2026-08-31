@@ -7,11 +7,15 @@ class SoundEngine {
     constructor() {
         this.ctx = null;
         this.masterVolume = 0.65;
+        this.gunVolume = 0.30; // Polished 30% volume scale for all gun sounds
         this.initialized = false;
         
         // Background Music track state properties
         this.currentMusic = null;
         this.currentTrack = '';
+
+        // Audio sample pools for rapid fire gun sounds
+        this.samplePools = {};
     }
 
     init() {
@@ -67,16 +71,72 @@ class SoundEngine {
     }
 
     /**
-     * Player assault rifle gunshot sound
+     * Play a gun sound effect from file with 30% volume and zero-latency audio pooling
+     */
+    playGunSample(key, fallbackFn = null) {
+        if (typeof window === 'undefined' || typeof document === 'undefined') {
+            if (fallbackFn) fallbackFn();
+            return;
+        }
+
+        const pathMap = {
+            'ak47Fire': 'gun-sounds/ak47-fire.mp3',
+            'shotgunFire': 'gun-sounds/shotgun-fire.mp3',
+            'shotgunPump': 'gun-sounds/shotgun-reload.mp3',
+            'sniperFire': 'gun-sounds/sniper-fire.mp3',
+            'sniperReload': 'gun-sounds/sniper-reload.mp3'
+        };
+
+        const src = pathMap[key];
+        if (!src) {
+            if (fallbackFn) fallbackFn();
+            return;
+        }
+
+        try {
+            // Lazy init sample pool (up to 8 audio elements per sound for high-speed polyphony)
+            if (!this.samplePools[key]) {
+                this.samplePools[key] = {
+                    pool: [],
+                    index: 0
+                };
+                for (let i = 0; i < 8; i++) {
+                    const audio = new Audio(src);
+                    audio.volume = this.gunVolume; // exactly 30% of original volume
+                    audio.preload = 'auto';
+                    this.samplePools[key].pool.push(audio);
+                }
+            }
+
+            const poolObj = this.samplePools[key];
+            const audio = poolObj.pool[poolObj.index];
+            poolObj.index = (poolObj.index + 1) % poolObj.pool.length;
+
+            audio.volume = this.gunVolume; // 30% volume
+            audio.currentTime = 0;
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    if (fallbackFn) fallbackFn();
+                });
+            }
+        } catch (e) {
+            if (fallbackFn) fallbackFn();
+        }
+    }
+
+    /**
+     * Player assault rifle gunshot sound (AK-47)
      */
     playRifleShot(scoped = false) {
         this.init();
         this.resume();
+        this.playGunSample('ak47Fire');
         if (!this.ctx) return;
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 0.9, t);
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.4, t);
 
         // 1. Initial Transient Noise Crack
         const noise = this.ctx.createBufferSource();
@@ -179,11 +239,12 @@ class SoundEngine {
     playSniperFire(scoped = false) {
         this.init();
         this.resume();
+        this.playGunSample('sniperFire');
         if (!this.ctx) return;
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 1.35, t);
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.5, t);
 
         // 1. Supersonic whip & heavy noise blast
         const noise = this.ctx.createBufferSource();
@@ -268,16 +329,30 @@ class SoundEngine {
     }
 
     /**
+     * Sniper rifle full reload sound
+     */
+    playSniperReload() {
+        this.init();
+        this.resume();
+        this.playGunSample('sniperReload', () => {
+            this.playReloadMagOut();
+            setTimeout(() => this.playReloadMagIn(), 800);
+            setTimeout(() => this.playBoltRelease(), 1800);
+        });
+    }
+
+    /**
      * 12-Gauge Shotgun Blast
      */
     playShotgunFire(scoped = false) {
         this.init();
         this.resume();
+        this.playGunSample('shotgunFire');
         if (!this.ctx) return;
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 1.5, t); // Boost gain for extra punch!
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.5, t); // 30% volume
 
         // 1. Crisp Muzzle Crack (High-frequency noise burst)
         const crack = this.ctx.createBufferSource();
@@ -321,7 +396,6 @@ class SoundEngine {
         subGain.connect(mainGain);
 
         // 4. Action Metal Resonance (Detuned mechanical clatters)
-        // High frequency mechanical ring
         const ring1 = this.ctx.createOscillator();
         ring1.type = 'sine';
         ring1.frequency.setValueAtTime(1800, t);
@@ -331,7 +405,6 @@ class SoundEngine {
         ring1.connect(ringGain1);
         ringGain1.connect(mainGain);
 
-        // Mid frequency mechanical slam
         const ring2 = this.ctx.createOscillator();
         ring2.type = 'triangle';
         ring2.frequency.setValueAtTime(650, t);
@@ -364,7 +437,7 @@ class SoundEngine {
         comp.attack.setValueAtTime(0.001, t);
         comp.release.setValueAtTime(0.18, t);
 
-        const distortion = this.createDistortion(0.25); // Lower distortion for clean chest hit!
+        const distortion = this.createDistortion(0.25);
 
         mainGain.connect(comp);
         comp.connect(distortion);
@@ -387,14 +460,14 @@ class SoundEngine {
     playShotgunPump() {
         this.init();
         this.resume();
+        this.playGunSample('shotgunPump');
         if (!this.ctx) return;
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 0.95, t);
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.4, t);
 
         // --- PART 1: Slide Back (t to t + 0.2s) ---
-        // Friction slide noise
         const slideBackNoise = this.ctx.createBufferSource();
         slideBackNoise.buffer = this.createNoiseBuffer(0.16);
         const filterBack = this.ctx.createBiquadFilter();
@@ -409,7 +482,6 @@ class SoundEngine {
         filterBack.connect(gainBackNoise);
         gainBackNoise.connect(mainGain);
 
-        // Action opening metallic rattle
         const metalBack = this.ctx.createOscillator();
         metalBack.type = 'triangle';
         metalBack.frequency.setValueAtTime(600, t);
@@ -422,7 +494,6 @@ class SoundEngine {
         gainBackMetal.connect(mainGain);
 
         // --- PART 2: Slide Forward (t + 0.22s to t + 0.38s) ---
-        // Slam noise
         const slideForwardNoise = this.ctx.createBufferSource();
         slideForwardNoise.buffer = this.createNoiseBuffer(0.14);
         const filterForward = this.ctx.createBiquadFilter();
@@ -437,7 +508,6 @@ class SoundEngine {
         filterForward.connect(gainForwardNoise);
         gainForwardNoise.connect(mainGain);
 
-        // High mechanical lock click
         const clickHigh = this.ctx.createOscillator();
         clickHigh.type = 'sine';
         clickHigh.frequency.setValueAtTime(2800, t + 0.22);
@@ -449,7 +519,6 @@ class SoundEngine {
         clickHigh.connect(gainClickHigh);
         gainClickHigh.connect(mainGain);
 
-        // Low action lock thud
         const clickLow = this.ctx.createOscillator();
         clickLow.type = 'triangle';
         clickLow.frequency.setValueAtTime(800, t + 0.24);
@@ -464,7 +533,6 @@ class SoundEngine {
 
         mainGain.connect(this.ctx.destination);
 
-        // Start source nodes
         slideBackNoise.start(t);
         slideBackNoise.stop(t + 0.17);
         metalBack.start(t);
@@ -479,7 +547,7 @@ class SoundEngine {
     }
 
     /**
-     * Mechanical clink and spring latch shove for inserting shotgun shells
+     * Mechanical clink and spring latch shove for inserting shotgun shells into chamber ("chk-chk")
      */
     playShotgunShellInsert() {
         this.init();
@@ -488,44 +556,86 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 0.75, t);
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.8, t); // 30% volume scale
 
-        // Friction noise (shuffling the shell shell in)
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = this.createNoiseBuffer(0.15);
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(1100, t);
-        filter.Q.setValueAtTime(3.5, t);
+        // 1. First "chk": Spring-loaded gate depress & brass shell friction
+        const noise1 = this.ctx.createBufferSource();
+        noise1.buffer = this.createNoiseBuffer(0.06);
+        const filter1 = this.ctx.createBiquadFilter();
+        filter1.type = 'bandpass';
+        filter1.frequency.setValueAtTime(1300, t);
+        filter1.Q.setValueAtTime(4.0, t);
+        const noiseGain1 = this.ctx.createGain();
+        noiseGain1.gain.setValueAtTime(0.4, t);
+        noiseGain1.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
 
-        const noiseGain = this.ctx.createGain();
-        noiseGain.gain.setValueAtTime(0.35, t);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+        noise1.connect(filter1);
+        filter1.connect(noiseGain1);
+        noiseGain1.connect(mainGain);
 
-        noise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(mainGain);
+        const click1 = this.ctx.createOscillator();
+        const clickGain1 = this.ctx.createGain();
+        click1.type = 'triangle';
+        click1.frequency.setValueAtTime(1600, t);
+        click1.frequency.exponentialRampToValueAtTime(600, t + 0.04);
+        clickGain1.gain.setValueAtTime(0.5, t);
+        clickGain1.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
 
-        // Click / latch lock (metal gate click)
-        const clickOsc = this.ctx.createOscillator();
-        const clickGain = this.ctx.createGain();
-        clickOsc.type = 'triangle';
-        clickOsc.frequency.setValueAtTime(1400, t + 0.07);
-        clickOsc.frequency.exponentialRampToValueAtTime(650, t + 0.12);
+        click1.connect(clickGain1);
+        clickGain1.connect(mainGain);
 
-        clickGain.gain.setValueAtTime(0, t);
-        clickGain.gain.setValueAtTime(0.55, t + 0.07);
-        clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        // 2. Second "chk": Magazine tube latch lock snap & chamber seating (0.08s later)
+        const t2 = t + 0.08;
+        const noise2 = this.ctx.createBufferSource();
+        noise2.buffer = this.createNoiseBuffer(0.07);
+        const filter2 = this.ctx.createBiquadFilter();
+        filter2.type = 'lowpass';
+        filter2.frequency.setValueAtTime(1800, t2);
+        const noiseGain2 = this.ctx.createGain();
+        noiseGain2.gain.setValueAtTime(0, t);
+        noiseGain2.gain.setValueAtTime(0.45, t2);
+        noiseGain2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.06);
 
-        clickOsc.connect(clickGain);
-        clickGain.connect(mainGain);
+        noise2.connect(filter2);
+        filter2.connect(noiseGain2);
+        noiseGain2.connect(mainGain);
+
+        const snapOsc = this.ctx.createOscillator();
+        const snapGain = this.ctx.createGain();
+        snapOsc.type = 'triangle';
+        snapOsc.frequency.setValueAtTime(900, t2);
+        snapOsc.frequency.exponentialRampToValueAtTime(220, t2 + 0.05);
+        snapGain.gain.setValueAtTime(0, t);
+        snapGain.gain.setValueAtTime(0.6, t2);
+        snapGain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.05);
+
+        snapOsc.connect(snapGain);
+        snapGain.connect(mainGain);
+
+        const ringOsc = this.ctx.createOscillator();
+        const ringGain = this.ctx.createGain();
+        ringOsc.type = 'sine';
+        ringOsc.frequency.setValueAtTime(2600, t2);
+        ringGain.gain.setValueAtTime(0, t);
+        ringGain.gain.setValueAtTime(0.3, t2);
+        ringGain.gain.exponentialRampToValueAtTime(0.001, t2 + 0.04);
+
+        ringOsc.connect(ringGain);
+        ringGain.connect(mainGain);
 
         mainGain.connect(this.ctx.destination);
 
-        noise.start(t);
-        noise.stop(t + 0.15);
-        clickOsc.start(t + 0.07);
-        clickOsc.stop(t + 0.13);
+        noise1.start(t);
+        noise1.stop(t + 0.06);
+        click1.start(t);
+        click1.stop(t + 0.05);
+
+        noise2.start(t2);
+        noise2.stop(t2 + 0.07);
+        snapOsc.start(t2);
+        snapOsc.stop(t2 + 0.06);
+        ringOsc.start(t2);
+        ringOsc.stop(t2 + 0.05);
     }
 
     /**
@@ -978,7 +1088,7 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 0.7, t);
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.7, t);
 
         // 1. Friction sound (magazine rubbing against magwell)
         const friction = this.ctx.createBufferSource();
@@ -1021,7 +1131,7 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 0.75, t);
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.75, t);
 
         // 1. Sliding slam noise (mag fully seated friction)
         const slamNoise = this.ctx.createBufferSource();
@@ -1065,7 +1175,7 @@ class SoundEngine {
 
         const t = this.ctx.currentTime;
         const mainGain = this.ctx.createGain();
-        mainGain.gain.setValueAtTime(this.masterVolume * 0.8, t);
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.8, t);
 
         // 1. Bolt sliding back (first stage rack)
         const rackNoise = this.ctx.createBufferSource();
@@ -1134,7 +1244,7 @@ class SoundEngine {
         osc.frequency.setValueAtTime(1200, t);
         osc.frequency.exponentialRampToValueAtTime(600, t + 0.03);
 
-        gain.gain.setValueAtTime(0.25 * this.masterVolume, t);
+        gain.gain.setValueAtTime(0.25 * this.gunVolume, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
 
         osc.connect(gain);
