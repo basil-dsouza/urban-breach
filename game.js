@@ -1078,6 +1078,7 @@ function createLadder(x, z, buildingHeight, rotY = 0, building = null) {
     ladders.push({
         x,
         z,
+        rotY,
         buildingHeight,
         height: totalHeight,
         bottom: 0,
@@ -1091,8 +1092,14 @@ function createLadder(x, z, buildingHeight, rotY = 0, building = null) {
 }
 
 for (const b of buildings) {
-    if (b.style === 'flat' || Math.random() < 0.12) {
-        createLadder(b.x, b.z + b.d / 2 + 0.15, b.h, 0, b);
+    if (b.style === 'flat') {
+        createLadder(b.x, b.z + b.d / 2 + 0.18, b.h, 0, b);
+    } else if (b.style === 'villa') {
+        createLadder(b.x - b.w * 0.48, b.z, b.h, -Math.PI / 2, b);
+    } else if (b.style === 'cottage') {
+        createLadder(b.x + b.w / 2 + 0.18, b.z - b.d * 0.1, b.h, Math.PI / 2, b);
+    } else if (b.style === 'cabin') {
+        createLadder(b.x - b.w * 0.48, b.z - b.d * 0.15, b.h, -Math.PI / 2, b);
     }
 }
 
@@ -2513,30 +2520,34 @@ function updatePlayer(delta) {
 
     const curY = camera.position.y - eyeHeight;
     let nearbyLadder = null;
+    let minLadderDist = Infinity;
 
     for (const lad of ladders) {
-        const dx = Math.abs(camera.position.x - lad.x);
-        const dz = Math.abs(camera.position.z - lad.z);
+        const dx = camera.position.x - lad.x;
+        const dz = camera.position.z - lad.z;
+        const distHoriz = Math.hypot(dx, dz);
 
-        if (dx < 1.2 && dz < 1.2 && curY >= -0.3 && curY <= lad.top + 0.6) {
-            nearbyLadder = lad;
-            break;
+        if (distHoriz < 1.6 && curY >= -0.5 && curY <= lad.top + 0.8) {
+            if (distHoriz < minLadderDist) {
+                minLadderDist = distHoriz;
+                nearbyLadder = lad;
+            }
         }
     }
 
     // Attach to ladder logic
     if (nearbyLadder) {
         if (!onLadder) {
-            // From ground: W or Space attaches
-            if (curY < 2.5 && (keys["KeyW"] || keys["Space"])) {
+            // From ground / lower height: W or Space attaches
+            if (curY < 2.8 && (keys["KeyW"] || keys["Space"])) {
                 onLadder = true;
             }
-            // From roof: S attaches to climb down
-            else if (curY >= nearbyLadder.buildingHeight - 0.6 && keys["KeyS"]) {
+            // From roof / upper level: moving towards ladder or pressing S attaches to climb down
+            else if (curY >= nearbyLadder.buildingHeight - 1.2 && (keys["KeyS"] || keys["KeyW"])) {
                 onLadder = true;
             }
-            // Mid-ladder: attaches automatically
-            else if (curY >= 2.5 && curY < nearbyLadder.buildingHeight - 0.6) {
+            // Mid-ladder: attaches automatically if in close proximity
+            else if (curY >= 2.8 && curY < nearbyLadder.buildingHeight - 1.2 && minLadderDist < 1.1) {
                 onLadder = true;
             }
         }
@@ -2549,48 +2560,76 @@ function updatePlayer(delta) {
         grounded = true;
         ladderSoundCooldown -= delta;
 
+        const ladderAngle = nearbyLadder.rotY || 0;
+        const normX = Math.sin(ladderAngle);
+        const normZ = Math.cos(ladderAngle);
+        const standX = nearbyLadder.x + normX * 0.40;
+        const standZ = nearbyLadder.z + normZ * 0.40;
+
+        // Smoothly lock player horizontally in front of the ladder rungs
+        camera.position.x = THREE.MathUtils.lerp(camera.position.x, standX, delta * 18.0);
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, standZ, delta * 18.0);
+
         // Climbing UP
         if (keys["KeyW"] || keys["Space"]) {
-            camera.position.y += 6.0 * delta;
+            camera.position.y += 6.5 * delta;
             if (ladderSoundCooldown <= 0) {
                 soundEngine.playLadderClimb();
-                ladderSoundCooldown = 0.26;
+                ladderSoundCooldown = 0.24;
             }
 
-            // Once at or above roof height, allow stepping forward onto the roof terrace!
+            // Stepping forward onto rooftop terrace
             if (camera.position.y - eyeHeight >= nearbyLadder.buildingHeight) {
                 const forward = new THREE.Vector3();
                 camera.getWorldDirection(forward);
                 forward.y = 0;
-                forward.normalize();
+                if (forward.lengthSq() > 0.01) {
+                    forward.normalize();
+                    camera.position.x += forward.x * 4.2 * delta;
+                    camera.position.z += forward.z * 4.2 * delta;
 
-                camera.position.x += forward.x * 4.5 * delta;
-                camera.position.z += forward.z * 4.5 * delta;
-
-                const groundY = getSimpleGround(camera.position.x, camera.position.z);
-                if (groundY >= nearbyLadder.buildingHeight - 0.2) {
-                    if (Math.hypot(camera.position.x - nearbyLadder.x, camera.position.z - nearbyLadder.z) > 0.65) {
-                        onLadder = false;
+                    const roofGround = getSimpleGround(camera.position.x, camera.position.z, nearbyLadder.buildingHeight);
+                    if (roofGround >= nearbyLadder.buildingHeight - 0.6) {
+                        if (Math.hypot(camera.position.x - nearbyLadder.x, camera.position.z - nearbyLadder.z) > 0.65) {
+                            onLadder = false;
+                            camera.position.y = roofGround + eyeHeight;
+                            grounded = true;
+                        }
                     }
                 }
             }
 
-            if (camera.position.y - eyeHeight > nearbyLadder.top) {
-                camera.position.y = nearbyLadder.top + eyeHeight;
+            if (camera.position.y - eyeHeight > nearbyLadder.top + 0.3) {
+                camera.position.y = nearbyLadder.top + 0.3 + eyeHeight;
             }
         }
         // Climbing DOWN
         else if (keys["KeyS"]) {
-            camera.position.y -= 6.0 * delta;
+            camera.position.y -= 6.5 * delta;
             if (ladderSoundCooldown <= 0) {
                 soundEngine.playLadderClimb();
-                ladderSoundCooldown = 0.26;
+                ladderSoundCooldown = 0.24;
             }
 
-            // Once feet reach ground, cleanly dismount to ground walking
-            if (camera.position.y - eyeHeight <= 0.1) {
-                camera.position.y = eyeHeight;
+            // Once feet reach ground level, cleanly dismount
+            const groundY = getSimpleGround(camera.position.x, camera.position.z, 0);
+            if (camera.position.y - eyeHeight <= groundY + 0.15) {
+                camera.position.y = groundY + eyeHeight;
                 onLadder = false;
+                velocityY = 0;
+                grounded = true;
+            }
+        }
+        // Strafing / Jumping off ladder
+        else if (keys["KeyA"] || keys["KeyD"]) {
+            const strafeDir = keys["KeyA"] ? -1 : 1;
+            const sideX = -normZ * strafeDir;
+            const sideZ = normX * strafeDir;
+            camera.position.x += sideX * 3.5 * delta;
+            camera.position.z += sideZ * 3.5 * delta;
+            if (Math.hypot(camera.position.x - nearbyLadder.x, camera.position.z - nearbyLadder.z) > 0.9) {
+                onLadder = false;
+                grounded = false;
             }
         }
     } else {

@@ -18,6 +18,28 @@ class SoundEngine {
         this.samplePools = {};
         this.audioBuffers = {};
         this.activeRifleBurst = null;
+
+        // Preload menu music immediately
+        this.menuAudio = null;
+        if (typeof window !== 'undefined' && typeof Audio !== 'undefined') {
+            try {
+                this.menuAudio = new Audio("background-sounds/superepic.mp3");
+                this.menuAudio.preload = "auto";
+                this.menuAudio.volume = 0.50;
+                this.menuAudio.loop = true;
+            } catch (e) {}
+
+            const startInteractionAudio = () => {
+                this.init();
+                this.resume();
+                window.removeEventListener('pointerdown', startInteractionAudio);
+                window.removeEventListener('keydown', startInteractionAudio);
+                window.removeEventListener('click', startInteractionAudio);
+            };
+            window.addEventListener('pointerdown', startInteractionAudio, { once: true });
+            window.addEventListener('keydown', startInteractionAudio, { once: true });
+            window.addEventListener('click', startInteractionAudio, { once: true });
+        }
     }
 
     init() {
@@ -1112,12 +1134,15 @@ class SoundEngine {
         this.currentTrack = 'menu';
         
         try {
-            const audio = new Audio("background-sounds/superepic.mp3");
-            audio.volume = 0.50; // set to 50% original volume
-            audio.loop = true;
-            
-            this.currentMusic = audio;
-            audio.play().catch(err => console.warn("[MUSIC] Autoplay blocked or failed:", err));
+            if (!this.menuAudio) {
+                this.menuAudio = new Audio("background-sounds/superepic.mp3");
+                this.menuAudio.preload = "auto";
+                this.menuAudio.volume = 0.50;
+                this.menuAudio.loop = true;
+            }
+            this.currentMusic = this.menuAudio;
+            this.currentMusic.currentTime = 0;
+            this.currentMusic.play().catch(err => console.warn("[MUSIC] Autoplay blocked or failed:", err));
         } catch (e) {
             console.error("[MUSIC] HTML5 Audio constructor error:", e);
         }
