@@ -40,7 +40,13 @@ export class SpreadSystem {
     }
 
     onFire(aiming = false, crouching = false) {
-        if (aiming) return; // Zero kick when aimed down sights
+        if (aiming) {
+            if (this.config.baseAiming <= 0.1) return; // Sniper pinpoint laser
+            const kick = (crouching ? this.config.firePerShotKick * 0.65 : this.config.firePerShotKick) * (this.config.aimShotKick || 0.35);
+            const max = this.config.maxAimSpread || 5.5;
+            this.currentSpread = Math.min(max, this.currentSpread + kick);
+            return;
+        }
         const kick = crouching ? this.config.firePerShotKick * 0.65 : this.config.firePerShotKick;
         this.currentSpread = Math.min(
             this.config.maxSpread,
@@ -52,11 +58,17 @@ export class SpreadSystem {
         this.targetBase = this.getBaseSpread({ moving, sprinting, aiming, crouching });
 
         if (aiming) {
-            // Recover/snap towards the aiming target base spread (e.g. 40.0 for Shotgun, 0.0 for AK47)
-            if (this.currentSpread > this.targetBase) {
-                this.currentSpread = Math.max(this.targetBase, this.currentSpread - this.config.recoverySpeed * 3 * delta);
-            } else if (this.currentSpread < this.targetBase) {
-                this.currentSpread = Math.min(this.targetBase, this.currentSpread + this.config.recoverySpeed * 3 * delta);
+            if (isFiring && this.config.baseAiming > 0.1) {
+                const spreadRate = (crouching ? this.config.fireSpreadRate * 0.6 : this.config.fireSpreadRate) * 0.35;
+                const max = this.config.maxAimSpread || 5.5;
+                this.currentSpread = Math.min(max, this.currentSpread + spreadRate * delta);
+            } else {
+                // Recover/snap towards the aiming target base spread (e.g. 1.8 for AK47, 0.0 for Sniper)
+                if (this.currentSpread > this.targetBase) {
+                    this.currentSpread = Math.max(this.targetBase, this.currentSpread - this.config.recoverySpeed * 3 * delta);
+                } else if (this.currentSpread < this.targetBase) {
+                    this.currentSpread = Math.min(this.targetBase, this.currentSpread + this.config.recoverySpeed * 3 * delta);
+                }
             }
             return this.currentSpread;
         }

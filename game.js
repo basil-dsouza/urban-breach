@@ -220,11 +220,66 @@ makeRoad(-120, 0, 14, 960, 0);              // West Avenue
 makeRoad(0, 120, 14, 960, Math.PI / 2);     // North Boulevard
 makeRoad(0, -120, 14, 960, Math.PI / 2);    // South Boulevard
 
+// Residential Neighborhood Streets & Driveways
+const residentialRoadSegments = [];
+
+function makeResidentialRoad(x, z, width = 8, length = 60, angle = 0) {
+    const roadGroup = new THREE.Group();
+    roadGroup.position.set(x, 0.02, z);
+    roadGroup.rotation.y = angle;
+
+    const roadGeo = new THREE.PlaneGeometry(width, length);
+    const road = new THREE.Mesh(roadGeo, roadMat);
+    road.rotation.x = -Math.PI / 2;
+    road.receiveShadow = true;
+    roadGroup.add(road);
+
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x8395a7, roughness: 0.9 });
+    for (const side of [-1, 1]) {
+        const curb = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.08, length), curbMat);
+        curb.position.set(side * (width / 2 + 0.22), 0.04, 0);
+        curb.receiveShadow = true;
+        roadGroup.add(curb);
+    }
+
+    const yellowLineMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f });
+    for (let i = -length / 2 + 4; i < length / 2 - 4; i += 6) {
+        const dash = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.05, 3.0), yellowLineMat);
+        dash.position.set(0, 0.04, i);
+        roadGroup.add(dash);
+    }
+
+    scene.add(roadGroup);
+    staticRaycastTargets.push(roadGroup);
+
+    residentialRoadSegments.push({ x, z, width, length, angle });
+}
+
+function makeDriveway(x1, z1, x2, z2, width = 4.2) {
+    const dx = x2 - x1;
+    const dz = z2 - z1;
+    const len = Math.hypot(dx, dz);
+    if (len < 0.5) return;
+    const angle = Math.atan2(dx, dz);
+
+    const drivewayMat = new THREE.MeshStandardMaterial({ color: 0x222f3e, roughness: 0.88 });
+    const driveway = new THREE.Mesh(new THREE.PlaneGeometry(width, len), drivewayMat);
+    driveway.position.set((x1 + x2) / 2, 0.025, (z1 + z2) / 2);
+    driveway.rotation.x = -Math.PI / 2;
+    driveway.rotation.z = -angle;
+    driveway.receiveShadow = true;
+    scene.add(driveway);
+    staticRaycastTargets.push(driveway);
+
+    residentialRoadSegments.push({ x: (x1 + x2) / 2, z: (z1 + z2) / 2, width, length: len, angle });
+}
+
 // 6. Hyper-Realistic Architecture Matching Reference Images
 // Image 1: Tropical Terracotta Clay-Tile Villa (Terracotta hipped roof, covered verandah, white pillars, coach lanterns, stone path)
-function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8 }) {
+function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8, rotY = 0 }) {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
+    group.rotation.y = rotY;
 
     const whiteStuccoMat = new THREE.MeshStandardMaterial({ color: 0xf8f9fa, roughness: 0.72 });
     const darkBaseMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, roughness: 0.9 });
@@ -257,8 +312,6 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8 }) {
     const roofH = 3.4;
     const roofBaseW = width + 1.6;
     const roofBaseD = depth + 1.6;
-    const roofTopW = width * 0.35;
-    const roofTopD = depth * 0.25;
 
     const roofGeo = new THREE.ConeGeometry(roofBaseW * 0.65, roofH, 4);
     roofGeo.rotateY(Math.PI / 4);
@@ -333,12 +386,17 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8 }) {
         group.add(paver);
     }
 
-    // Obstacle Registration
+    // Obstacle Registration with Rotated Bounds
+    const cosR = Math.abs(Math.cos(rotY));
+    const sinR = Math.abs(Math.sin(rotY));
+    const boundW = cosR * (width + 0.6) + sinR * (depth + 0.6);
+    const boundD = sinR * (width + 0.6) + cosR * (depth + 0.6);
+
     obstacles.push({
         x,
         z,
-        w: width + 0.5,
-        d: depth + 0.5,
+        w: boundW,
+        d: boundD,
         bottom: 0,
         top: height + roofH
     });
@@ -346,10 +404,11 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8 }) {
     buildings.push({
         x,
         z,
-        w: width,
-        d: depth,
+        w: boundW,
+        d: boundD,
         h: height,
         style: 'cottage',
+        rotY,
         roofHeight: roofH
     });
 
@@ -358,9 +417,10 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8 }) {
 }
 
 // Image 2: American Craftsman Suburban Residence (Multi-gable slate roof, dark sage lap siding, double garage, craftsman tapered pillars)
-function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2 }) {
+function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rotY = 0 }) {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
+    group.rotation.y = rotY;
 
     const sageSidingMat = new THREE.MeshStandardMaterial({ color: 0x43534a, roughness: 0.82 });
     const slateShingleMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, roughness: 0.85 });
@@ -468,12 +528,17 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2 }) {
     win1Frame.position.set(-width * 0.36, 3.0, depth * 0.38 + 0.03);
     group.add(win1Frame);
 
-    // Obstacle Registration
+    // Obstacle Registration with Rotated Bounds
+    const cosR = Math.abs(Math.cos(rotY));
+    const sinR = Math.abs(Math.sin(rotY));
+    const boundW = cosR * (width + 0.6) + sinR * (depth + 0.6);
+    const boundD = sinR * (width + 0.6) + cosR * (depth + 0.6);
+
     obstacles.push({
         x,
         z,
-        w: width + 0.6,
-        d: depth + 0.6,
+        w: boundW,
+        d: boundD,
         bottom: 0,
         top: height + mainRoofH
     });
@@ -481,10 +546,11 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2 }) {
     buildings.push({
         x,
         z,
-        w: width,
-        d: depth,
+        w: boundW,
+        d: boundD,
         h: height,
         style: 'cabin',
+        rotY,
         roofHeight: mainRoofH
     });
 
@@ -493,9 +559,10 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2 }) {
 }
 
 // Image 3: Contemporary Modern Minimalist Luxury Villa (Cantilevered flat dark roofs, floor-to-ceiling glass curtain walls, teak sundeck, pergola & pool)
-function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8 }) {
+function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, rotY = 0 }) {
     const group = new THREE.Group();
     group.position.set(x, 0, z);
+    group.rotation.y = rotY;
 
     const pristineWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.55 });
     const charcoalSlateMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, roughness: 0.65 });
@@ -599,39 +666,29 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8 }
     pergolaRoof.position.set(deckX, 3.4, deckZ - deckD / 4);
     group.add(pergolaRoof);
 
-    // Obstacle Registration
+    // Obstacle Registration with Rotated Bounds
+    const cosR = Math.abs(Math.cos(rotY));
+    const sinR = Math.abs(Math.sin(rotY));
+    const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
+    const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
+
     obstacles.push({
-        x: x - width * 0.15,
-        z: z - depth * 0.05,
-        w: width * 0.65,
-        d: depth * 0.75,
+        x,
+        z,
+        w: boundW,
+        d: boundD,
         bottom: 0,
         top: height
-    });
-    obstacles.push({
-        x: x,
-        z: z,
-        w: width * 0.72,
-        d: depth * 0.82,
-        bottom: groundH,
-        top: height
-    });
-    obstacles.push({
-        x: x + deckX,
-        z: z + deckZ,
-        w: deckW,
-        d: deckD,
-        bottom: 0,
-        top: deckH
     });
 
     buildings.push({
         x,
         z,
-        w: width,
-        d: depth,
+        w: boundW,
+        d: boundD,
         h: height,
         style: 'villa',
+        rotY,
         roofHeight: 0
     });
 
@@ -640,17 +697,17 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8 }
 }
 
 // Master Building Creator
-function createBuilding({ x, z, width, depth, height, style = 'flat' }) {
+function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }) {
     if (style === 'cottage') {
-        createLowPolyCottage({ x, z, width, depth, height });
+        createLowPolyCottage({ x, z, width, depth, height, rotY });
         return;
     }
     if (style === 'cabin') {
-        createLowPolyLogCabin({ x, z, width, depth, height });
+        createLowPolyLogCabin({ x, z, width, depth, height, rotY });
         return;
     }
     if (style === 'villa') {
-        createLowPolyModernVilla({ x, z, width, depth, height });
+        createLowPolyModernVilla({ x, z, width, depth, height, rotY });
         return;
     }
 
@@ -766,58 +823,173 @@ function createBuilding({ x, z, width, depth, height, style = 'flat' }) {
 
 // Generate Massive Urban & Suburban Districts
 function generateMassiveCity() {
-    const blockRanges = [
-        // Inner Downtown Blocks (High-Rises)
-        { xs: [28, 56, 84], zs: [28, 56, 84], style: 'flat', minH: 14, maxH: 34 },
-        { xs: [-84, -56, -28], zs: [28, 56, 84], style: 'flat', minH: 14, maxH: 34 },
-        { xs: [28, 56, 84], zs: [-84, -56, -28], style: 'flat', minH: 14, maxH: 34 },
-        { xs: [-84, -56, -28], zs: [-84, -56, -28], style: 'flat', minH: 14, maxH: 34 },
-
-        // North Suburb District (Modern Luxury Pool Villas)
-        { xs: [28, 68, 148, 192], zs: [148, 188, 228], style: 'villa', minH: 7.2, maxH: 8.4 },
-        { xs: [-192, -148, -68, -28], zs: [148, 188, 228], style: 'villa', minH: 7.2, maxH: 8.4 },
-
-        // West Suburb District (Yellow Suburban Cottages)
-        { xs: [-238, -204, -170, -136], zs: [28, 58, 88], style: 'cottage', minH: 5.6, maxH: 6.8 },
-        { xs: [-238, -204, -170, -136], zs: [-88, -58, -28], style: 'cottage', minH: 5.6, maxH: 6.8 },
-
-        // East Alpine District (Alpine Timber Log Cabins)
-        { xs: [136, 170, 204, 238], zs: [28, 58, 88], style: 'cabin', minH: 5.4, maxH: 6.4 },
-        { xs: [136, 170, 204, 238], zs: [-88, -58, -28], style: 'cabin', minH: 5.4, maxH: 6.4 },
-
-        // South Suburb District (Mixed Cottages & Cabins)
-        { xs: [28, 64, 148, 188], zs: [-228, -188, -148], style: 'cottage', minH: 5.6, maxH: 6.8 },
-        { xs: [-188, -148, -64, -28], zs: [-228, -188, -148], style: 'cabin', minH: 5.4, maxH: 6.4 }
+    // ==========================================
+    // 1. DOWNTOWN INNER CITY (High-Rise Towers)
+    // Organized in urban grid blocks with streets
+    // ==========================================
+    const downtownBlocks = [
+        { xs: [28, 56, 84], zs: [28, 56, 84] },
+        { xs: [-84, -56, -28], zs: [28, 56, 84] },
+        { xs: [28, 56, 84], zs: [-84, -56, -28] },
+        { xs: [-84, -56, -28], zs: [-84, -56, -28] }
     ];
-
-    for (const range of blockRanges) {
-        for (const x of range.xs) {
-            for (const z of range.zs) {
-                const isNearRoadX = Math.abs(x) < 14 || Math.abs(x - 120) < 12 || Math.abs(x + 120) < 12;
-                const isNearRoadZ = Math.abs(z) < 14 || Math.abs(z - 120) < 12 || Math.abs(z + 120) < 12;
-                if (isNearRoadX || isNearRoadZ) continue;
-
-                let w = 12;
-                let d = 11;
-                if (range.style === 'villa') {
-                    w = 16;
-                    d = 15;
-                } else if (range.style === 'flat') {
-                    w = 14 + Math.random() * 6;
-                    d = 14 + Math.random() * 6;
-                }
-                const h = range.minH + Math.random() * (range.maxH - range.minH);
-
-                createBuilding({
-                    x,
-                    z,
-                    width: w,
-                    depth: d,
-                    height: h,
-                    style: range.style
-                });
+    for (const b of downtownBlocks) {
+        for (const x of b.xs) {
+            for (const z of b.zs) {
+                const w = 14 + Math.random() * 6;
+                const d = 14 + Math.random() * 6;
+                const h = 14 + Math.random() * 20;
+                createBuilding({ x, z, width: w, depth: d, height: h, style: 'flat' });
             }
         }
+    }
+
+    // ==========================================
+    // 2. NORTH SUBURB: LUXURY POOL VILLAS
+    // Organic neighborhood with connecting streets, cul-de-sacs, varied rotations, and driveways
+    // ==========================================
+    makeResidentialRoad(0, 185, 8.5, 460, Math.PI / 2);
+    makeResidentialRoad(-170, 212, 7.5, 54, 0);
+    makeResidentialRoad(-65, 212, 7.5, 54, 0);
+    makeResidentialRoad(65, 212, 7.5, 54, 0);
+    makeResidentialRoad(170, 212, 7.5, 54, 0);
+
+    const northVillas = [
+        { x: -196, z: 205, rotY: Math.PI / 2, dw: [-170, 205, -188, 205] },
+        { x: -144, z: 218, rotY: -Math.PI / 2, dw: [-170, 218, -152, 218] },
+        { x: -170, z: 246, rotY: Math.PI, dw: [-170, 235, -170, 239] },
+        { x: -198, z: 160, rotY: 0.15, dw: [-198, 185, -198, 168] },
+        { x: -140, z: 162, rotY: -0.15, dw: [-140, 185, -140, 170] },
+
+        { x: -92, z: 205, rotY: Math.PI / 2, dw: [-65, 205, -84, 205] },
+        { x: -38, z: 220, rotY: -Math.PI / 2, dw: [-65, 220, -46, 220] },
+        { x: -65, z: 248, rotY: Math.PI, dw: [-65, 235, -65, 241] },
+        { x: -92, z: 160, rotY: 0.2, dw: [-92, 185, -92, 168] },
+        { x: -38, z: 162, rotY: -0.2, dw: [-38, 185, -38, 170] },
+
+        { x: 38, z: 220, rotY: Math.PI / 2, dw: [65, 220, 46, 220] },
+        { x: 92, z: 205, rotY: -Math.PI / 2, dw: [65, 205, 84, 205] },
+        { x: 65, z: 248, rotY: Math.PI, dw: [65, 235, 65, 241] },
+        { x: 38, z: 162, rotY: 0.2, dw: [38, 185, 38, 170] },
+        { x: 92, z: 160, rotY: -0.2, dw: [92, 185, 92, 168] },
+
+        { x: 144, z: 218, rotY: Math.PI / 2, dw: [170, 218, 152, 218] },
+        { x: 196, z: 205, rotY: -Math.PI / 2, dw: [170, 205, 188, 205] },
+        { x: 170, z: 246, rotY: Math.PI, dw: [170, 235, 170, 239] },
+        { x: 140, z: 162, rotY: 0.15, dw: [140, 185, 140, 170] },
+        { x: 198, z: 160, rotY: -0.15, dw: [198, 185, 198, 168] }
+    ];
+
+    for (const v of northVillas) {
+        createBuilding({ x: v.x, z: v.z, width: 16, depth: 15, height: 7.8, style: 'villa', rotY: v.rotY });
+        if (v.dw) makeDriveway(v.dw[0], v.dw[1], v.dw[2], v.dw[3]);
+    }
+
+    // ==========================================
+    // 3. WEST SUBURB: TROPICAL COTTAGES
+    // Organic neighborhood with connecting streets, cul-de-sacs, varied rotations, and driveways
+    // ==========================================
+    makeResidentialRoad(-185, 0, 8.5, 210, 0);
+    makeResidentialRoad(-212, 65, 7.5, 54, Math.PI / 2);
+    makeResidentialRoad(-212, 0, 7.5, 54, Math.PI / 2);
+    makeResidentialRoad(-212, -65, 7.5, 54, Math.PI / 2);
+
+    const westCottages = [
+        { x: -210, z: 86, rotY: Math.PI, dw: [-210, 65, -210, 80] },
+        { x: -210, z: 44, rotY: 0, dw: [-210, 65, -210, 50] },
+        { x: -246, z: 65, rotY: -Math.PI / 2, dw: [-235, 65, -240, 65] },
+
+        { x: -210, z: 21, rotY: Math.PI, dw: [-210, 0, -210, 15] },
+        { x: -210, z: -21, rotY: 0, dw: [-210, 0, -210, -15] },
+        { x: -246, z: 0, rotY: -Math.PI / 2, dw: [-235, 0, -240, 0] },
+
+        { x: -210, z: -44, rotY: Math.PI, dw: [-210, -65, -210, -50] },
+        { x: -210, z: -86, rotY: 0, dw: [-210, -65, -210, -80] },
+        { x: -246, z: -65, rotY: -Math.PI / 2, dw: [-235, -65, -240, -65] },
+
+        { x: -160, z: 75, rotY: -Math.PI / 2, dw: [-185, 75, -167, 75] },
+        { x: -160, z: 25, rotY: -Math.PI / 2, dw: [-185, 25, -167, 25] },
+        { x: -160, z: -25, rotY: -Math.PI / 2, dw: [-185, -25, -167, -25] },
+        { x: -160, z: -75, rotY: -Math.PI / 2, dw: [-185, -75, -167, -75] }
+    ];
+
+    for (const c of westCottages) {
+        createBuilding({ x: c.x, z: c.z, width: 13, depth: 12, height: 5.8, style: 'cottage', rotY: c.rotY });
+        if (c.dw) makeDriveway(c.dw[0], c.dw[1], c.dw[2], c.dw[3]);
+    }
+
+    // ==========================================
+    // 4. EAST ALPINE DISTRICT: TIMBER CABINS
+    // Mountain road with scenic cul-de-sacs, driveways, and organic cabin orientations
+    // ==========================================
+    makeResidentialRoad(185, 0, 8.5, 210, 0);
+    makeResidentialRoad(212, 65, 7.5, 54, Math.PI / 2);
+    makeResidentialRoad(212, 0, 7.5, 54, Math.PI / 2);
+    makeResidentialRoad(212, -65, 7.5, 54, Math.PI / 2);
+
+    const eastCabins = [
+        { x: 210, z: 86, rotY: Math.PI, dw: [210, 65, 210, 80] },
+        { x: 210, z: 44, rotY: 0, dw: [210, 65, 210, 50] },
+        { x: 246, z: 65, rotY: Math.PI / 2, dw: [235, 65, 240, 65] },
+
+        { x: 210, z: 21, rotY: Math.PI, dw: [210, 0, 210, 15] },
+        { x: 210, z: -21, rotY: 0, dw: [210, 0, 210, -15] },
+        { x: 246, z: 0, rotY: Math.PI / 2, dw: [235, 0, 240, 0] },
+
+        { x: 210, z: -44, rotY: Math.PI, dw: [210, -65, 210, -50] },
+        { x: 210, z: -86, rotY: 0, dw: [210, -65, 210, -80] },
+        { x: 246, z: -65, rotY: Math.PI / 2, dw: [235, -65, 240, -65] },
+
+        { x: 160, z: 75, rotY: Math.PI / 2, dw: [185, 75, 167, 75] },
+        { x: 160, z: 25, rotY: Math.PI / 2, dw: [185, 25, 167, 25] },
+        { x: 160, z: -25, rotY: Math.PI / 2, dw: [185, -25, 167, -25] },
+        { x: 160, z: -75, rotY: Math.PI / 2, dw: [185, -75, 167, -75] }
+    ];
+
+    for (const c of eastCabins) {
+        createBuilding({ x: c.x, z: c.z, width: 14, depth: 13, height: 6.2, style: 'cabin', rotY: c.rotY });
+        if (c.dw) makeDriveway(c.dw[0], c.dw[1], c.dw[2], c.dw[3]);
+    }
+
+    // ==========================================
+    // 5. SOUTH SUBURB: CRAFTSMAN SUBURBAN HOMES
+    // Organic neighborhood with parkway, cul-de-sacs, varied rotations, and garage driveways
+    // ==========================================
+    makeResidentialRoad(0, -185, 8.5, 460, Math.PI / 2);
+    makeResidentialRoad(-170, -212, 7.5, 54, 0);
+    makeResidentialRoad(-65, -212, 7.5, 54, 0);
+    makeResidentialRoad(65, -212, 7.5, 54, 0);
+    makeResidentialRoad(170, -212, 7.5, 54, 0);
+
+    const southHomes = [
+        { x: -196, z: -205, rotY: -Math.PI / 2, dw: [-170, -205, -188, -205] },
+        { x: -144, z: -218, rotY: Math.PI / 2, dw: [-170, -218, -152, -218] },
+        { x: -170, z: -246, rotY: 0, dw: [-170, -235, -170, -239] },
+        { x: -198, z: -160, rotY: Math.PI - 0.15, dw: [-198, -185, -198, -168] },
+        { x: -140, z: -162, rotY: Math.PI + 0.15, dw: [-140, -185, -140, -170] },
+
+        { x: -92, z: -205, rotY: -Math.PI / 2, dw: [-65, -205, -84, -205] },
+        { x: -38, z: -220, rotY: Math.PI / 2, dw: [-65, -220, -46, -220] },
+        { x: -65, z: -248, rotY: 0, dw: [-65, -235, -65, -241] },
+        { x: -92, z: -160, rotY: Math.PI - 0.2, dw: [-92, -185, -92, -168] },
+        { x: -38, z: -162, rotY: Math.PI + 0.2, dw: [-38, -185, -38, -170] },
+
+        { x: 38, z: -220, rotY: -Math.PI / 2, dw: [65, -220, 46, -220] },
+        { x: 92, z: -205, rotY: Math.PI / 2, dw: [65, -205, 84, -205] },
+        { x: 65, z: -248, rotY: 0, dw: [65, -235, 65, -241] },
+        { x: 38, z: -162, rotY: Math.PI - 0.2, dw: [38, -185, 38, -170] },
+        { x: 92, z: -160, rotY: Math.PI + 0.2, dw: [92, -185, 92, -168] },
+
+        { x: 144, z: -218, rotY: -Math.PI / 2, dw: [170, -218, 152, -218] },
+        { x: 196, z: -205, rotY: Math.PI / 2, dw: [170, -205, 188, -205] },
+        { x: 170, z: -246, rotY: 0, dw: [170, -235, 170, -239] },
+        { x: 140, z: -162, rotY: Math.PI - 0.15, dw: [140, -185, 140, -170] },
+        { x: 198, z: -160, rotY: Math.PI + 0.15, dw: [198, -185, 198, -168] }
+    ];
+
+    for (const h of southHomes) {
+        createBuilding({ x: h.x, z: h.z, width: 14, depth: 13, height: 6.2, style: 'cabin', rotY: h.rotY });
+        if (h.dw) makeDriveway(h.dw[0], h.dw[1], h.dw[2], h.dw[3]);
     }
 }
 generateMassiveCity();
@@ -829,8 +1001,23 @@ function isValidTreeLocation(x, z) {
     if (Math.abs(x - 120) < roadClearMargin || Math.abs(x + 120) < roadClearMargin) return false;
     if (Math.abs(z - 120) < roadClearMargin || Math.abs(z + 120) < roadClearMargin) return false;
 
+    // Check residential connecting streets and driveways
+    for (const seg of residentialRoadSegments) {
+        const halfW = seg.width / 2 + 2.5;
+        const halfL = seg.length / 2 + 2.5;
+        const dx = x - seg.x;
+        const dz = z - seg.z;
+        const cosA = Math.cos(-seg.angle);
+        const sinA = Math.sin(-seg.angle);
+        const localX = cosA * dx - sinA * dz;
+        const localZ = sinA * dx + cosA * dz;
+        if (Math.abs(localX) < halfW && Math.abs(localZ) < halfL) {
+            return false;
+        }
+    }
+
     for (const b of buildings) {
-        const buffer = 4.0;
+        const buffer = 3.5;
         if (
             x >= b.x - b.w / 2 - buffer &&
             x <= b.x + b.w / 2 + buffer &&
@@ -1092,14 +1279,15 @@ function createLadder(x, z, buildingHeight, rotY = 0, building = null) {
 }
 
 for (const b of buildings) {
+    const rot = b.rotY || 0;
     if (b.style === 'flat') {
         createLadder(b.x, b.z + b.d / 2 + 0.18, b.h, 0, b);
-    } else if (b.style === 'villa') {
-        createLadder(b.x - b.w * 0.48, b.z, b.h, -Math.PI / 2, b);
-    } else if (b.style === 'cottage') {
-        createLadder(b.x + b.w / 2 + 0.18, b.z - b.d * 0.1, b.h, Math.PI / 2, b);
-    } else if (b.style === 'cabin') {
-        createLadder(b.x - b.w * 0.48, b.z - b.d * 0.15, b.h, -Math.PI / 2, b);
+    } else {
+        const sideOffset = b.style === 'villa' ? 7.6 : 6.6;
+        const ladderAngle = rot - Math.PI / 2;
+        const lx = b.x + Math.sin(ladderAngle) * sideOffset;
+        const lz = b.z + Math.cos(ladderAngle) * sideOffset;
+        createLadder(lx, lz, b.h, ladderAngle, b);
     }
 }
 

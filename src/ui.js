@@ -22,7 +22,9 @@ export const WEAPON_CONFIGS = {
             baseSprinting: 18.0,
             baseCrouching: 3.5,
             baseCrouchMoving: 6.0,
-            baseAiming: 0.0,
+            baseAiming: 1.8, // Realistic slight spread instead of zero
+            maxAimSpread: 5.2,
+            aimShotKick: 0.35,
             maxSpread: 26.0,
             fireSpreadRate: 20.0,
             firePerShotKick: 2.0,
