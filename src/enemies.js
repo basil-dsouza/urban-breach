@@ -5,30 +5,55 @@ import { soundEngine } from './audio.js';
  * Solid Obstacle Raycast & Line-of-Sight Detection
  */
 export function lineIntersectsBox(p1, p2, box) {
-    const minX = box.x - box.w / 2;
-    const maxX = box.x + box.w / 2;
+    let p1x = p1.x;
+    let p1z = p1.z;
+    let p2x = p2.x;
+    let p2z = p2.z;
+
+    let minX = box.x - box.w / 2;
+    let maxX = box.x + box.w / 2;
+    let minZ = box.z - box.d / 2;
+    let maxZ = box.z + box.d / 2;
+
+    if (box.rotY) {
+        const cosA = Math.cos(-box.rotY);
+        const sinA = Math.sin(-box.rotY);
+        const d1x = p1.x - box.x;
+        const d1z = p1.z - box.z;
+        p1x = cosA * d1x - sinA * d1z;
+        p1z = sinA * d1x + cosA * d1z;
+
+        const d2x = p2.x - box.x;
+        const d2z = p2.z - box.z;
+        p2x = cosA * d2x - sinA * d2z;
+        p2z = sinA * d2x + cosA * d2z;
+
+        minX = -box.w / 2;
+        maxX = box.w / 2;
+        minZ = -box.d / 2;
+        maxZ = box.d / 2;
+    }
+
     const minY = box.bottom !== undefined ? box.bottom : 0;
     const maxY = box.top !== undefined ? box.top : (box.h || 20);
-    const minZ = box.z - box.d / 2;
-    const maxZ = box.z + box.d / 2;
 
-    const dx = p2.x - p1.x;
+    const dx = p2x - p1x;
     const dy = p2.y - p1.y;
-    const dz = p2.z - p1.z;
+    const dz = p2z - p1z;
 
     let tmin = 0;
     let tmax = 1;
 
     // X slab
     if (Math.abs(dx) > 1e-6) {
-        let t1 = (minX - p1.x) / dx;
-        let t2 = (maxX - p1.x) / dx;
+        let t1 = (minX - p1x) / dx;
+        let t2 = (maxX - p1x) / dx;
         if (t1 > t2) [t1, t2] = [t2, t1];
         tmin = Math.max(tmin, t1);
         tmax = Math.min(tmax, t2);
         if (tmin > tmax) return false;
     } else {
-        if (p1.x < minX || p1.x > maxX) return false;
+        if (p1x < minX || p1x > maxX) return false;
     }
 
     // Y slab
@@ -45,14 +70,14 @@ export function lineIntersectsBox(p1, p2, box) {
 
     // Z slab
     if (Math.abs(dz) > 1e-6) {
-        let t1 = (minZ - p1.z) / dz;
-        let t2 = (maxZ - p1.z) / dz;
+        let t1 = (minZ - p1z) / dz;
+        let t2 = (maxZ - p1z) / dz;
         if (t1 > t2) [t1, t2] = [t2, t1];
         tmin = Math.max(tmin, t1);
         tmax = Math.min(tmax, t2);
         if (tmin > tmax) return false;
     } else {
-        if (p1.z < minZ || p1.z > maxZ) return false;
+        if (p1z < minZ || p1z > maxZ) return false;
     }
 
     return tmin <= tmax && tmax >= 0 && tmin <= 1;
@@ -87,12 +112,21 @@ export function moveEnemyWithCollision(enemy, moveX, moveZ, obstacles = []) {
             // Ignore obstacles above or below enemy
             if (currentY + 1.8 < obsBottom || currentY > obsTop - 0.2) continue;
 
-            const minX = obs.x - obs.w / 2 - radius;
-            const maxX = obs.x + obs.w / 2 + radius;
-            const minZ = obs.z - obs.d / 2 - radius;
-            const maxZ = obs.z + obs.d / 2 + radius;
+            let localTargetX = targetX - obs.x;
+            let localEnemyZ = enemy.position.z - obs.z;
+            if (obs.rotY) {
+                const cosA = Math.cos(-obs.rotY);
+                const sinA = Math.sin(-obs.rotY);
+                const dtx = targetX - obs.x;
+                const dez = enemy.position.z - obs.z;
+                localTargetX = cosA * dtx - sinA * dez;
+                localEnemyZ = sinA * dtx + cosA * dez;
+            }
 
-            if (targetX >= minX && targetX <= maxX && enemy.position.z >= minZ && enemy.position.z <= maxZ) {
+            const halfW = obs.w / 2 + radius;
+            const halfD = obs.d / 2 + radius;
+
+            if (Math.abs(localTargetX) <= halfW && Math.abs(localEnemyZ) <= halfD) {
                 canMoveX = false;
                 break;
             }
@@ -111,12 +145,21 @@ export function moveEnemyWithCollision(enemy, moveX, moveZ, obstacles = []) {
             const obsTop = obs.top !== undefined ? obs.top : 20;
             if (currentY + 1.8 < obsBottom || currentY > obsTop - 0.2) continue;
 
-            const minX = obs.x - obs.w / 2 - radius;
-            const maxX = obs.x + obs.w / 2 + radius;
-            const minZ = obs.z - obs.d / 2 - radius;
-            const maxZ = obs.z + obs.d / 2 + radius;
+            let localEnemyX = enemy.position.x - obs.x;
+            let localTargetZ = targetZ - obs.z;
+            if (obs.rotY) {
+                const cosA = Math.cos(-obs.rotY);
+                const sinA = Math.sin(-obs.rotY);
+                const dex = enemy.position.x - obs.x;
+                const dtz = targetZ - obs.z;
+                localEnemyX = cosA * dex - sinA * dtz;
+                localTargetZ = sinA * dex + cosA * dtz;
+            }
 
-            if (enemy.position.x >= minX && enemy.position.x <= maxX && targetZ >= minZ && targetZ <= maxZ) {
+            const halfW = obs.w / 2 + radius;
+            const halfD = obs.d / 2 + radius;
+
+            if (Math.abs(localEnemyX) <= halfW && Math.abs(localTargetZ) <= halfD) {
                 canMoveZ = false;
                 break;
             }

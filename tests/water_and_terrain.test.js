@@ -18,6 +18,11 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
         { x: 260, z: 180 }
     ];
 
+    const buildings = [
+        { x: -65, z: 236, w: 16, d: 15, h: 7.8, style: 'villa', rotY: Math.PI },
+        { x: -160, z: 242, w: 16, d: 15, h: 7.8, style: 'villa', rotY: Math.PI }
+    ];
+
     function getRiverDistance(x, z) {
         let minDist = 9999;
         for (let i = 0; i < riverWaypoints.length - 1; i++) {
@@ -38,6 +43,29 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
     }
 
     function getWaterLevel(x, z) {
+        // Buildings are always dry inside (except swimming pool)
+        for (const b of buildings) {
+            if (b.style === 'dam') continue;
+            const rot = b.rotY || 0;
+            const cosR = Math.cos(-rot);
+            const sinR = Math.sin(-rot);
+            const dx = x - b.x;
+            const dz = z - b.z;
+            const localX = cosR * dx - sinR * dz;
+            const localZ = sinR * dx + cosR * dz;
+
+            if (Math.abs(localX) <= (b.w || 14) / 2 && Math.abs(localZ) <= (b.d || 14) / 2) {
+                if (b.style === 'villa') {
+                    const poolOffsetX = 0.44 * 16 + 0.2;
+                    const poolOffsetZ = 0.34 * 15 - 0.2;
+                    if (Math.abs(localX - poolOffsetX) < 2.3 && Math.abs(localZ - poolOffsetZ) < 3.2) {
+                        return 0.32;
+                    }
+                }
+                return -999.0;
+            }
+        }
+
         for (const lake of waterBodies) {
             const dist = Math.hypot(x - lake.x, z - lake.z);
             if (dist <= lake.radius) {
@@ -52,6 +80,23 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
     }
 
     function getTerrainHeight(x, z) {
+        // 1. Building lots & yards are always flat and level
+        for (const b of buildings) {
+            if (b.style === 'dam') continue;
+            const rot = b.rotY || 0;
+            const cosR = Math.cos(-rot);
+            const sinR = Math.sin(-rot);
+            const dx = x - b.x;
+            const dz = z - b.z;
+            const localX = cosR * dx - sinR * dz;
+            const localZ = sinR * dx + cosR * dz;
+            const halfW = (b.w || 14) / 2 + 3.0;
+            const halfD = (b.d || 14) / 2 + 3.0;
+            if (Math.abs(localX) < halfW && Math.abs(localZ) < halfD) {
+                return 0.0;
+            }
+        }
+
         for (const lake of waterBodies) {
             const dist = Math.hypot(x - lake.x, z - lake.z);
             if (dist < lake.radius) {
@@ -78,6 +123,27 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
         return 14.5 * Math.exp(- (dNW1 * dNW1) / (70 * 70));
     }
 
+    function checkObstacleCollision(px, pz, feetY, obs, radius = 0.55) {
+        if (feetY >= (obs.top !== undefined ? obs.top : 20) - 0.15 || feetY < (obs.bottom || 0) - 0.5) {
+            return false;
+        }
+
+        let localX = px - obs.x;
+        let localZ = pz - obs.z;
+        if (obs.rotY) {
+            const cosA = Math.cos(-obs.rotY);
+            const sinA = Math.sin(-obs.rotY);
+            const dx = localX;
+            const dz = localZ;
+            localX = cosA * dx - sinA * dz;
+            localZ = sinA * dx + cosA * dz;
+        }
+
+        const halfW = obs.w / 2 + radius;
+        const halfD = obs.d / 2 + radius;
+        return Math.abs(localX) <= halfW && Math.abs(localZ) <= halfD;
+    }
+
     it('should return flat 0m in city center and no water', () => {
         expect(getTerrainHeight(0, 0)).toBe(0);
         expect(getTerrainHeight(50, 50)).toBe(0);
@@ -94,13 +160,38 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
         expect(getTerrainHeight(-140, 245)).toBeLessThan(-2.0);
     });
 
-    it('should keep residential house locations completely dry without water overlap', () => {
-        // South residential cottages
-        expect(getWaterLevel(170, -212)).toBe(-999.0);
-        expect(getWaterLevel(196, -205)).toBe(-999.0);
-        expect(getWaterLevel(144, -218)).toBe(-999.0);
-        // West cottages
-        expect(getWaterLevel(-210, 86)).toBe(-999.0);
+    it('should keep lakeside villa houses completely dry and level on dry ground', () => {
+        // Emerald Lake Shoreline Villa
+        expect(getWaterLevel(-65, 236)).toBe(-999.0);
+        expect(getTerrainHeight(-65, 236)).toBe(0.0);
+
+        // Alpine Reservoir Shoreline Villa
+        expect(getWaterLevel(-160, 242)).toBe(-999.0);
+        expect(getTerrainHeight(-160, 242)).toBe(0.0);
+    });
+
+    it('should allow player to walk on modern villa sundeck without phantom collisions', () => {
+        const villaObs = {
+            x: 0,
+            z: 0,
+            w: 16 * 0.72, // 11.52m
+            d: 15 * 0.82, // 12.30m
+            rotY: 0,
+            bottom: 0,
+            top: 7.8
+        };
+
+        // Sundeck is at x = 7.04, z = 5.1 (outside main wall volume)
+        const patioX = 7.04;
+        const patioZ = 5.1;
+        const collidesPatio = checkObstacleCollision(patioX, patioZ, 0.35, villaObs, 0.55);
+        expect(collidesPatio).toBe(false);
+
+        // Center of the house (solid interior walls)
+        const insideX = 0;
+        const insideZ = 0;
+        const collidesCenter = checkObstacleCollision(insideX, insideZ, 0.35, villaObs, 0.55);
+        expect(collidesCenter).toBe(true);
     });
 });
 

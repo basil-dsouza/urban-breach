@@ -65,24 +65,34 @@ export class GrenadePhysics {
 
         // Obstacle side-wall collisions
         for (const obs of obstacles) {
+            let localNextX = nextX - obs.x;
+            let localNextZ = nextZ - obs.z;
+            if (obs.rotY) {
+                const cosA = Math.cos(-obs.rotY);
+                const sinA = Math.sin(-obs.rotY);
+                const dx = nextX - obs.x;
+                const dz = nextZ - obs.z;
+                localNextX = cosA * dx - sinA * dz;
+                localNextZ = sinA * dx + cosA * dz;
+            }
+
             const halfW = obs.w / 2 + grenade.radius;
             const halfD = obs.d / 2 + grenade.radius;
 
             if (
-                nextX >= obs.x - halfW && nextX <= obs.x + halfW &&
-                nextZ >= obs.z - halfD && nextZ <= obs.z + halfD &&
-                nextY >= obs.bottom && nextY < obs.top - 0.1
+                Math.abs(localNextX) <= halfW &&
+                Math.abs(localNextZ) <= halfD &&
+                nextY >= (obs.bottom !== undefined ? obs.bottom : 0) &&
+                nextY < (obs.top !== undefined ? obs.top : 20) - 0.1
             ) {
                 // Determine collision normal from closest face
-                const overlapX = halfW - Math.abs(nextX - obs.x);
-                const overlapZ = halfD - Math.abs(nextZ - obs.z);
+                const overlapX = halfW - Math.abs(localNextX);
+                const overlapZ = halfD - Math.abs(localNextZ);
 
                 if (overlapX < overlapZ) {
                     grenade.vx = -grenade.vx * this.config.restitution;
-                    nextX = obs.x + (nextX > obs.x ? halfW : -halfW);
                 } else {
                     grenade.vz = -grenade.vz * this.config.restitution;
-                    nextZ = obs.z + (nextZ > obs.z ? halfD : -halfD);
                 }
             }
         }

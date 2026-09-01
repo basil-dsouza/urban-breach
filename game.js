@@ -539,17 +539,12 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8, rotY
         group.add(paver);
     }
 
-    // Obstacle Registration with Rotated Bounds
-    const cosR = Math.abs(Math.cos(rotY));
-    const sinR = Math.abs(Math.sin(rotY));
-    const boundW = cosR * (width + 0.6) + sinR * (depth + 0.6);
-    const boundD = sinR * (width + 0.6) + cosR * (depth + 0.6);
-
     obstacles.push({
         x,
         z,
-        w: boundW,
-        d: boundD,
+        w: width,
+        d: depth,
+        rotY,
         bottom: 0,
         top: height
     });
@@ -683,17 +678,12 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rot
     win1Frame.position.set(-width * 0.36, 3.0, depth * 0.38 + 0.03);
     group.add(win1Frame);
 
-    // Obstacle Registration with Rotated Bounds
-    const cosR = Math.abs(Math.cos(rotY));
-    const sinR = Math.abs(Math.sin(rotY));
-    const boundW = cosR * (width + 0.6) + sinR * (depth + 0.6);
-    const boundD = sinR * (width + 0.6) + cosR * (depth + 0.6);
-
     obstacles.push({
         x,
         z,
-        w: boundW,
-        d: boundD,
+        w: width,
+        d: depth,
+        rotY,
         bottom: 0,
         top: height
     });
@@ -823,17 +813,12 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, 
     pergolaRoof.position.set(deckX, 3.4, deckZ - deckD / 4);
     group.add(pergolaRoof);
 
-    // Obstacle Registration with Rotated Bounds
-    const cosR = Math.abs(Math.cos(rotY));
-    const sinR = Math.abs(Math.sin(rotY));
-    const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
-    const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
-
     obstacles.push({
         x,
         z,
-        w: boundW,
-        d: boundD,
+        w: width * 0.72,
+        d: depth * 0.82,
+        rotY,
         bottom: 0,
         top: height
     });
@@ -1000,19 +985,20 @@ function createGiantDonutDiner({ x, z, rotY = 0 }) {
     hvac.position.set(-3.5, height + 0.6, -2.5);
     group.add(hvac);
 
+    obstacles.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        rotY,
+        bottom: 0,
+        top: height
+    });
+
     const cosR = Math.abs(Math.cos(rotY));
     const sinR = Math.abs(Math.sin(rotY));
     const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
     const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
-
-    obstacles.push({
-        x,
-        z,
-        w: boundW,
-        d: boundD,
-        bottom: 0,
-        top: height
-    });
 
     buildings.push({
         x,
@@ -1131,15 +1117,12 @@ function createCityHospital({ x, z, rotY = 0 }) {
     }
 
     const cosR = Math.abs(Math.cos(rotY));
-    const sinR = Math.abs(Math.sin(rotY));
-    const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
-    const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
-
     obstacles.push({
         x,
         z,
-        w: boundW,
-        d: boundD,
+        w: width,
+        d: depth,
+        rotY,
         bottom: 0,
         top: height
     });
@@ -1256,16 +1239,12 @@ function createPoliceHeadquarters({ x, z, rotY = 0 }) {
     redBeacon.position.set(0, towerH + 6.0, 0);
     group.add(redBeacon);
 
-    const cosR = Math.abs(Math.cos(rotY));
-    const sinR = Math.abs(Math.sin(rotY));
-    const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
-    const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
-
     obstacles.push({
         x,
         z,
-        w: boundW,
-        d: boundD,
+        w: width,
+        d: depth,
+        rotY,
         bottom: 0,
         top: 8.5
     });
@@ -1355,6 +1334,7 @@ function createHydroelectricDam({ x = -180, z = 230, rotY = -0.42 }) {
         z,
         w: 24,
         d: 78,
+        rotY,
         bottom: 0,
         top: height + 0.25
     });
@@ -1563,13 +1543,13 @@ function generateMassiveCity() {
     const northVillas = [
         { x: -196, z: 205, rotY: Math.PI / 2, dw: [-170, 205, -188, 205] },
         { x: -144, z: 218, rotY: -Math.PI / 2, dw: [-170, 218, -152, 218] },
-        { x: -170, z: 246, rotY: Math.PI, dw: [-170, 235, -170, 239] },
+        { x: -160, z: 242, rotY: Math.PI, dw: [-160, 225, -160, 234] },
         { x: -198, z: 160, rotY: 0.15, dw: [-198, 185, -198, 168] },
         { x: -140, z: 162, rotY: -0.15, dw: [-140, 185, -140, 170] },
 
         { x: -92, z: 205, rotY: Math.PI / 2, dw: [-65, 205, -84, 205] },
         { x: -38, z: 220, rotY: -Math.PI / 2, dw: [-65, 220, -46, 220] },
-        { x: -65, z: 248, rotY: Math.PI, dw: [-65, 235, -65, 241] },
+        { x: -65, z: 236, rotY: Math.PI, dw: [-65, 222, -65, 228] },
         { x: -92, z: 160, rotY: 0.2, dw: [-92, 185, -92, 168] },
         { x: -38, z: 162, rotY: -0.2, dw: [-38, 185, -38, 170] },
 
@@ -1734,6 +1714,29 @@ function getRiverDistance(x, z) {
 }
 
 function getWaterLevel(x, z) {
+    // 1. Buildings are always dry inside (except luxury villa swimming pools)
+    for (const b of buildings) {
+        if (b.style === 'dam') continue;
+        const rot = b.rotY || 0;
+        const cosR = Math.cos(-rot);
+        const sinR = Math.sin(-rot);
+        const dx = x - b.x;
+        const dz = z - b.z;
+        const localX = cosR * dx - sinR * dz;
+        const localZ = sinR * dx + cosR * dz;
+
+        if (Math.abs(localX) <= (b.w || 14) / 2 && Math.abs(localZ) <= (b.d || 14) / 2) {
+            if (b.style === 'villa') {
+                const poolOffsetX = 0.44 * 16 + 0.2;
+                const poolOffsetZ = 0.34 * 15 - 0.2;
+                if (Math.abs(localX - poolOffsetX) < 2.3 && Math.abs(localZ - poolOffsetZ) < 3.2) {
+                    return 0.32;
+                }
+            }
+            return -999.0;
+        }
+    }
+
     for (const lake of waterBodies) {
         const dist = Math.hypot(x - lake.x, z - lake.z);
         if (dist <= lake.radius) {
@@ -1745,26 +1748,28 @@ function getWaterLevel(x, z) {
     if (riverDist <= 10.0 && x > -180) {
         return 0.0;
     }
-    // Check luxury villa swimming pools
-    for (const b of buildings) {
-        if (b.style === 'villa') {
-            const rot = b.rotY || 0;
-            const poolOffsetX = 0.44 * 16 + 0.2;
-            const poolOffsetZ = 0.34 * 15 - 0.2;
-            const cosR = Math.cos(rot);
-            const sinR = Math.sin(rot);
-            const px = b.x + cosR * poolOffsetX - sinR * poolOffsetZ;
-            const pz = b.z + sinR * poolOffsetX + cosR * poolOffsetZ;
-            if (Math.abs(x - px) < 2.8 && Math.abs(z - pz) < 3.8) {
-                return 0.32;
-            }
-        }
-    }
     return -999.0;
 }
 
 function getTerrainHeight(x, z) {
-    // 1. Lake Depressions
+    // 1. Building lots & yards are always flat and level
+    for (const b of buildings) {
+        if (b.style === 'dam') continue;
+        const rot = b.rotY || 0;
+        const cosR = Math.cos(-rot);
+        const sinR = Math.sin(-rot);
+        const dx = x - b.x;
+        const dz = z - b.z;
+        const localX = cosR * dx - sinR * dz;
+        const localZ = sinR * dx + cosR * dz;
+        const halfW = (b.w || 14) / 2 + 3.0;
+        const halfD = (b.d || 14) / 2 + 3.0;
+        if (Math.abs(localX) < halfW && Math.abs(localZ) < halfD) {
+            return 0.0;
+        }
+    }
+
+    // 2. Lake Depressions
     for (const lake of waterBodies) {
         const dist = Math.hypot(x - lake.x, z - lake.z);
         if (dist < lake.radius) {
@@ -1777,7 +1782,7 @@ function getTerrainHeight(x, z) {
         }
     }
 
-    // 2. Riverbed Channel
+    // 3. Riverbed Channel
     const riverDist = getRiverDistance(x, z);
     if (riverDist < 12.0 && x > -180) {
         const t = riverDist / 12.0;
@@ -3777,6 +3782,27 @@ function explodeGrenadeAt(grenadeData) {
     uiManager.updateHUD(getHUDState());
 }
 
+function checkObstacleCollision(px, pz, feetY, obs, radius = 0.55) {
+    if (feetY >= (obs.top !== undefined ? obs.top : 20) - 0.15 || feetY < (obs.bottom || 0) - 0.5) {
+        return false;
+    }
+
+    let localX = px - obs.x;
+    let localZ = pz - obs.z;
+    if (obs.rotY) {
+        const cosA = Math.cos(-obs.rotY);
+        const sinA = Math.sin(-obs.rotY);
+        const dx = localX;
+        const dz = localZ;
+        localX = cosA * dx - sinA * dz;
+        localZ = sinA * dx + cosA * dz;
+    }
+
+    const halfW = obs.w / 2 + radius;
+    const halfD = obs.d / 2 + radius;
+    return Math.abs(localX) <= halfW && Math.abs(localZ) <= halfD;
+}
+
 // 20. Player Movement, Physics & Ladder Climbing Loop
 function updatePlayer(delta) {
     if (window.chatInputActive) {
@@ -3933,14 +3959,7 @@ function updatePlayer(delta) {
             // Check X Movement
             let collidesX = false;
             for (const obs of obstacles) {
-                const halfW = obs.w / 2 + playerRadius;
-                const halfD = obs.d / 2 + playerRadius;
-                if (
-                    nextX >= obs.x - halfW && nextX <= obs.x + halfW &&
-                    camera.position.z >= obs.z - halfD && camera.position.z <= obs.z + halfD &&
-                    playerFeetY < obs.top - 0.15 &&
-                    playerFeetY >= (obs.bottom || 0) - 0.5
-                ) {
+                if (checkObstacleCollision(nextX, camera.position.z, playerFeetY, obs, playerRadius)) {
                     collidesX = true;
                     break;
                 }
@@ -3960,14 +3979,7 @@ function updatePlayer(delta) {
             // Check Z Movement
             let collidesZ = false;
             for (const obs of obstacles) {
-                const halfW = obs.w / 2 + playerRadius;
-                const halfD = obs.d / 2 + playerRadius;
-                if (
-                    camera.position.x >= obs.x - halfW && camera.position.x <= obs.x + halfW &&
-                    nextZ >= obs.z - halfD && nextZ <= obs.z + halfD &&
-                    playerFeetY < obs.top - 0.15 &&
-                    playerFeetY >= (obs.bottom || 0) - 0.5
-                ) {
+                if (checkObstacleCollision(camera.position.x, nextZ, playerFeetY, obs, playerRadius)) {
                     collidesZ = true;
                     break;
                 }
