@@ -550,14 +550,16 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8, rotY
         w: boundW,
         d: boundD,
         bottom: 0,
-        top: height + roofH
+        top: height
     });
 
     buildings.push({
         x,
         z,
-        w: boundW,
-        d: boundD,
+        w: width,
+        d: depth,
+        boundW,
+        boundD,
         h: height,
         style: 'cottage',
         rotY,
@@ -692,14 +694,16 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rot
         w: boundW,
         d: boundD,
         bottom: 0,
-        top: height + mainRoofH
+        top: height
     });
 
     buildings.push({
         x,
         z,
-        w: boundW,
-        d: boundD,
+        w: width,
+        d: depth,
+        boundW,
+        boundD,
         h: height,
         style: 'cabin',
         rotY,
@@ -836,8 +840,10 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, 
     buildings.push({
         x,
         z,
-        w: boundW,
-        d: boundD,
+        w: width,
+        d: depth,
+        boundW,
+        boundD,
         h: height,
         style: 'villa',
         rotY,
@@ -1709,41 +1715,47 @@ window.damageVehicleLocal = (vehicleId, damage) => {
 // Ground & Slanted Roof Surface Height Calculation
 function getSimpleGround(x, z) {
     let highest = getTerrainHeight(x, z);
+
     for (const b of buildings) {
-        if (
-            x >= b.x - b.w / 2 - 0.2 &&
-            x <= b.x + b.w / 2 + 0.2 &&
-            z >= b.z - b.d / 2 - 0.2 &&
-            z <= b.z + b.d / 2 + 0.2
-        ) {
-            if (b.style === 'slanted-gable') {
-                // If standing on chimney top
-                if (b.chimney &&
-                    Math.abs(x - b.chimney.x) <= b.chimney.w / 2 &&
-                    Math.abs(z - b.chimney.z) <= b.chimney.d / 2) {
-                    highest = Math.max(highest, b.chimney.top);
-                } else {
-                    const distFromRidge = Math.abs(x - b.x);
-                    const halfW = b.w / 2;
-                    const slopeFactor = Math.max(0, 1 - (distFromRidge / halfW));
-                    const surfaceY = b.h + b.roofHeight * slopeFactor;
-                    highest = Math.max(highest, surfaceY);
-                }
-            } else {
-                let roofFloor = b.h + 0.35;
-                // If standing on HVAC top
-                if (b.hvac &&
-                    Math.abs(x - b.hvac.x) <= b.hvac.w / 2 &&
-                    Math.abs(z - b.hvac.z) <= b.hvac.d / 2) {
-                    roofFloor = Math.max(roofFloor, b.hvac.top);
-                }
-                // If standing on brown water tower top
-                if (b.tower &&
-                    Math.hypot(x - b.tower.x, z - b.tower.z) <= b.tower.radius) {
-                    roofFloor = Math.max(roofFloor, b.tower.top);
-                }
-                highest = Math.max(highest, roofFloor);
+        const rot = b.rotY || 0;
+        const cosR = Math.cos(-rot);
+        const sinR = Math.sin(-rot);
+        const dx = x - b.x;
+        const dz = z - b.z;
+        const localX = cosR * dx - sinR * dz;
+        const localZ = sinR * dx + cosR * dz;
+
+        const halfW = (b.w || 14) / 2 + 0.35;
+        const halfD = (b.d || 14) / 2 + 0.35;
+
+        if (Math.abs(localX) <= halfW && Math.abs(localZ) <= halfD) {
+            let roofFloor = b.h + 0.35;
+
+            if (b.style === 'cottage') {
+                const normX = Math.abs(localX) / ((b.w || 13) / 2);
+                const normZ = Math.abs(localZ) / ((b.d || 12) / 2);
+                const edgeDist = Math.max(normX, normZ);
+                const slopeFactor = Math.max(0, 1 - edgeDist);
+                roofFloor = b.h + 0.35 + (b.roofHeight || 2.2) * slopeFactor;
+            } else if (b.style === 'cabin') {
+                const normX = Math.abs(localX) / ((b.w || 14) / 2);
+                const slopeFactor = Math.max(0, 1 - normX);
+                roofFloor = b.h + 0.35 + (b.roofHeight || 2.4) * slopeFactor;
+            } else if (b.style === 'villa') {
+                roofFloor = b.h + 0.35;
             }
+
+            if (b.hvac &&
+                Math.abs(x - b.hvac.x) <= b.hvac.w / 2 &&
+                Math.abs(z - b.hvac.z) <= b.hvac.d / 2) {
+                roofFloor = Math.max(roofFloor, b.hvac.top);
+            }
+            if (b.tower &&
+                Math.hypot(x - b.tower.x, z - b.tower.z) <= b.tower.radius) {
+                roofFloor = Math.max(roofFloor, b.tower.top);
+            }
+
+            highest = Math.max(highest, roofFloor);
         }
     }
     return highest;
@@ -2464,6 +2476,7 @@ function startReload() {
     soundEngine.stopRifleBurst();
     if (isReloading || ammo >= maxAmmo) return;
     isReloading = true;
+    aiming = false;
     reloadTimer = reloadDuration;
     reloadPhase = 0;
     if (currentWeapon.id === 'SHOTGUN') {
@@ -3135,9 +3148,13 @@ function updatePlayer(delta) {
         const standX = nearbyLadder.x + normX * 0.40;
         const standZ = nearbyLadder.z + normZ * 0.40;
 
-        // Smoothly lock player horizontally in front of the ladder rungs
-        camera.position.x = THREE.MathUtils.lerp(camera.position.x, standX, delta * 18.0);
-        camera.position.z = THREE.MathUtils.lerp(camera.position.z, standZ, delta * 18.0);
+        const isNearRoof = (camera.position.y - eyeHeight >= nearbyLadder.buildingHeight - 0.35);
+
+        // Only lock horizontally while climbing between ground and roof level
+        if (!isNearRoof) {
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, standX, delta * 18.0);
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, standZ, delta * 18.0);
+        }
 
         // Climbing UP
         if (keys["KeyW"] || keys["Space"]) {
@@ -3148,28 +3165,21 @@ function updatePlayer(delta) {
             }
 
             // Stepping forward onto rooftop terrace
-            if (camera.position.y - eyeHeight >= nearbyLadder.buildingHeight) {
-                const forward = new THREE.Vector3();
-                camera.getWorldDirection(forward);
-                forward.y = 0;
-                if (forward.lengthSq() > 0.01) {
-                    forward.normalize();
-                    camera.position.x += forward.x * 4.2 * delta;
-                    camera.position.z += forward.z * 4.2 * delta;
+            if (isNearRoof) {
+                const toBldgX = (nearbyLadder.buildingX !== undefined ? nearbyLadder.buildingX : nearbyLadder.x) - nearbyLadder.x;
+                const toBldgZ = (nearbyLadder.buildingZ !== undefined ? nearbyLadder.buildingZ : nearbyLadder.z) - nearbyLadder.z;
+                const len = Math.hypot(toBldgX, toBldgZ) || 1.0;
+                const stepX = toBldgX / len;
+                const stepZ = toBldgZ / len;
 
-                    const roofGround = getSimpleGround(camera.position.x, camera.position.z, nearbyLadder.buildingHeight);
-                    if (roofGround >= nearbyLadder.buildingHeight - 0.6) {
-                        if (Math.hypot(camera.position.x - nearbyLadder.x, camera.position.z - nearbyLadder.z) > 0.65) {
-                            onLadder = false;
-                            camera.position.y = roofGround + eyeHeight;
-                            grounded = true;
-                        }
-                    }
-                }
-            }
+                camera.position.x = nearbyLadder.x + stepX * 1.5;
+                camera.position.z = nearbyLadder.z + stepZ * 1.5;
 
-            if (camera.position.y - eyeHeight > nearbyLadder.top + 0.3) {
-                camera.position.y = nearbyLadder.top + 0.3 + eyeHeight;
+                const roofGround = getSimpleGround(camera.position.x, camera.position.z);
+                camera.position.y = Math.max(nearbyLadder.buildingHeight, roofGround) + eyeHeight;
+                onLadder = false;
+                grounded = true;
+                velocityY = 0;
             }
         }
         // Climbing DOWN
@@ -3181,7 +3191,7 @@ function updatePlayer(delta) {
             }
 
             // Once feet reach ground level, cleanly dismount
-            const groundY = getSimpleGround(camera.position.x, camera.position.z, 0);
+            const groundY = getSimpleGround(camera.position.x, camera.position.z);
             if (camera.position.y - eyeHeight <= groundY + 0.15) {
                 camera.position.y = groundY + eyeHeight;
                 onLadder = false;
@@ -3196,10 +3206,8 @@ function updatePlayer(delta) {
             const sideZ = normX * strafeDir;
             camera.position.x += sideX * 3.5 * delta;
             camera.position.z += sideZ * 3.5 * delta;
-            if (Math.hypot(camera.position.x - nearbyLadder.x, camera.position.z - nearbyLadder.z) > 0.9) {
-                onLadder = false;
-                grounded = false;
-            }
+            onLadder = false;
+            grounded = false;
         }
     } else {
         const moveVector = new THREE.Vector3();
@@ -3593,31 +3601,43 @@ function updateAimAndGun(delta, moving, sprint) {
         if (currentWeapon.id === 'AK47') {
             const reloadDip = Math.sin(reloadProgress * Math.PI) * 0.12;
             targetGunY -= reloadDip;
-            targetRotX -= Math.sin(reloadProgress * Math.PI) * 0.32;
-            targetRotZ -= Math.sin(reloadProgress * Math.PI) * 0.18;
+            targetRotX -= Math.sin(reloadProgress * Math.PI) * 0.28;
+            targetRotZ += Math.sin(reloadProgress * Math.PI) * 0.42;
+            targetGunX += Math.sin(reloadProgress * Math.PI) * 0.06;
 
-            if (reloadProgress < 0.4) {
-                const t = reloadProgress / 0.4;
-                gunGroup.traverse(child => {
-                    if (child.name === 'magazine') {
-                        child.position.y = child.userData.basePos.y - t * 0.35;
-                    }
-                });
-            } else if (reloadProgress < 0.8) {
-                const t = (reloadProgress - 0.4) / 0.4;
-                gunGroup.traverse(child => {
-                    if (child.name === 'magazine') {
-                        child.position.y = child.userData.basePos.y - (1 - t) * 0.35;
-                    }
-                });
+            const mag = gunGroup.getObjectByName('magazine');
+            const bolt = gunGroup.getObjectByName('bolt');
+            const handLeft = gunGroup.getObjectByName('handLeft');
+
+            if (reloadProgress < 0.35) {
+                const t = reloadProgress / 0.35;
+                if (mag && mag.userData.basePos) {
+                    mag.position.y = mag.userData.basePos.y - t * 0.45;
+                    mag.position.z = mag.userData.basePos.z + t * 0.10;
+                }
+                if (handLeft && handLeft.userData.basePos) {
+                    handLeft.position.y = handLeft.userData.basePos.y - t * 0.45;
+                    handLeft.position.z = handLeft.userData.basePos.z + t * 0.10;
+                }
+            } else if (reloadProgress < 0.70) {
+                const t = (reloadProgress - 0.35) / 0.35;
+                if (mag && mag.userData.basePos) {
+                    mag.position.y = mag.userData.basePos.y - (1 - t) * 0.45;
+                    mag.position.z = mag.userData.basePos.z + (1 - t) * 0.10;
+                }
+                if (handLeft && handLeft.userData.basePos) {
+                    handLeft.position.y = handLeft.userData.basePos.y - (1 - t) * 0.45;
+                    handLeft.position.z = handLeft.userData.basePos.z + (1 - t) * 0.10;
+                }
             } else {
-                const t = (reloadProgress - 0.8) / 0.2;
-                const boltSlide = Math.sin(t * Math.PI) * 0.06;
-                gunGroup.traverse(child => {
-                    if (child.name === 'bolt') {
-                        child.position.z = child.userData.basePos.z + boltSlide;
-                    }
-                });
+                const t = (reloadProgress - 0.70) / 0.30;
+                const boltSlide = Math.sin(t * Math.PI) * 0.08;
+                if (bolt && bolt.userData.basePos) {
+                    bolt.position.z = bolt.userData.basePos.z + boltSlide;
+                }
+                if (handLeft && bolt && bolt.userData.basePos) {
+                    handLeft.position.set(0.045, 0.045, bolt.userData.basePos.z + boltSlide);
+                }
             }
         } else if (currentWeapon.id === 'SNIPER') {
             const reloadDip = Math.sin(reloadProgress * Math.PI) * 0.10;
