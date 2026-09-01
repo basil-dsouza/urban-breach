@@ -372,7 +372,7 @@ export class UIManager {
                 </div>
             </div>
 
-            <!-- Stealth, Ladder & Crouch prompts -->
+            <!-- Stealth, Ladder, Crouch & Oxygen prompts -->
             <div id="hud-stealth-prompt" class="hud-stealth-prompt" style="display:none;">
                 🌿 <span>STEALTH</span> HIDDEN IN FOLIAGE
             </div>
@@ -381,6 +381,18 @@ export class UIManager {
             </div>
             <div id="hud-crouch-prompt" class="hud-crouch-prompt" style="display:none;">
                 🛡️ <span>CROUCH</span> STEADY AIM & EDGE LOCK
+            </div>
+
+            <!-- Swimming Oxygen & Suffocation Gauge -->
+            <div id="hud-oxygen-container" class="hud-oxygen-container" style="display:none;">
+                <div class="hud-oxygen-header">
+                    <span class="hud-oxygen-icon">🫧</span>
+                    <span class="hud-oxygen-label">OXYGEN</span>
+                    <span id="hud-oxygen-val" class="hud-oxygen-val">100%</span>
+                </div>
+                <div class="hud-oxygen-bar-bg">
+                    <div id="hud-oxygen-bar-fill" class="hud-oxygen-bar-fill" style="width: 100%;"></div>
+                </div>
             </div>
 
             <div class="hud-bottom-right">
@@ -436,6 +448,13 @@ export class UIManager {
         this.damageFlash = document.createElement('div');
         this.damageFlash.id = 'damage-flash';
         this.uiRoot.appendChild(this.damageFlash);
+
+        // 6b. Underwater Visual Screen Overlay
+        this.underwaterOverlay = document.createElement('div');
+        this.underwaterOverlay.id = 'underwater-overlay';
+        this.underwaterOverlay.className = 'underwater-screen-overlay';
+        this.underwaterOverlay.style.display = 'none';
+        this.uiRoot.appendChild(this.underwaterOverlay);
 
         // 7. Game Over Screen
         this.gameOverScreen = document.createElement('div');
@@ -1061,7 +1080,10 @@ export class UIManager {
         grenadeCount = 3,
         maxGrenades = 5,
         grenadeTimer = 0,
-        weapon = null
+        weapon = null,
+        oxygen = 100,
+        isSubmerged = false,
+        inWater = false
     }) {
         const hpEl = document.getElementById('hud-hp-val');
         if (hpEl) {
@@ -1098,6 +1120,34 @@ export class UIManager {
         const crouchEl = document.getElementById('hud-crouch-prompt');
         if (crouchEl) {
             crouchEl.style.display = isCrouching ? 'flex' : 'none';
+        }
+
+        // Oxygen / Breath Meter UI
+        const oxyContainer = document.getElementById('hud-oxygen-container');
+        const oxyValEl = document.getElementById('hud-oxygen-val');
+        const oxyFillEl = document.getElementById('hud-oxygen-bar-fill');
+        const underOverlay = document.getElementById('underwater-overlay');
+
+        if (oxyContainer && oxyFillEl && oxyValEl) {
+            if (inWater || oxygen < 99.5) {
+                oxyContainer.style.display = 'flex';
+                const pct = Math.max(0, Math.min(100, Math.round(oxygen)));
+                oxyValEl.textContent = `${pct}%`;
+                oxyFillEl.style.width = `${pct}%`;
+                if (pct <= 25) {
+                    oxyValEl.style.color = '#ff3344';
+                    oxyFillEl.style.background = '#ff3344';
+                } else {
+                    oxyValEl.style.color = '#00cec9';
+                    oxyFillEl.style.background = 'linear-gradient(90deg, #0984e3, #00cec9)';
+                }
+            } else {
+                oxyContainer.style.display = 'none';
+            }
+        }
+
+        if (underOverlay) {
+            underOverlay.style.display = isSubmerged ? 'block' : 'none';
         }
 
         if (difficulty) {

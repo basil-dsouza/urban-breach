@@ -109,4 +109,20 @@ describe('Procedural Sound Engine', () => {
         soundEngine.playGrenadeExplosion();
         expect(soundEngine.ctx.createOscillator).toHaveBeenCalled();
     });
+
+    it('should play Water Splash sound without crashing', () => {
+        soundEngine.playWaterSplash();
+        expect(soundEngine.ctx.createOscillator).toHaveBeenCalled();
+        expect(soundEngine.ctx.createBufferSource).toHaveBeenCalled();
+    });
+
+    it('should play Drowning Gasp sound without crashing', () => {
+        soundEngine.playDrownGasp();
+        expect(soundEngine.ctx.createOscillator).toHaveBeenCalled();
+    });
+
+    it('should play Surfacing Gasp sound without crashing', () => {
+        soundEngine.playSurfacingGasp();
+        expect(soundEngine.ctx.createBufferSource).toHaveBeenCalled();
+    });
 });

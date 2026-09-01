@@ -107,12 +107,13 @@ const glassMat = new THREE.MeshStandardMaterial({
 });
 const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffff55 });
 
-// Ground Mesh (Expanded 1000m x 1000m)
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), groundMat);
-ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
-scene.add(ground);
-staticRaycastTargets.push(ground);
+// 4b. Water Bodies & Terrain Elevation Declarations
+const waterBodies = [
+    { name: 'alpine_lake', x: -210, z: 215, radius: 38, bedDepth: -3.5, waterLevel: 0.0 },
+    { name: 'woodland_lake', x: 210, z: -215, radius: 35, bedDepth: -3.2, waterLevel: 0.0 }
+];
+const waterMeshes = [];
+let ground = null;
 
 // Initialize Pools
 function initObjectPools() {
@@ -1145,12 +1146,225 @@ function generateMassiveCity() {
 }
 generateMassiveCity();
 
+// ==========================================
+// 6b. Procedural Water Bodies & 3D Rolling Terrain Elevation
+// ==========================================
+function getWaterLevel(x, z) {
+    for (const lake of waterBodies) {
+        const dist = Math.hypot(x - lake.x, z - lake.z);
+        if (dist <= lake.radius) {
+            return lake.waterLevel;
+        }
+    }
+    // Check luxury villa swimming pools
+    for (const b of buildings) {
+        if (b.style === 'villa') {
+            const rot = b.rotY || 0;
+            const poolOffsetX = 0.44 * 16 + 0.2;
+            const poolOffsetZ = 0.34 * 15 - 0.2;
+            const cosR = Math.cos(rot);
+            const sinR = Math.sin(rot);
+            const px = b.x + cosR * poolOffsetX - sinR * poolOffsetZ;
+            const pz = b.z + sinR * poolOffsetX + cosR * poolOffsetZ;
+            if (Math.abs(x - px) < 2.8 && Math.abs(z - pz) < 3.8) {
+                return 0.32;
+            }
+        }
+    }
+    return -999.0;
+}
+
+function getTerrainHeight(x, z) {
+    // 1. Lake Depressions
+    for (const lake of waterBodies) {
+        const dist = Math.hypot(x - lake.x, z - lake.z);
+        if (dist < lake.radius) {
+            const t = dist / lake.radius;
+            const depthFactor = Math.cos(t * Math.PI * 0.5);
+            return lake.bedDepth * depthFactor;
+        }
+    }
+
+    // 2. City Core & Road Flattening Factor
+    let elevationFactor = 1.0;
+    const distFromCenter = Math.max(Math.abs(x), Math.abs(z));
+    if (distFromCenter < 125) {
+        return 0.0;
+    } else if (distFromCenter < 145) {
+        elevationFactor = (distFromCenter - 125) / 20.0;
+    }
+
+    // Main Avenues & Boulevards
+    const nearRoadX = Math.min(Math.abs(x), Math.abs(x - 120), Math.abs(x + 120));
+    const nearRoadZ = Math.min(Math.abs(z), Math.abs(z - 120), Math.abs(z + 120));
+    if (nearRoadX < 14 || nearRoadZ < 14) return 0.0;
+    if (nearRoadX < 24) elevationFactor = Math.min(elevationFactor, (nearRoadX - 14) / 10.0);
+    if (nearRoadZ < 24) elevationFactor = Math.min(elevationFactor, (nearRoadZ - 14) / 10.0);
+
+    // Residential Roads & Driveways
+    for (const seg of residentialRoadSegments) {
+        const halfW = seg.width / 2 + 3.0;
+        const halfL = seg.length / 2 + 3.0;
+        const dx = x - seg.x;
+        const dz = z - seg.z;
+        const cosA = Math.cos(-seg.angle);
+        const sinA = Math.sin(-seg.angle);
+        const localX = Math.abs(cosA * dx - sinA * dz);
+        const localZ = Math.abs(sinA * dx + cosA * dz);
+        if (localX < halfW && localZ < halfL) {
+            return 0.0;
+        } else if (localX < halfW + 10 && localZ < halfL + 10) {
+            const padX = Math.max(0, localX - halfW) / 10.0;
+            const padZ = Math.max(0, localZ - halfL) / 10.0;
+            elevationFactor = Math.min(elevationFactor, Math.max(padX, padZ));
+        }
+    }
+
+    // Buildings & immediate lot yards
+    for (const b of buildings) {
+        const dx = Math.abs(x - b.x);
+        const dz = Math.abs(z - b.z);
+        const halfW = b.w / 2 + 4.0;
+        const halfD = b.d / 2 + 4.0;
+        if (dx < halfW && dz < halfD) {
+            return 0.0;
+        } else if (dx < halfW + 8.0 && dz < halfD + 8.0) {
+            const factorX = (dx - halfW) / 8.0;
+            const factorZ = (dz - halfD) / 8.0;
+            elevationFactor = Math.min(elevationFactor, Math.max(factorX, factorZ));
+        }
+    }
+
+    if (elevationFactor <= 0.001) return 0.0;
+
+    // 3. Procedural Hills & Mountain Peaks
+    let h = 0.0;
+
+    // North-West Alpine Mountain Peaks & Ridges
+    const dNW1 = Math.hypot(x - (-260), z - 260);
+    h += 14.5 * Math.exp(- (dNW1 * dNW1) / (70 * 70));
+
+    const dNW2 = Math.hypot(x - (-165), z - 275);
+    h += 12.0 * Math.exp(- (dNW2 * dNW2) / (55 * 55));
+
+    const dNW3 = Math.hypot(x - (-285), z - 160);
+    h += 11.0 * Math.exp(- (dNW3 * dNW3) / (50 * 50));
+
+    // South-East Deciduous Woodland Rolling Hills
+    const dSE1 = Math.hypot(x - 260, z - (-260));
+    h += 11.5 * Math.exp(- (dSE1 * dSE1) / (65 * 65));
+
+    const dSE2 = Math.hypot(x - 165, z - (-275));
+    h += 9.5 * Math.exp(- (dSE2 * dSE2) / (55 * 55));
+
+    const dSE3 = Math.hypot(x - 275, z - (-165));
+    h += 10.0 * Math.exp(- (dSE3 * dSE3) / (50 * 50));
+
+    // Harmonic Undulations for natural forest depth
+    const wave = (Math.sin(x * 0.025) * Math.cos(z * 0.025) * 2.5) + (Math.sin(x * 0.06 + 1.2) * Math.cos(z * 0.06 + 0.8) * 1.2);
+    h += Math.max(0, wave);
+
+    // Outer Mountain Horizon Ring
+    const distOuter = Math.hypot(x, z);
+    if (distOuter > 320) {
+        h += Math.min(18.0, (distOuter - 320) * 0.18);
+    }
+
+    return h * elevationFactor;
+}
+
+// 3D Elevated Terrain Mesh with Vertex Colors (Lakes, Grass, Rock Hills)
+const terrainGeo = new THREE.PlaneGeometry(1000, 1000, 180, 180);
+terrainGeo.rotateX(-Math.PI / 2);
+
+const posAttr = terrainGeo.attributes.position;
+const colorAttr = new Float32Array(posAttr.count * 3);
+
+const sandColor = new THREE.Color(0xd2b48c);
+const grassColor = new THREE.Color(0x3e6b35);
+const darkGrassColor = new THREE.Color(0x2d5226);
+const alpineStoneColor = new THREE.Color(0x636e72);
+
+for (let i = 0; i < posAttr.count; i++) {
+    const vx = posAttr.getX(i);
+    const vz = posAttr.getZ(i);
+    const vy = getTerrainHeight(vx, vz);
+    posAttr.setY(i, vy);
+
+    let col = grassColor;
+    if (vy < 0.2) {
+        col = sandColor;
+    } else if (vy > 8.0) {
+        const t = Math.min(1.0, (vy - 8.0) / 7.0);
+        col = grassColor.clone().lerp(alpineStoneColor, t);
+    } else {
+        const t = Math.min(1.0, vy / 8.0);
+        col = grassColor.clone().lerp(darkGrassColor, t);
+    }
+
+    colorAttr[i * 3] = col.r;
+    colorAttr[i * 3 + 1] = col.g;
+    colorAttr[i * 3 + 2] = col.b;
+}
+
+terrainGeo.setAttribute('color', new THREE.BufferAttribute(colorAttr, 3));
+terrainGeo.computeVertexNormals();
+
+const terrainMat = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.95,
+    flatShading: true
+});
+
+ground = new THREE.Mesh(terrainGeo, terrainMat);
+ground.receiveShadow = true;
+scene.add(ground);
+staticRaycastTargets.push(ground);
+
+// Realistic Translucent Water Surfaces for Lakes
+for (const lake of waterBodies) {
+    const waterGeo = new THREE.CircleGeometry(lake.radius + 1.5, 36);
+    waterGeo.rotateX(-Math.PI / 2);
+
+    const waterMat = new THREE.MeshStandardMaterial({
+        color: 0x0984e3,
+        roughness: 0.08,
+        metalness: 0.7,
+        transparent: true,
+        opacity: 0.82
+    });
+
+    const waterMesh = new THREE.Mesh(waterGeo, waterMat);
+    waterMesh.position.set(lake.x, lake.waterLevel, lake.z);
+    waterMesh.receiveShadow = true;
+    scene.add(waterMesh);
+    waterMeshes.push({ mesh: waterMesh, baseLevel: lake.waterLevel, x: lake.x });
+
+    // Shoreline Foam Rim
+    const foamGeo = new THREE.RingGeometry(lake.radius - 2.5, lake.radius + 1.5, 36);
+    foamGeo.rotateX(-Math.PI / 2);
+    const foamMat = new THREE.MeshBasicMaterial({
+        color: 0xdff9fb,
+        transparent: true,
+        opacity: 0.40,
+        side: THREE.DoubleSide
+    });
+    const foamMesh = new THREE.Mesh(foamGeo, foamMat);
+    foamMesh.position.set(lake.x, lake.waterLevel + 0.02, lake.z);
+    scene.add(foamMesh);
+}
+
 // 7. Dense Low-Poly Forest Ecosystems & Wilderness Biomes
 function isValidTreeLocation(x, z) {
     const roadClearMargin = 11.5;
     if (Math.abs(x) < roadClearMargin || Math.abs(z) < roadClearMargin) return false;
     if (Math.abs(x - 120) < roadClearMargin || Math.abs(x + 120) < roadClearMargin) return false;
     if (Math.abs(z - 120) < roadClearMargin || Math.abs(z + 120) < roadClearMargin) return false;
+
+    // Check lake water bodies
+    if (getWaterLevel(x, z) > -900 && getTerrainHeight(x, z) < 0.25) {
+        return false;
+    }
 
     // Check residential connecting streets and driveways
     for (const seg of residentialRoadSegments) {
@@ -1185,9 +1399,10 @@ function isValidTreeLocation(x, z) {
 // Low-Poly Hyper-Realistic Coniferous Pine & Fir Tree (Image 5)
 function createLowPolyPine(x, z, h = 10.5) {
     if (!isValidTreeLocation(x, z)) return;
+    const gy = getTerrainHeight(x, z);
 
     const group = new THREE.Group();
-    group.position.set(x, 0, z);
+    group.position.set(x, gy, z);
 
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2717, roughness: 0.94 });
     const pineMats = [
@@ -1223,8 +1438,8 @@ function createLowPolyPine(x, z, h = 10.5) {
         z,
         w: 1.1,
         d: 1.1,
-        bottom: 0,
-        top: h
+        bottom: gy,
+        top: gy + h
     });
 
     trees.push(group);
@@ -1235,9 +1450,10 @@ function createLowPolyPine(x, z, h = 10.5) {
 // Low-Poly Hyper-Realistic Deciduous Woodland Oak / Birch Tree (Image 4)
 function createLowPolyDeciduous(x, z, scale = 1.0) {
     if (!isValidTreeLocation(x, z)) return;
+    const gy = getTerrainHeight(x, z);
 
     const group = new THREE.Group();
-    group.position.set(x, 0, z);
+    group.position.set(x, gy, z);
 
     const barkMat = new THREE.MeshStandardMaterial({ color: 0x4a3321, roughness: 0.92 });
     const leafMats = [
@@ -1253,7 +1469,6 @@ function createLowPolyDeciduous(x, z, scale = 1.0) {
     trunk.castShadow = true;
     group.add(trunk);
 
-    // 4 Natural Branch Forks
     for (let b = 0; b < 4; b++) {
         const ang = (b * Math.PI * 2) / 4 + 0.3;
         const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.11 * scale, 0.20 * scale, 2.6 * scale, 6), barkMat);
@@ -1279,8 +1494,8 @@ function createLowPolyDeciduous(x, z, scale = 1.0) {
         z,
         w: 1.2 * scale,
         d: 1.2 * scale,
-        bottom: 0,
-        top: trunkH + 2.8 * scale
+        bottom: gy,
+        top: gy + trunkH + 2.8 * scale
     });
 
     trees.push(group);
@@ -1291,6 +1506,7 @@ function createLowPolyDeciduous(x, z, scale = 1.0) {
 // Low-Poly Faceted Granite Boulder (Tactical Combat Cover)
 function createLowPolyBoulder(x, z, radius = 1.4) {
     if (!isValidTreeLocation(x, z)) return;
+    const gy = getTerrainHeight(x, z);
 
     const rockMat = new THREE.MeshStandardMaterial({
         color: Math.random() > 0.5 ? 0x57606f : 0x718093,
@@ -1299,7 +1515,7 @@ function createLowPolyBoulder(x, z, radius = 1.4) {
     });
 
     const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(radius, 1), rockMat);
-    rock.position.set(x, radius * 0.45, z);
+    rock.position.set(x, gy + radius * 0.45, z);
     rock.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
     rock.scale.set(1.0 + Math.random() * 0.3, 0.75 + Math.random() * 0.3, 1.0 + Math.random() * 0.3);
     rock.castShadow = true;
@@ -1311,8 +1527,8 @@ function createLowPolyBoulder(x, z, radius = 1.4) {
         z,
         w: radius * 1.8,
         d: radius * 1.8,
-        bottom: 0,
-        top: radius * 1.2
+        bottom: gy,
+        top: gy + radius * 1.2
     });
 
     staticRaycastTargets.push(rock);
@@ -1321,9 +1537,10 @@ function createLowPolyBoulder(x, z, radius = 1.4) {
 // Plant Stealth Foliage Bushes
 function createStealthBush(x, z) {
     if (!isValidTreeLocation(x, z)) return;
+    const gy = getTerrainHeight(x, z);
 
     const group = new THREE.Group();
-    group.position.set(x, 0, z);
+    group.position.set(x, gy, z);
 
     const bushMat1 = new THREE.MeshStandardMaterial({ color: 0x1f5425, roughness: 0.9, flatShading: true });
     const bushMat2 = new THREE.MeshStandardMaterial({ color: 0x2b6e32, roughness: 0.9, flatShading: true });
@@ -1344,7 +1561,7 @@ function createStealthBush(x, z) {
     group.add(cluster3);
 
     scene.add(group);
-    stealthBushes.push({ x, z, radius: 2.3 });
+    stealthBushes.push({ x, z, y: gy, radius: 2.3 });
 }
 
 // 1. North-West Dense Alpine Pine Forest Biome
@@ -1491,7 +1708,7 @@ window.damageVehicleLocal = (vehicleId, damage) => {
 
 // Ground & Slanted Roof Surface Height Calculation
 function getSimpleGround(x, z) {
-    let highest = 0;
+    let highest = getTerrainHeight(x, z);
     for (const b of buildings) {
         if (
             x >= b.x - b.w / 2 - 0.2 &&
@@ -1582,7 +1799,17 @@ let waveTimer = 0;
 let enemySpawnTimer = 0;
 let carSpawnTimer = 18;
 
+// Swimming, Water & Suffocation State
+let oxygen = 100;
+let wasInWater = false;
+let wasHeadSubmerged = false;
+let drownDamageTimer = 0;
+
 function getHUDState() {
+    const waterSurface = getWaterLevel(camera.position.x, camera.position.z);
+    const inWater = waterSurface > -900 && (camera.position.y - eyeHeight < waterSurface);
+    const isSubmerged = waterSurface > -900 && (camera.position.y < waterSurface);
+
     return {
         health,
         maxHealth,
@@ -1598,7 +1825,10 @@ function getHUDState() {
         grenadeCount,
         maxGrenades,
         grenadeTimer: grenadeReplenishTimer,
-        weapon: currentWeapon
+        weapon: currentWeapon,
+        oxygen,
+        isSubmerged,
+        inWater
     };
 }
 
@@ -3042,33 +3272,96 @@ function updatePlayer(delta) {
             if (!collidesZ) camera.position.z = nextZ;
         }
 
-        const groundLevel = getSimpleGround(camera.position.x, camera.position.z);
-        const targetY = groundLevel + eyeHeight;
+        const waterSurfaceLevel = getWaterLevel(camera.position.x, camera.position.z);
+        const playerFeetY = camera.position.y - eyeHeight;
+        const inWater = waterSurfaceLevel > -900 && (playerFeetY < waterSurfaceLevel);
+        const isHeadSubmerged = waterSurfaceLevel > -900 && (camera.position.y < waterSurfaceLevel);
 
-        if (keys["Space"] && grounded) {
-            velocityY = jumpPower;
-            grounded = false;
-        }
+        if (inWater) {
+            // Water Entry Splash Sound
+            if (!wasInWater && velocityY < -1.5) {
+                soundEngine.playWaterSplash();
+            }
+            wasInWater = true;
 
-        velocityY -= gravity * delta;
-        camera.position.y += velocityY * delta;
+            // Swimming Physics & Buoyancy
+            velocityY -= (gravity * 0.25) * delta;
+            velocityY *= Math.pow(0.35, delta * 4);
 
-        if (camera.position.y <= targetY) {
-            // Realistic Fall Damage upon hard landing
-            if (!grounded && velocityY < -14.5) {
-                const fallSpeed = Math.abs(velocityY);
-                const fallDmg = Math.round((fallSpeed - 13.5) * 4.5);
-                if (fallDmg > 0) {
-                    soundEngine.playPlayerHurt();
-                    damagePlayer(fallDmg, 'fall');
-                }
+            if (keys["Space"]) {
+                velocityY = Math.min(4.2, velocityY + 16.0 * delta);
+            }
+            if (keys["KeyC"] || keys["ControlLeft"] || keys["ControlRight"]) {
+                velocityY = Math.max(-4.2, velocityY - 16.0 * delta);
             }
 
-            camera.position.y = targetY;
-            velocityY = 0;
-            grounded = true;
+            camera.position.y += velocityY * delta;
+
+            const maxSwimY = waterSurfaceLevel + eyeHeight * 0.6;
+            if (camera.position.y > maxSwimY && !keys["Space"]) {
+                camera.position.y = maxSwimY;
+                velocityY = 0;
+            }
+
+            const groundLevel = getSimpleGround(camera.position.x, camera.position.z);
+            const targetY = groundLevel + eyeHeight;
+            if (camera.position.y <= targetY) {
+                camera.position.y = targetY;
+                velocityY = 0;
+                grounded = true;
+            } else {
+                grounded = false;
+            }
         } else {
-            grounded = false;
+            wasInWater = false;
+            const groundLevel = getSimpleGround(camera.position.x, camera.position.z);
+            const targetY = groundLevel + eyeHeight;
+
+            if (keys["Space"] && grounded) {
+                velocityY = jumpPower;
+                grounded = false;
+            }
+
+            velocityY -= gravity * delta;
+            camera.position.y += velocityY * delta;
+
+            if (camera.position.y <= targetY) {
+                // Realistic Fall Damage upon hard landing
+                if (!grounded && velocityY < -14.5) {
+                    const fallSpeed = Math.abs(velocityY);
+                    const fallDmg = Math.round((fallSpeed - 13.5) * 4.5);
+                    if (fallDmg > 0) {
+                        soundEngine.playPlayerHurt();
+                        damagePlayer(fallDmg, 'fall');
+                    }
+                }
+
+                camera.position.y = targetY;
+                velocityY = 0;
+                grounded = true;
+            } else {
+                grounded = false;
+            }
+        }
+
+        // Oxygen & Suffocation / Drowning Management
+        if (isHeadSubmerged) {
+            oxygen = Math.max(0, oxygen - (100 / 12.0) * delta); // 12 seconds lung capacity
+            if (oxygen <= 0) {
+                drownDamageTimer -= delta;
+                if (drownDamageTimer <= 0) {
+                    drownDamageTimer = 0.85;
+                    soundEngine.playDrownGasp();
+                    damagePlayer(14, 'drowning');
+                }
+            }
+            wasHeadSubmerged = true;
+        } else {
+            if (wasHeadSubmerged && oxygen < 95) {
+                soundEngine.playSurfacingGasp();
+                wasHeadSubmerged = false;
+            }
+            oxygen = Math.min(100, oxygen + 48.0 * delta); // Rapidly recovers when breathing on surface
         }
     }
 
@@ -3525,6 +3818,12 @@ function animate() {
             grenades: activeGrenades
         }, delta);
 
+    }
+
+    // Lake water subtle wave oscillation
+    const animTime = clock.getElapsedTime();
+    for (const w of waterMeshes) {
+        w.mesh.position.y = w.baseLevel + Math.sin(animTime * 1.8 + w.x * 0.05) * 0.03;
     }
 
     uiManager.updateDamageFlash(delta);

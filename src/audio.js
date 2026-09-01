@@ -1123,6 +1123,110 @@ class SoundEngine {
     }
 
     /**
+     * Splash sound when entering water / swimming
+     */
+    playWaterSplash() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.setValueAtTime(this.masterVolume * 0.7, t);
+
+        // Low frequency water displacement thud
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(140, t);
+        osc.frequency.exponentialRampToValueAtTime(35, t + 0.35);
+
+        oscGain.gain.setValueAtTime(0.6, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        osc.connect(oscGain);
+        oscGain.connect(mainGain);
+
+        // Filtered white noise water spray / splash
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer(0.4);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(900, t);
+        filter.frequency.exponentialRampToValueAtTime(300, t + 0.35);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.5, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(mainGain);
+
+        mainGain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.36);
+        noise.start(t);
+        noise.stop(t + 0.40);
+    }
+
+    /**
+     * Drowning choking / gasp sound under suffocation
+     */
+    playDrownGasp() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(95, t);
+        osc.frequency.exponentialRampToValueAtTime(60, t + 0.28);
+
+        gain.gain.setValueAtTime(0.6 * this.masterVolume, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.32);
+    }
+
+    /**
+     * Refreshing deep inhale/gasp sound when breaking the water surface
+     */
+    playSurfacingGasp() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer(0.35);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, t);
+        filter.frequency.exponentialRampToValueAtTime(1400, t + 0.3);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.4 * this.masterVolume, t + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        noise.start(t);
+        noise.stop(t + 0.36);
+    }
+
+    /**
      * Start playing menu background music
      */
     playMenuMusic() {

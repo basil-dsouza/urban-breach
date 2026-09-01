@@ -1316,4 +1316,84 @@ body {
 @keyframes marquee-scroll-credits {
     0% { transform: translate3d(0, 0, 0); }
     100% { transform: translate3d(-100%, 0, 0); }
+}
+
+/* =========================================================
+   UNDERWATER OVERLAY & OXYGEN BREATH GAUGE
+   ========================================================= */
+
+.underwater-screen-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, rgba(0, 168, 255, 0.28) 0%, rgba(9, 132, 227, 0.65) 75%, rgba(4, 30, 60, 0.88) 100%);
+    backdrop-filter: blur(1.5px) saturate(1.4);
+    z-index: 99990;
+    animation: underwater-caustics 4s ease-in-out infinite alternate;
+}
+
+@keyframes underwater-caustics {
+    0% { filter: contrast(100%) brightness(100%); }
+    50% { filter: contrast(110%) brightness(108%); }
+    100% { filter: contrast(105%) brightness(95%); }
+}
+
+.hud-oxygen-container {
+    position: fixed;
+    top: 92px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(6, 18, 30, 0.85);
+    border: 1.5px solid rgba(0, 206, 201, 0.55);
+    box-shadow: 0 0 16px rgba(0, 206, 201, 0.25);
+    border-radius: 8px;
+    padding: 8px 14px;
+    z-index: 99995;
+    transition: all 0.2s ease;
+}
+
+.hud-oxygen-container.oxygen-critical {
+    border-color: #ff3344;
+    box-shadow: 0 0 20px rgba(255, 51, 68, 0.6);
+    animation: oxygen-critical-pulse 0.6s infinite alternate;
+}
+
+@keyframes oxygen-critical-pulse {
+    0% { transform: scale(1.0); }
+    100% { transform: scale(1.04); }
+}
+
+.hud-oxygen-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #00cec9;
+}
+
+.hud-oxygen-val {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 900;
+    color: #00cec9;
+    font-family: monospace;
+}
+
+.hud-oxygen-bar-bg {
+    width: 150px;
+    height: 7px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hud-oxygen-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0984e3, #00cec9);
+    border-radius: 4px;
+    transition: width 0.08s linear, background 0.25s ease;
 }
