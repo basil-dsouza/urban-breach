@@ -2353,8 +2353,15 @@ window.damageVehicleLocal = (vehicleId, damage) => {
 };
 
 // Ground & Slanted Roof Surface Height Calculation
-function getSimpleGround(x, z) {
+function getSimpleGround(x, z, queryY = null) {
     let highest = getTerrainHeight(x, z);
+
+    let curY = queryY;
+    if (curY === null || curY === undefined) {
+        if (typeof camera !== 'undefined' && camera && camera.position) {
+            curY = camera.position.y - eyeHeight;
+        }
+    }
 
     for (const b of buildings) {
         const rot = b.rotY || 0;
@@ -2395,7 +2402,12 @@ function getSimpleGround(x, z) {
                 roofFloor = Math.max(roofFloor, b.tower.top);
             }
 
-            highest = Math.max(highest, roofFloor);
+            // Only consider roof floor if entity's feet are at or above roof level (or within 1.2m of roof)
+            // If the entity is on the ground below the building (curY < b.h - 1.2), the roof is high overhead
+            // and must NOT pull the entity up into the sky!
+            if (curY === null || curY === undefined || curY >= b.h - 1.2) {
+                highest = Math.max(highest, roofFloor);
+            }
         }
     }
     return highest;
@@ -3899,7 +3911,7 @@ function updatePlayer(delta) {
             const nextX = camera.position.x + moveVector.x * speed * delta;
             const nextZ = camera.position.z + moveVector.z * speed * delta;
             const playerFeetY = camera.position.y - eyeHeight;
-            const currentGround = getSimpleGround(camera.position.x, camera.position.z);
+            const currentGround = getSimpleGround(camera.position.x, camera.position.z, playerFeetY);
 
             // Check X Movement
             let collidesX = false;
@@ -3920,7 +3932,7 @@ function updatePlayer(delta) {
             // Crouch Edge Protection along X (Prevents walking off rooftops, ledges & heights)
             if (!collidesX && crouch && grounded) {
                 const probeDistX = Math.sign(moveVector.x) * 0.28;
-                const groundNextX = getSimpleGround(nextX + probeDistX, camera.position.z);
+                const groundNextX = getSimpleGround(nextX + probeDistX, camera.position.z, playerFeetY);
                 if (currentGround - groundNextX > 0.85) {
                     collidesX = true;
                 }
@@ -3947,7 +3959,7 @@ function updatePlayer(delta) {
             // Crouch Edge Protection along Z (Prevents walking off rooftops, ledges & heights)
             if (!collidesZ && crouch && grounded) {
                 const probeDistZ = Math.sign(moveVector.z) * 0.28;
-                const groundNextZ = getSimpleGround(camera.position.x, nextZ + probeDistZ);
+                const groundNextZ = getSimpleGround(camera.position.x, nextZ + probeDistZ, playerFeetY);
                 if (currentGround - groundNextZ > 0.85) {
                     collidesZ = true;
                 }
@@ -3987,7 +3999,7 @@ function updatePlayer(delta) {
                 velocityY = 0;
             }
 
-            const groundLevel = getSimpleGround(camera.position.x, camera.position.z);
+            const groundLevel = getSimpleGround(camera.position.x, camera.position.z, playerFeetY);
             const targetY = groundLevel + eyeHeight;
             if (camera.position.y <= targetY) {
                 camera.position.y = targetY;
@@ -3998,7 +4010,7 @@ function updatePlayer(delta) {
             }
         } else {
             wasInWater = false;
-            const groundLevel = getSimpleGround(camera.position.x, camera.position.z);
+            const groundLevel = getSimpleGround(camera.position.x, camera.position.z, playerFeetY);
             const targetY = groundLevel + eyeHeight;
 
             if (keys["Space"] && grounded) {

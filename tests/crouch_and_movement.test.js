@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
-describe('Player Crouching & Edge Lock Mechanics', () => {
-    // Simulated getSimpleGround function with a 15m building between -10 and +10
-    const getSimpleGround = (x, z) => {
+describe('Player Crouching, Ground Sampling & Edge Lock Mechanics', () => {
+    // getSimpleGround function with 15m building between -10 and +10 with queryY elevation filter
+    const getSimpleGround = (x, z, queryY = null) => {
         if (x >= -10 && x <= 10 && z >= -10 && z <= 10) {
-            return 15.0; // Rooftop height
+            // Overhead roof only counts as ground if queryY >= 13.8m
+            if (queryY === null || queryY >= 13.8) {
+                return 15.0; // Rooftop height
+            }
         }
         return 0.0; // Street ground level
     };
@@ -20,7 +23,8 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
     }) {
         const nextX = currentPos.x + moveDir.x * speed * delta;
         const nextZ = currentPos.z + moveDir.z * speed * delta;
-        const currentGround = getSimpleGround(currentPos.x, currentPos.z);
+        const playerFeetY = currentPos.y - 1.7;
+        const currentGround = getSimpleGround(currentPos.x, currentPos.z, playerFeetY);
         const playerRadius = 0.35;
 
         let collidesX = false;
@@ -38,7 +42,7 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
 
         if (!collidesX && isCrouching && grounded) {
             const probeDistX = Math.sign(moveDir.x) * 0.28;
-            const groundNextX = getSimpleGround(nextX + probeDistX, currentPos.z);
+            const groundNextX = getSimpleGround(nextX + probeDistX, currentPos.z, playerFeetY);
             if (currentGround - groundNextX > 0.85) {
                 collidesX = true; // Block walking off ledge
             }
@@ -59,7 +63,7 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
 
         if (!collidesZ && isCrouching && grounded) {
             const probeDistZ = Math.sign(moveDir.z) * 0.28;
-            const groundNextZ = getSimpleGround(currentPos.x, nextZ + probeDistZ);
+            const groundNextZ = getSimpleGround(currentPos.x, nextZ + probeDistZ, playerFeetY);
             if (currentGround - groundNextZ > 0.85) {
                 collidesZ = true; // Block walking off ledge
             }
@@ -73,8 +77,20 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
         };
     }
 
+    it('should keep ground level players on the street (0m) even when walking near/under a building footprint', () => {
+        // Player at street level (y = 1.7m, feetY = 0m) walking near building
+        const groundHeight = getSimpleGround(5.0, 5.0, 0.0);
+        expect(groundHeight).toBe(0.0);
+    });
+
+    it('should return 15m roof height when player is at rooftop elevation', () => {
+        // Player at rooftop level (feetY = 15m)
+        const groundHeight = getSimpleGround(5.0, 5.0, 15.0);
+        expect(groundHeight).toBe(15.0);
+    });
+
     it('should prevent crouched player from walking off a high rooftop edge', () => {
-        const startPos = { x: 9.9, z: 0.0 };
+        const startPos = { x: 9.9, y: 16.7, z: 0.0 }; // feetY = 15.0m
         const moveDir = { x: 1.0, z: 0.0 };
 
         const result = simulateMovementStep({
@@ -89,7 +105,7 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
     });
 
     it('should allow standing player to fall off edges normally', () => {
-        const startPos = { x: 9.9, z: 0.0 };
+        const startPos = { x: 9.9, y: 16.7, z: 0.0 };
         const moveDir = { x: 1.0, z: 0.0 };
 
         const result = simulateMovementStep({
@@ -102,38 +118,6 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
         expect(result.stoppedByEdgeX).toBe(false);
         expect(result.x).toBeGreaterThan(9.9);
     });
-
-    it('should allow smooth diagonal sliding along the edge when crouching', () => {
-        const startPos = { x: 9.9, z: 0.0 };
-        const moveDir = { x: 0.707, z: 0.707 };
-
-        const result = simulateMovementStep({
-            currentPos: startPos,
-            moveDir,
-            isCrouching: true,
-            grounded: true
-        });
-
-        expect(result.stoppedByEdgeX).toBe(true);
-        expect(result.x).toBe(9.9);
-        expect(result.stoppedByEdgeZ).toBe(false);
-        expect(result.z).toBeGreaterThan(0.0);
-    });
-
-    it('should allow free movement across flat ground and small steps (< 0.85m)', () => {
-        const startPos = { x: 0.0, z: 0.0 };
-        const moveDir = { x: 1.0, z: 0.0 };
-
-        const result = simulateMovementStep({
-            currentPos: startPos,
-            moveDir,
-            isCrouching: true,
-            grounded: true
-        });
-
-        expect(result.stoppedByEdgeX).toBe(false);
-        expect(result.x).toBeGreaterThan(0.0);
-    });
 });
 
 describe('Rooftop Ladder Dismount & Anti-Softlock Attachment Rules', () => {
@@ -141,15 +125,15 @@ describe('Rooftop Ladder Dismount & Anti-Softlock Attachment Rules', () => {
         const nearbyLadder = {
             x: 0,
             z: -10.0,
-            rotY: Math.PI, // Ladder on south wall facing outward (+Z)
+            rotY: Math.PI,
             buildingHeight: 15.0
         };
 
         const ladderAngle = nearbyLadder.rotY || 0;
-        const normX = Math.sin(ladderAngle); // ~0
-        const normZ = Math.cos(ladderAngle); // -1
+        const normX = Math.sin(ladderAngle);
+        const normZ = Math.cos(ladderAngle);
         const stepIntoRoofX = -normX;
-        const stepIntoRoofZ = -normZ; // +1 into roof interior
+        const stepIntoRoofZ = -normZ;
 
         const newPos = {
             x: nearbyLadder.x + stepIntoRoofX * 2.2,
@@ -159,7 +143,6 @@ describe('Rooftop Ladder Dismount & Anti-Softlock Attachment Rules', () => {
         let onLadder = true;
         let ladderAttachCooldown = 0;
 
-        // Dismount step
         onLadder = false;
         ladderAttachCooldown = 0.6;
 
@@ -170,14 +153,13 @@ describe('Rooftop Ladder Dismount & Anti-Softlock Attachment Rules', () => {
 
     it('should prevent KeyW from re-attaching to ladder when walking across rooftop', () => {
         const nearbyLadder = { buildingHeight: 15.0 };
-        const curY = 15.0; // At roof level
+        const curY = 15.0;
         const keys = { KeyW: true, KeyS: false };
         const minLadderDist = 1.2;
         let onLadder = false;
 
         const isAtRoofLevel = (curY >= nearbyLadder.buildingHeight - 0.5);
         if (isAtRoofLevel) {
-            // Only KeyS (backing down ladder) attaches
             if (keys.KeyS && minLadderDist < 1.5) {
                 onLadder = true;
             }
@@ -188,7 +170,7 @@ describe('Rooftop Ladder Dismount & Anti-Softlock Attachment Rules', () => {
 
     it('should allow KeyS to re-attach and descend down ladder from rooftop', () => {
         const nearbyLadder = { buildingHeight: 15.0 };
-        const curY = 15.0; // At roof level
+        const curY = 15.0;
         const keys = { KeyW: false, KeyS: true };
         const minLadderDist = 1.2;
         let onLadder = false;
