@@ -1406,12 +1406,12 @@ body {
 .skeleton-hud-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    background: rgba(10, 16, 26, 0.85);
-    border: 1.5px solid rgba(0, 229, 255, 0.35);
-    border-radius: 12px;
-    padding: 8px 12px;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 229, 255, 0.15);
+    gap: 10px;
+    background: rgba(10, 16, 24, 0.75);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 10px;
+    padding: 6px 10px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(8px);
     transition: all 0.25s ease;
     user-select: none;
@@ -1419,70 +1419,70 @@ body {
 }
 
 .skeleton-hud-card.has-critical-fracture {
-    border-color: rgba(255, 51, 68, 0.7);
-    box-shadow: 0 0 20px rgba(255, 51, 68, 0.35);
+    border-color: rgba(255, 71, 87, 0.6);
+    box-shadow: 0 0 14px rgba(255, 71, 87, 0.25);
 }
 
 .skeleton-paperdoll-wrapper {
     position: relative;
-    width: 58px;
-    height: 88px;
+    width: 48px;
+    height: 74px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(0, 229, 255, 0.2);
-    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    border-radius: 6px;
     padding: 2px;
 }
 
 .skeleton-svg {
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.4));
+    filter: drop-shadow(0 0 3px rgba(0, 206, 201, 0.35));
 }
 
 .body-silhouette {
-    fill: rgba(0, 229, 255, 0.08);
-    stroke: rgba(0, 229, 255, 0.35);
-    stroke-width: 1;
+    fill: rgba(0, 229, 255, 0.05);
+    stroke: rgba(0, 229, 255, 0.2);
+    stroke-width: 0.8;
 }
 
 .bone-part {
-    stroke: #00e5ff;
-    stroke-width: 3.2;
+    stroke: #00cec9;
+    stroke-width: 2.0;
     stroke-linecap: round;
     stroke-linejoin: round;
-    fill: rgba(0, 229, 255, 0.3);
-    filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.8));
+    fill: rgba(0, 206, 201, 0.2);
+    filter: drop-shadow(0 0 2px rgba(0, 206, 201, 0.5));
     transition: all 0.2s ease;
 }
 
 .bone-head {
-    fill: rgba(0, 229, 255, 0.45);
-    stroke-width: 2.2;
+    fill: rgba(0, 206, 201, 0.3);
+    stroke-width: 1.6;
 }
 
 .bone-torso {
-    stroke-width: 2.4;
-    fill: rgba(0, 229, 255, 0.35);
+    stroke-width: 1.6;
+    fill: rgba(0, 206, 201, 0.22);
 }
 
 .bone-limb {
     fill: none;
-    stroke-width: 3.4;
+    stroke-width: 2.2;
 }
 
 .bone-part.bone-fractured {
-    stroke: #ff2233 !important;
-    fill: rgba(255, 34, 51, 0.75) !important;
-    filter: drop-shadow(0 0 10px #ff1122) !important;
-    animation: bone-fracture-flash 0.6s infinite alternate;
+    stroke: #ff4757 !important;
+    fill: rgba(255, 71, 87, 0.6) !important;
+    filter: drop-shadow(0 0 6px #ff4757) !important;
+    animation: bone-fracture-flash 0.8s infinite alternate;
 }
 
 @keyframes bone-fracture-flash {
-    0% { filter: drop-shadow(0 0 4px #ff3344); opacity: 0.65; }
-    100% { filter: drop-shadow(0 0 12px #ff1122); opacity: 1.0; }
+    0% { filter: drop-shadow(0 0 2px #ff4757); opacity: 0.75; }
+    100% { filter: drop-shadow(0 0 8px #ff4757); opacity: 1.0; }
 }
 
 .wounds-layer {
@@ -1496,58 +1496,52 @@ body {
 
 .bullet-wound-marker {
     position: absolute;
-    width: 8px;
-    height: 8px;
-    background: #ff1122;
-    border: 1.5px solid #ffffff;
+    width: 6px;
+    height: 6px;
+    background: #ff4757;
+    border: 1px solid #ffffff;
     border-radius: 50%;
-    box-shadow: 0 0 8px #ff1122, 0 0 14px rgba(255, 17, 34, 0.8);
+    box-shadow: 0 0 6px #ff4757;
     transform: translate(-50%, -50%);
-    animation: wound-bleed-pulse 0.7s infinite alternate;
+    animation: wound-bleed-pulse 0.8s infinite alternate;
 }
 
 @keyframes wound-bleed-pulse {
-    0% { transform: translate(-50%, -50%) scale(0.85); box-shadow: 0 0 4px #ff1122; }
-    100% { transform: translate(-50%, -50%) scale(1.25); box-shadow: 0 0 12px #ff0000; }
+    0% { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 3px #ff4757; }
+    100% { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 8px #ff4757; }
 }
 
 .skeleton-info-col {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    min-width: 130px;
+    gap: 2px;
+    min-width: 110px;
 }
 
 .skeleton-header-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 10.5px;
-    font-weight: 900;
-    letter-spacing: 1.2px;
-    color: #00e5ff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #00cec9;
     text-transform: uppercase;
 }
 
 .skeleton-status-tag {
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 800;
-    padding: 1px 5px;
-    border-radius: 4px;
-    background: rgba(0, 229, 255, 0.15);
-    color: #00e5ff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(0, 206, 201, 0.15);
+    color: #00cec9;
 }
 
 .skeleton-status-tag.status-impaired {
-    background: rgba(255, 51, 68, 0.25);
+    background: rgba(255, 71, 87, 0.2);
     color: #ff4757;
-    border: 1px solid rgba(255, 51, 68, 0.5);
-    animation: blink-tag 0.9s infinite alternate;
-}
-
-@keyframes blink-tag {
-    0% { opacity: 0.7; }
-    100% { opacity: 1.0; }
+    border: 1px solid rgba(255, 71, 87, 0.4);
 }
 
 .skeleton-debuff-list {
@@ -1558,15 +1552,15 @@ body {
 }
 
 .skeleton-debuff-item {
-    font-size: 9px;
-    font-weight: 800;
+    font-size: 8.5px;
+    font-weight: 700;
     color: #ff6b81;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
 }
 
 .skeleton-debuff-item.debuff-bleed {
     color: #ff4757;
-    font-weight: 900;
+    font-weight: 800;
 }

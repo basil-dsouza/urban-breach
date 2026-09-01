@@ -1022,7 +1022,7 @@ function createGiantDonutDiner({ x, z, rotY = 0 }) {
         boundW,
         boundD,
         h: height,
-        style: 'flat',
+        style: 'donut',
         rotY,
         roofHeight: 0
     });
@@ -1152,7 +1152,7 @@ function createCityHospital({ x, z, rotY = 0 }) {
         boundW,
         boundD,
         h: height,
-        style: 'flat',
+        style: 'hospital',
         rotY,
         roofHeight: 0
     });
@@ -1278,7 +1278,7 @@ function createPoliceHeadquarters({ x, z, rotY = 0 }) {
         boundW,
         boundD,
         h: 8.5,
-        style: 'flat',
+        style: 'police',
         rotY,
         roofHeight: 0
     });
@@ -2283,17 +2283,34 @@ for (const b of buildings) {
     const rot = b.rotY || 0;
     let x_l = 0, z_l = 0, theta_l = 0;
 
-    if (b.style === 'flat' || b.style === 'donut' || b.style === 'hospital' || b.style === 'police') {
+    if (b.style === 'police') {
+        // Police HQ: Right Wing Side Wall (East exterior wall, completely clear of central tower)
+        x_l = (b.w / 2) + 0.22;
+        z_l = 0;
+        theta_l = Math.PI / 2;
+    } else if (b.style === 'donut') {
+        // Donut Diner: Rear Wall (North exterior wall)
+        x_l = 4.5;
+        z_l = -(b.d / 2) - 0.22;
+        theta_l = Math.PI;
+    } else if (b.style === 'hospital') {
+        // City Hospital: West exterior side wall leading to helipad
+        x_l = -(b.w / 2) - 0.22;
+        z_l = -5.0;
+        theta_l = -Math.PI / 2;
+    } else if (b.style === 'flat') {
+        // Downtown High-Rise: South exterior wall
         x_l = 0;
-        z_l = (b.d || 14) / 2 + 0.18;
+        z_l = (b.d || 14) / 2 + 0.20;
         theta_l = 0;
     } else if (b.style === 'villa') {
-        x_l = -(b.w || 16) / 2 - 0.18;
+        // Luxury Villa: West side wall (opposite swimming pool)
+        x_l = -(b.w || 16) / 2 - 0.20;
         z_l = 0;
         theta_l = -Math.PI / 2;
     } else {
-        // Cottages and cabins
-        x_l = (b.w || 14) / 2 + 0.18;
+        // Suburban Cottages and Log Cabins: East side wall
+        x_l = (b.w || 14) / 2 + 0.20;
         z_l = 0;
         theta_l = Math.PI / 2;
     }
