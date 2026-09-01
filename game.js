@@ -554,8 +554,6 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8, rotY
         z,
         w: width,
         d: depth,
-        boundW,
-        boundD,
         h: height,
         style: 'cottage',
         rotY,
@@ -693,8 +691,6 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rot
         z,
         w: width,
         d: depth,
-        boundW,
-        boundD,
         h: height,
         style: 'cabin',
         rotY,
@@ -828,8 +824,6 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, 
         z,
         w: width,
         d: depth,
-        boundW,
-        boundD,
         h: height,
         style: 'villa',
         rotY,
@@ -995,18 +989,11 @@ function createGiantDonutDiner({ x, z, rotY = 0 }) {
         top: height
     });
 
-    const cosR = Math.abs(Math.cos(rotY));
-    const sinR = Math.abs(Math.sin(rotY));
-    const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
-    const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
-
     buildings.push({
         x,
         z,
         w: width,
         d: depth,
-        boundW,
-        boundD,
         h: height,
         style: 'donut',
         rotY,
@@ -1132,8 +1119,6 @@ function createCityHospital({ x, z, rotY = 0 }) {
         z,
         w: width,
         d: depth,
-        boundW,
-        boundD,
         h: height,
         style: 'hospital',
         rotY,
@@ -1254,8 +1239,6 @@ function createPoliceHeadquarters({ x, z, rotY = 0 }) {
         z,
         w: width,
         d: depth,
-        boundW,
-        boundD,
         h: 8.5,
         style: 'police',
         rotY,
