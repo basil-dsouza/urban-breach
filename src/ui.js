@@ -363,19 +363,21 @@ export class UIManager {
                 <!-- Biometric Anatomical Skeleton & Bone Fracture Paperdoll -->
                 <div id="skeleton-hud-card" class="skeleton-hud-card">
                     <div class="skeleton-paperdoll-wrapper">
-                        <svg class="skeleton-svg" viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Head / Cranium -->
-                            <path id="bone-head" class="bone-part" d="M30 4 C24 4 20 8 20 14 C20 19 24 22 30 22 C36 22 40 19 40 14 C40 8 36 4 30 4 Z" />
-                            <!-- Spine / Torso / Ribcage -->
-                            <path id="bone-torso" class="bone-part" d="M22 24 L38 24 L36 48 L24 48 Z M20 28 L40 28 M18 34 L42 34 M21 40 L39 40 M30 22 L30 50" />
-                            <!-- Left Arm (Humerus, Forearm) -->
-                            <path id="bone-arm-l" class="bone-part" d="M19 25 L10 38 L8 52" stroke-linecap="round" stroke-linejoin="round" />
-                            <!-- Right Arm (Humerus, Forearm) -->
-                            <path id="bone-arm-r" class="bone-part" d="M41 25 L50 38 L52 52" stroke-linecap="round" stroke-linejoin="round" />
-                            <!-- Left Leg (Femur, Tibia) -->
-                            <path id="bone-leg-l" class="bone-part" d="M25 49 L22 68 L21 86" stroke-linecap="round" stroke-linejoin="round" />
-                            <!-- Right Leg (Femur, Tibia) -->
-                            <path id="bone-leg-r" class="bone-part" d="M35 49 L38 68 L39 86" stroke-linecap="round" stroke-linejoin="round" />
+                        <svg class="skeleton-svg" viewBox="0 0 70 100" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Human Silhouette Ghost -->
+                            <path class="body-silhouette" d="M35,6 C30,6 26,10 26,16 C26,21 29,24 33,25 L22,28 L14,44 L11,62 L15,63 L19,47 L25,36 L25,58 L20,78 L18,94 L24,95 L27,79 L32,60 L35,60 L38,60 L43,79 L46,95 L52,94 L50,78 L45,58 L45,36 L51,47 L55,63 L59,62 L56,44 L48,28 L37,25 C41,24 44,21 44,16 C44,10 40,6 35,6 Z" />
+                            <!-- Cranium / Skull -->
+                            <ellipse id="bone-head" class="bone-part bone-head" cx="35" cy="15" rx="7.5" ry="9" />
+                            <!-- Torso / Spine / Ribcage -->
+                            <path id="bone-torso" class="bone-part bone-torso" d="M27,27 L43,27 L40,54 L30,54 Z M25,32 L45,32 M26,38 L44,38 M28,44 L42,44 M35,27 L35,56" />
+                            <!-- Left Arm -->
+                            <path id="bone-arm-l" class="bone-part bone-limb" d="M24,28 L15,44 L12,60" />
+                            <!-- Right Arm -->
+                            <path id="bone-arm-r" class="bone-part bone-limb" d="M46,28 L55,44 L58,60" />
+                            <!-- Left Leg -->
+                            <path id="bone-leg-l" class="bone-part bone-limb" d="M30,56 L24,76 L22,94" />
+                            <!-- Right Leg -->
+                            <path id="bone-leg-r" class="bone-part bone-limb" d="M40,56 L46,76 L48,94" />
                         </svg>
                         <div id="skeleton-wounds-layer" class="wounds-layer"></div>
                     </div>

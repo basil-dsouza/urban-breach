@@ -1425,39 +1425,64 @@ body {
 
 .skeleton-paperdoll-wrapper {
     position: relative;
-    width: 54px;
-    height: 84px;
+    width: 58px;
+    height: 88px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 8px;
+    padding: 2px;
 }
 
 .skeleton-svg {
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4));
+    filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.4));
+}
+
+.body-silhouette {
+    fill: rgba(0, 229, 255, 0.08);
+    stroke: rgba(0, 229, 255, 0.35);
+    stroke-width: 1;
 }
 
 .bone-part {
-    fill: #00e5ff;
-    fill-opacity: 0.45;
     stroke: #00e5ff;
-    stroke-width: 1.2;
+    stroke-width: 3.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: rgba(0, 229, 255, 0.3);
+    filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.8));
     transition: all 0.2s ease;
 }
 
+.bone-head {
+    fill: rgba(0, 229, 255, 0.45);
+    stroke-width: 2.2;
+}
+
+.bone-torso {
+    stroke-width: 2.4;
+    fill: rgba(0, 229, 255, 0.35);
+}
+
+.bone-limb {
+    fill: none;
+    stroke-width: 3.4;
+}
+
 .bone-part.bone-fractured {
-    fill: #ff3344 !important;
-    fill-opacity: 0.95 !important;
-    stroke: #ff1122 !important;
-    stroke-width: 2.2 !important;
-    filter: drop-shadow(0 0 6px #ff3344);
-    animation: bone-fracture-flash 0.8s infinite alternate;
+    stroke: #ff2233 !important;
+    fill: rgba(255, 34, 51, 0.75) !important;
+    filter: drop-shadow(0 0 10px #ff1122) !important;
+    animation: bone-fracture-flash 0.6s infinite alternate;
 }
 
 @keyframes bone-fracture-flash {
-    0% { fill-opacity: 0.5; filter: drop-shadow(0 0 4px #ff3344); }
-    100% { fill-opacity: 1.0; filter: drop-shadow(0 0 10px #ff1122); }
+    0% { filter: drop-shadow(0 0 4px #ff3344); opacity: 0.65; }
+    100% { filter: drop-shadow(0 0 12px #ff1122); opacity: 1.0; }
 }
 
 .wounds-layer {
