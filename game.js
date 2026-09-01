@@ -1000,25 +1000,6 @@ function createGiantDonutDiner({ x, z, rotY = 0 }) {
     hvac.position.set(-3.5, height + 0.6, -2.5);
     group.add(hvac);
 
-    // Rear Roof Access Ladder
-    createLadder(group, {
-        x: 4.5,
-        y: 0,
-        z: -depth / 2 - 0.1,
-        height: height + 0.6,
-        rotY: Math.PI
-    });
-
-    ladders.push({
-        x: x + Math.cos(rotY) * 4.5 - Math.sin(rotY) * (-depth / 2 - 0.1),
-        z: z + Math.sin(rotY) * 4.5 + Math.cos(rotY) * (-depth / 2 - 0.1),
-        rotY: rotY + Math.PI,
-        top: height + 0.6,
-        buildingHeight: height,
-        buildingX: x,
-        buildingZ: z
-    });
-
     const cosR = Math.abs(Math.cos(rotY));
     const sinR = Math.abs(Math.sin(rotY));
     const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
@@ -1149,25 +1130,6 @@ function createCityHospital({ x, z, rotY = 0 }) {
         group.add(chiller);
     }
 
-    // Side Access Ladder
-    createLadder(group, {
-        x: -width / 2 - 0.08,
-        y: 0,
-        z: -5,
-        height: height + 0.8,
-        rotY: -Math.PI / 2
-    });
-
-    ladders.push({
-        x: x + Math.cos(rotY) * (-width / 2 - 0.08) - Math.sin(rotY) * (-5),
-        z: z + Math.sin(rotY) * (-width / 2 - 0.08) + Math.cos(rotY) * (-5),
-        rotY: rotY - Math.PI / 2,
-        top: height + 0.8,
-        buildingHeight: height,
-        buildingX: x,
-        buildingZ: z
-    });
-
     const cosR = Math.abs(Math.cos(rotY));
     const sinR = Math.abs(Math.sin(rotY));
     const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
@@ -1293,25 +1255,6 @@ function createPoliceHeadquarters({ x, z, rotY = 0 }) {
     const redBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff1122 }));
     redBeacon.position.set(0, towerH + 6.0, 0);
     group.add(redBeacon);
-
-    // Side Access Ladder
-    createLadder(group, {
-        x: width / 2 + 0.08,
-        y: 0,
-        z: 0,
-        height: 8.8,
-        rotY: Math.PI / 2
-    });
-
-    ladders.push({
-        x: x + Math.cos(rotY) * (width / 2 + 0.08),
-        z: z + Math.sin(rotY) * (width / 2 + 0.08),
-        rotY: rotY + Math.PI / 2,
-        top: 8.8,
-        buildingHeight: 8.5,
-        buildingX: x,
-        buildingZ: z
-    });
 
     const cosR = Math.abs(Math.cos(rotY));
     const sinR = Math.abs(Math.sin(rotY));
@@ -2335,16 +2278,31 @@ function createLadder(x, z, buildingHeight, rotY = 0, building = null) {
 }
 
 for (const b of buildings) {
+    if (b.style === 'dam') continue;
+
     const rot = b.rotY || 0;
-    if (b.style === 'flat') {
-        createLadder(b.x, b.z + b.d / 2 + 0.18, b.h, 0, b);
+    let x_l = 0, z_l = 0, theta_l = 0;
+
+    if (b.style === 'flat' || b.style === 'donut' || b.style === 'hospital' || b.style === 'police') {
+        x_l = 0;
+        z_l = (b.d || 14) / 2 + 0.18;
+        theta_l = 0;
+    } else if (b.style === 'villa') {
+        x_l = -(b.w || 16) / 2 - 0.18;
+        z_l = 0;
+        theta_l = -Math.PI / 2;
     } else {
-        const sideOffset = b.style === 'villa' ? 7.6 : 6.6;
-        const ladderAngle = rot - Math.PI / 2;
-        const lx = b.x + Math.sin(ladderAngle) * sideOffset;
-        const lz = b.z + Math.cos(ladderAngle) * sideOffset;
-        createLadder(lx, lz, b.h, ladderAngle, b);
+        // Cottages and cabins
+        x_l = (b.w || 14) / 2 + 0.18;
+        z_l = 0;
+        theta_l = Math.PI / 2;
     }
+
+    const lx = b.x + x_l * Math.cos(rot) + z_l * Math.sin(rot);
+    const lz = b.z - x_l * Math.sin(rot) + z_l * Math.cos(rot);
+    const ladderAngle = rot + theta_l;
+
+    createLadder(lx, lz, b.h, ladderAngle, b);
 }
 
 // 9. Game Subsystems
