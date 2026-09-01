@@ -1340,29 +1340,31 @@ body {
 
 .hud-oxygen-container {
     position: fixed;
-    top: 92px;
-    left: 20px;
+    bottom: 92px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     gap: 4px;
-    background: rgba(6, 18, 30, 0.85);
-    border: 1.5px solid rgba(0, 206, 201, 0.55);
-    box-shadow: 0 0 16px rgba(0, 206, 201, 0.25);
+    background: rgba(6, 18, 30, 0.88);
+    border: 1.5px solid rgba(0, 206, 201, 0.65);
+    box-shadow: 0 0 18px rgba(0, 206, 201, 0.35);
     border-radius: 8px;
-    padding: 8px 14px;
+    padding: 8px 16px;
     z-index: 99995;
     transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
 }
 
 .hud-oxygen-container.oxygen-critical {
     border-color: #ff3344;
-    box-shadow: 0 0 20px rgba(255, 51, 68, 0.6);
+    box-shadow: 0 0 22px rgba(255, 51, 68, 0.7);
     animation: oxygen-critical-pulse 0.6s infinite alternate;
 }
 
 @keyframes oxygen-critical-pulse {
-    0% { transform: scale(1.0); }
-    100% { transform: scale(1.04); }
+    0% { transform: translateX(-50%) scale(1.0); }
+    100% { transform: translateX(-50%) scale(1.05); }
 }
 
 .hud-oxygen-header {
@@ -1384,8 +1386,8 @@ body {
 }
 
 .hud-oxygen-bar-bg {
-    width: 150px;
-    height: 7px;
+    width: 170px;
+    height: 8px;
     background: rgba(255, 255, 255, 0.12);
     border-radius: 4px;
     overflow: hidden;
@@ -1396,4 +1398,153 @@ body {
     background: linear-gradient(90deg, #0984e3, #00cec9);
     border-radius: 4px;
     transition: width 0.08s linear, background 0.25s ease;
+}
+
+/* ========================================================= */
+/* 24. BIOMETRIC ANATOMICAL SKELETON & BONE FRACTURE HUD     */
+/* ========================================================= */
+.skeleton-hud-card {
+    position: fixed;
+    bottom: 24px;
+    left: 200px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(10, 16, 26, 0.85);
+    border: 1.5px solid rgba(0, 229, 255, 0.35);
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 229, 255, 0.15);
+    backdrop-filter: blur(8px);
+    z-index: 99990;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+.skeleton-hud-card.has-critical-fracture {
+    border-color: rgba(255, 51, 68, 0.7);
+    box-shadow: 0 0 20px rgba(255, 51, 68, 0.35);
+}
+
+.skeleton-paperdoll-wrapper {
+    position: relative;
+    width: 54px;
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.skeleton-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4));
+}
+
+.bone-part {
+    fill: #00e5ff;
+    fill-opacity: 0.45;
+    stroke: #00e5ff;
+    stroke-width: 1.2;
+    transition: all 0.2s ease;
+}
+
+.bone-part.bone-fractured {
+    fill: #ff3344 !important;
+    fill-opacity: 0.95 !important;
+    stroke: #ff1122 !important;
+    stroke-width: 2.2 !important;
+    filter: drop-shadow(0 0 6px #ff3344);
+    animation: bone-fracture-flash 0.8s infinite alternate;
+}
+
+@keyframes bone-fracture-flash {
+    0% { fill-opacity: 0.5; filter: drop-shadow(0 0 4px #ff3344); }
+    100% { fill-opacity: 1.0; filter: drop-shadow(0 0 10px #ff1122); }
+}
+
+.wounds-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.bullet-wound-marker {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #ff1122;
+    border: 1.5px solid #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #ff1122, 0 0 14px rgba(255, 17, 34, 0.8);
+    transform: translate(-50%, -50%);
+    animation: wound-bleed-pulse 0.7s infinite alternate;
+}
+
+@keyframes wound-bleed-pulse {
+    0% { transform: translate(-50%, -50%) scale(0.85); box-shadow: 0 0 4px #ff1122; }
+    100% { transform: translate(-50%, -50%) scale(1.25); box-shadow: 0 0 12px #ff0000; }
+}
+
+.skeleton-info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 130px;
+}
+
+.skeleton-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+    color: #00e5ff;
+    text-transform: uppercase;
+}
+
+.skeleton-status-tag {
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(0, 229, 255, 0.15);
+    color: #00e5ff;
+}
+
+.skeleton-status-tag.status-impaired {
+    background: rgba(255, 51, 68, 0.25);
+    color: #ff4757;
+    border: 1px solid rgba(255, 51, 68, 0.5);
+    animation: blink-tag 0.9s infinite alternate;
+}
+
+@keyframes blink-tag {
+    0% { opacity: 0.7; }
+    100% { opacity: 1.0; }
+}
+
+.skeleton-debuff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 2px;
+}
+
+.skeleton-debuff-item {
+    font-size: 9px;
+    font-weight: 800;
+    color: #ff6b81;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.skeleton-debuff-item.debuff-bleed {
+    color: #ff4757;
+    font-weight: 900;
 }

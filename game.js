@@ -109,8 +109,9 @@ const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffff55 });
 
 // 4b. Water Bodies & Terrain Elevation Declarations
 const waterBodies = [
-    { name: 'alpine_lake', x: -210, z: 215, radius: 38, bedDepth: -3.5, waterLevel: 0.0 },
-    { name: 'woodland_lake', x: 210, z: -215, radius: 35, bedDepth: -3.2, waterLevel: 0.0 }
+    { name: 'alpine_reservoir', x: -270, z: 270, radius: 45, bedDepth: 3.5, waterLevel: 7.0 },
+    { name: 'emerald_lake', x: -90, z: 260, radius: 34, bedDepth: -3.2, waterLevel: 0.0 },
+    { name: 'eastern_delta', x: 260, z: 180, radius: 38, bedDepth: -3.4, waterLevel: 0.0 }
 ];
 const waterMeshes = [];
 let ground = null;
@@ -854,6 +855,582 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, 
     staticRaycastTargets.push(group);
 }
 
+// ==========================================
+// 6d. Iconic Landmark Buildings from References
+// ==========================================
+
+// Image 1: Giant Donut Diner / Bakery
+function createGiantDonutDiner({ x, z, rotY = 0 }) {
+    const width = 14, depth = 12, height = 4.8;
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+
+    const stuccoMat = new THREE.MeshStandardMaterial({ color: 0xf5f3ee, roughness: 0.75 });
+    const darkTrimMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, roughness: 0.85 });
+    const orangeMat = new THREE.MeshStandardMaterial({ color: 0xe67e22, roughness: 0.6 });
+    const woodCounterMat = new THREE.MeshStandardMaterial({ color: 0x8e5d34, roughness: 0.7 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xdfe6e9, metalness: 0.9, roughness: 0.2 });
+    const grassBedMat = new THREE.MeshStandardMaterial({ color: 0x44bd32, roughness: 0.9 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff, roughness: 0.15, metalness: 0.45, transparent: true, opacity: 0.82 });
+
+    // 1. Main Diner Body & Parapet
+    const body = new THREE.Mesh(new THREE.BoxGeometry(width, height - 0.4, depth), stuccoMat);
+    body.position.y = (height - 0.4) / 2;
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
+
+    const parapet = new THREE.Mesh(new THREE.BoxGeometry(width + 0.4, 0.5, depth + 0.4), darkTrimMat);
+    parapet.position.y = height - 0.15;
+    group.add(parapet);
+
+    // 2. Front Gabled Portico Entrance with Twin Pillars
+    const pillarL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 3.8, 0.45), stuccoMat);
+    pillarL.position.set(-1.6, 1.9, depth / 2 + 1.2);
+    group.add(pillarL);
+
+    const pillarR = pillarL.clone();
+    pillarR.position.x = 1.6;
+    group.add(pillarR);
+
+    // Portico Roof Gable
+    const pedimentGeo = new THREE.ConeGeometry(2.4, 1.2, 4);
+    const pediment = new THREE.Mesh(pedimentGeo, darkTrimMat);
+    pediment.rotation.y = Math.PI / 4;
+    pediment.position.set(0, 4.4, depth / 2 + 1.2);
+    group.add(pediment);
+
+    // Front Glass Door
+    const door = new THREE.Mesh(new THREE.BoxGeometry(1.8, 3.0, 0.1), glassMat);
+    door.position.set(0, 1.5, depth / 2 + 0.05);
+    group.add(door);
+
+    // 3. Orange Window Frames & Glass Shopfronts
+    for (const wx of [-4.2, 4.2]) {
+        const winBorder = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.2, 0.15), orangeMat);
+        winBorder.position.set(wx, 2.4, depth / 2 + 0.05);
+        group.add(winBorder);
+
+        const winGlass = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.8, 0.08), glassMat);
+        winGlass.position.set(wx, 2.4, depth / 2 + 0.1);
+        group.add(winGlass);
+    }
+
+    // 4. Side Outdoor Dining Counter & Barstools
+    const counter = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.14, 5.2), woodCounterMat);
+    counter.position.set(-width / 2 - 0.7, 1.8, 0);
+    group.add(counter);
+
+    const counterBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.7, 5.0), stuccoMat);
+    counterBase.position.set(-width / 2 - 0.7, 0.85, 0);
+    group.add(counterBase);
+
+    // Barstools
+    for (let bz = -2.0; bz <= 2.0; bz += 1.0) {
+        const stoolPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.1, 8), chromeMat);
+        stoolPost.position.set(-width / 2 - 1.5, 0.55, bz);
+        group.add(stoolPost);
+
+        const stoolSeat = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.08, 12), chromeMat);
+        stoolSeat.position.set(-width / 2 - 1.5, 1.14, bz);
+        group.add(stoolSeat);
+    }
+
+    // Striped Canvas Awning Over Side Counter
+    const stripedCanvasMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.8 });
+    const awning = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 5.8), stripedCanvasMat);
+    awning.position.set(-width / 2 - 0.7, 3.6, 0);
+    awning.rotation.z = -0.35;
+    group.add(awning);
+
+    // 5. Front Planter Beds
+    for (const px of [-3.8, 3.8]) {
+        const bed = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.35, 1.8), grassBedMat);
+        bed.position.set(px, 0.18, depth / 2 + 1.2);
+        group.add(bed);
+
+        const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 1), new THREE.MeshStandardMaterial({ color: 0x27ae60, roughness: 0.85 }));
+        bush.position.set(px, 0.7, depth / 2 + 1.2);
+        group.add(bush);
+    }
+
+    // 6. Rooftop Industrial Steel Girder Truss
+    const trussMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, metalness: 0.8, roughness: 0.3 });
+    for (const tx of [-1.1, 1.1]) {
+        for (const tz of [-1.1, 1.1]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.2, 0.18), trussMat);
+            leg.position.set(tx, height + 1.6, tz);
+            group.add(leg);
+        }
+    }
+    const trussCross = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.18, 2.5), trussMat);
+    trussCross.position.set(0, height + 3.2, 0);
+    group.add(trussCross);
+
+    // 7. GIANT 3D FROSTED DONUT WITH COLORFUL SPRINKLES
+    const donutDoughMat = new THREE.MeshStandardMaterial({ color: 0xdfa064, roughness: 0.82 });
+    const donutFrostingMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.32 });
+
+    const donut = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.95, 16, 32), donutDoughMat);
+    donut.position.set(0, height + 5.6, 0);
+    donut.castShadow = true;
+    group.add(donut);
+
+    const frosting = new THREE.Mesh(new THREE.TorusGeometry(2.42, 0.98, 16, 32, Math.PI * 1.85), donutFrostingMat);
+    frosting.position.set(0, height + 5.6, 0.05);
+    frosting.rotation.z = 0.1;
+    group.add(frosting);
+
+    // Colorful Rainbow Sprinkles
+    const sprinkleColors = [0xff3344, 0xf1c40f, 0x0984e3, 0x2ecc71, 0x9b59b6, 0xe67e22];
+    for (let i = 0; i < 48; i++) {
+        const col = sprinkleColors[i % sprinkleColors.length];
+        const sMat = new THREE.MeshBasicMaterial({ color: col });
+        const sprinkle = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.32, 0.08), sMat);
+        const ang = (i / 48) * Math.PI * 2;
+        const rad = 2.4 + (Math.sin(i * 3) * 0.45);
+        sprinkle.position.set(Math.cos(ang) * rad, height + 5.6 + Math.sin(ang) * rad, 0.98);
+        sprinkle.rotation.z = Math.sin(i * 7) * Math.PI;
+        group.add(sprinkle);
+    }
+
+    // Rooftop HVAC Unit
+    const hvac = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 1.8), darkTrimMat);
+    hvac.position.set(-3.5, height + 0.6, -2.5);
+    group.add(hvac);
+
+    // Rear Roof Access Ladder
+    createLadder(group, {
+        x: 4.5,
+        y: 0,
+        z: -depth / 2 - 0.1,
+        height: height + 0.6,
+        rotY: Math.PI
+    });
+
+    ladders.push({
+        x: x + Math.cos(rotY) * 4.5 - Math.sin(rotY) * (-depth / 2 - 0.1),
+        z: z + Math.sin(rotY) * 4.5 + Math.cos(rotY) * (-depth / 2 - 0.1),
+        rotY: rotY + Math.PI,
+        top: height + 0.6,
+        buildingHeight: height,
+        buildingX: x,
+        buildingZ: z
+    });
+
+    const cosR = Math.abs(Math.cos(rotY));
+    const sinR = Math.abs(Math.sin(rotY));
+    const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
+    const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
+
+    obstacles.push({
+        x,
+        z,
+        w: boundW,
+        d: boundD,
+        bottom: 0,
+        top: height
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        boundW,
+        boundD,
+        h: height,
+        style: 'flat',
+        rotY,
+        roofHeight: 0
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
+// Image 2: City Hospital & Emergency Center with Helipad & Ambulance Canopy
+function createCityHospital({ x, z, rotY = 0 }) {
+    const width = 28, depth = 24, height = 11.5;
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8f9fa, roughness: 0.68 });
+    const blueGlassMat = new THREE.MeshStandardMaterial({ color: 0x227093, metalness: 0.55, roughness: 0.2, transparent: true, opacity: 0.85 });
+    const helipadMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.88 });
+    const darkMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, roughness: 0.9 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff, roughness: 0.15, metalness: 0.45, transparent: true, opacity: 0.82 });
+
+    // 1. L-Shaped Multi-Story Main Complex
+    const mainWing = new THREE.Mesh(new THREE.BoxGeometry(width, height, 14), whiteMat);
+    mainWing.position.set(0, height / 2, -5);
+    mainWing.castShadow = true;
+    mainWing.receiveShadow = true;
+    group.add(mainWing);
+
+    const sideWing = new THREE.Mesh(new THREE.BoxGeometry(13, height, 10), whiteMat);
+    sideWing.position.set(width / 2 - 6.5, height / 2, 7);
+    sideWing.castShadow = true;
+    sideWing.receiveShadow = true;
+    group.add(sideWing);
+
+    // 2. Ribbon Band Windows (3 Floors)
+    for (let f = 0; f < 3; f++) {
+        const fy = 2.4 + f * 3.4;
+        const ribbon1 = new THREE.Mesh(new THREE.BoxGeometry(width - 2, 1.4, 0.12), blueGlassMat);
+        ribbon1.position.set(0, fy, 2.05);
+        group.add(ribbon1);
+
+        const ribbon2 = new THREE.Mesh(new THREE.BoxGeometry(11, 1.4, 0.12), blueGlassMat);
+        ribbon2.position.set(width / 2 - 6.5, fy, 12.05);
+        group.add(ribbon2);
+    }
+
+    // 3. Ambulance Emergency Drive-Through Canopy
+    const canopyFrameMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.25, 7.0), canopyFrameMat);
+    canopy.position.set(-6.5, 3.8, 5.5);
+    group.add(canopy);
+
+    for (const cx of [-10.8, -2.2]) {
+        const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3.8, 0.4), canopyFrameMat);
+        pillar.position.set(cx, 1.9, 8.8);
+        group.add(pillar);
+    }
+
+    const canopyGlass = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.08, 5.8), glassMat);
+    canopyGlass.position.set(-6.5, 3.95, 5.5);
+    group.add(canopyGlass);
+
+    // "HOSPITAL" Illuminated Marquee Signboard
+    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(6.4, 1.1, 0.2), new THREE.MeshStandardMaterial({ color: 0xeb2f06, roughness: 0.5 }));
+    signBoard.position.set(-6.5, 4.6, 2.15);
+    group.add(signBoard);
+
+    // 4. Rooftop Emergency Helipad
+    const helipad = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.2, 0.18, 32), helipadMat);
+    helipad.position.set(6.5, height + 0.1, -5);
+    group.add(helipad);
+
+    const helipadRing = new THREE.Mesh(new THREE.RingGeometry(4.4, 4.8, 32), new THREE.MeshBasicMaterial({ color: 0xf1c40f, side: THREE.DoubleSide }));
+    helipadRing.rotation.x = -Math.PI / 2;
+    helipadRing.position.set(6.5, height + 0.2, -5);
+    group.add(helipadRing);
+
+    const hBarL = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.05, 3.6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    hBarL.position.set(5.2, height + 0.21, -5);
+    group.add(hBarL);
+
+    const hBarR = hBarL.clone();
+    hBarR.position.x = 7.8;
+    group.add(hBarR);
+
+    const hBarC = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.05, 0.55), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    hBarC.position.set(6.5, height + 0.21, -5);
+    group.add(hBarC);
+
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0x2ecc71 });
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+        const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.35, 8), beaconMat);
+        beacon.position.set(6.5 + Math.cos(a) * 5.0, height + 0.3, -5 + Math.sin(a) * 5.0);
+        group.add(beacon);
+    }
+
+    // 5. Rooftop Elevator Penthouse & HVAC Chillers
+    const penthouse = new THREE.Mesh(new THREE.BoxGeometry(5.2, 3.4, 4.8), whiteMat);
+    penthouse.position.set(-7.5, height + 1.7, -7.5);
+    group.add(penthouse);
+
+    for (let hx = -10; hx <= -4; hx += 3.0) {
+        const chiller = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 2.0), darkMat);
+        chiller.position.set(hx, height + 0.8, -1.0);
+        group.add(chiller);
+    }
+
+    // Side Access Ladder
+    createLadder(group, {
+        x: -width / 2 - 0.08,
+        y: 0,
+        z: -5,
+        height: height + 0.8,
+        rotY: -Math.PI / 2
+    });
+
+    ladders.push({
+        x: x + Math.cos(rotY) * (-width / 2 - 0.08) - Math.sin(rotY) * (-5),
+        z: z + Math.sin(rotY) * (-width / 2 - 0.08) + Math.cos(rotY) * (-5),
+        rotY: rotY - Math.PI / 2,
+        top: height + 0.8,
+        buildingHeight: height,
+        buildingX: x,
+        buildingZ: z
+    });
+
+    const cosR = Math.abs(Math.cos(rotY));
+    const sinR = Math.abs(Math.sin(rotY));
+    const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
+    const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
+
+    obstacles.push({
+        x,
+        z,
+        w: boundW,
+        d: boundD,
+        bottom: 0,
+        top: height
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        boundW,
+        boundD,
+        h: height,
+        style: 'flat',
+        rotY,
+        roofHeight: 0
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
+// Image 3: Police Headquarters & Precinct Station with Helipad & Central POLICE Tower
+function createPoliceHeadquarters({ x, z, rotY = 0 }) {
+    const width = 26, depth = 18, height = 10.2;
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+
+    const policeBlueMat = new THREE.MeshStandardMaterial({ color: 0x0984e3, roughness: 0.65 });
+    const whiteStuccoMat = new THREE.MeshStandardMaterial({ color: 0xf8f9fa, roughness: 0.72 });
+    const darkBaseMat = new THREE.MeshStandardMaterial({ color: 0x1e272e, roughness: 0.9 });
+    const securityGlassMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff, metalness: 0.6, roughness: 0.2 });
+    const badgeGoldMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, metalness: 0.85, roughness: 0.25 });
+
+    // 1. Symmetrical White Main Precinct Wings
+    for (const sx of [-7.5, 7.5]) {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(10.5, 8.5, depth), whiteStuccoMat);
+        wing.position.set(sx, 4.25, 0);
+        wing.castShadow = true;
+        wing.receiveShadow = true;
+        group.add(wing);
+
+        const roofTrim = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.4, depth + 0.4), policeBlueMat);
+        roofTrim.position.set(sx, 8.7, 0);
+        group.add(roofTrim);
+
+        const baseTrim = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.8, depth + 0.4), darkBaseMat);
+        baseTrim.position.set(sx, 0.4, 0);
+        group.add(baseTrim);
+    }
+
+    // 2. Central Elevated Police Blue Tower
+    const towerH = 12.0;
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(7.0, towerH, depth + 0.8), policeBlueMat);
+    tower.position.set(0, towerH / 2, 0.2);
+    tower.castShadow = true;
+    tower.receiveShadow = true;
+    group.add(tower);
+
+    // Vertical White "POLICE" Block Letters on Tower Facade
+    const letters = ['P', 'O', 'L', 'I', 'C', 'E'];
+    for (let li = 0; li < letters.length; li++) {
+        const letterMesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.15), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        letterMesh.position.set(0, 10.4 - li * 1.35, depth / 2 + 0.7);
+        group.add(letterMesh);
+    }
+
+    // Police Shield Badge Insignia
+    const badgeShield = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.4, 5), badgeGoldMat);
+    badgeShield.rotation.x = Math.PI;
+    badgeShield.position.set(0, 3.2, depth / 2 + 0.7);
+    group.add(badgeShield);
+
+    // 3. Reinforced Security Windows
+    for (const sx of [-7.5, 7.5]) {
+        for (let f = 0; f < 2; f++) {
+            const fy = 2.4 + f * 3.6;
+            for (let wx = -3.2; wx <= 3.2; wx += 3.2) {
+                const win = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.6, 0.1), securityGlassMat);
+                win.position.set(sx + wx, fy, depth / 2 + 0.05);
+                group.add(win);
+            }
+        }
+    }
+
+    // 4. Rooftop Tactical Helipad on Left Wing Roof
+    const helipad = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 0.18, 32), policeBlueMat);
+    helipad.position.set(-7.5, 8.8, 0);
+    group.add(helipad);
+
+    const helipadRing = new THREE.Mesh(new THREE.RingGeometry(3.6, 3.9, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+    helipadRing.rotation.x = -Math.PI / 2;
+    helipadRing.position.set(-7.5, 8.9, 0);
+    group.add(helipadRing);
+
+    const hBarL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.05, 2.8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    hBarL.position.set(-8.4, 8.91, 0);
+    group.add(hBarL);
+
+    const hBarR = hBarL.clone();
+    hBarR.position.x = -6.6;
+    group.add(hBarR);
+
+    const hBarC = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.05, 0.45), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    hBarC.position.set(-7.5, 8.91, 0);
+    group.add(hBarC);
+
+    // 5. Communications Antenna Mast on Central Tower Roof
+    const antennaMast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.15, 6.0, 8), darkBaseMat);
+    antennaMast.position.set(0, towerH + 3.0, 0);
+    group.add(antennaMast);
+
+    const redBeacon = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff1122 }));
+    redBeacon.position.set(0, towerH + 6.0, 0);
+    group.add(redBeacon);
+
+    // Side Access Ladder
+    createLadder(group, {
+        x: width / 2 + 0.08,
+        y: 0,
+        z: 0,
+        height: 8.8,
+        rotY: Math.PI / 2
+    });
+
+    ladders.push({
+        x: x + Math.cos(rotY) * (width / 2 + 0.08),
+        z: z + Math.sin(rotY) * (width / 2 + 0.08),
+        rotY: rotY + Math.PI / 2,
+        top: 8.8,
+        buildingHeight: 8.5,
+        buildingX: x,
+        buildingZ: z
+    });
+
+    const cosR = Math.abs(Math.cos(rotY));
+    const sinR = Math.abs(Math.sin(rotY));
+    const boundW = cosR * (width + 0.8) + sinR * (depth + 0.8);
+    const boundD = sinR * (width + 0.8) + cosR * (depth + 0.8);
+
+    obstacles.push({
+        x,
+        z,
+        w: boundW,
+        d: boundD,
+        bottom: 0,
+        top: 8.5
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        boundW,
+        boundD,
+        h: 8.5,
+        style: 'flat',
+        rotY,
+        roofHeight: 0
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
+// Hydroelectric Concrete Dam & Reservoir Barrier
+function createHydroelectricDam({ x = -180, z = 230, rotY = -0.42 }) {
+    const length = 76, height = 12.5, crestWidth = 8.5;
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+
+    const concreteMat = new THREE.MeshStandardMaterial({ color: 0x7f8c8d, roughness: 0.94 });
+    const darkConcreteMat = new THREE.MeshStandardMaterial({ color: 0x57606f, roughness: 0.9 });
+    const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x2f3542, roughness: 0.88 });
+    const yellowStripeMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f });
+    const railMat = new THREE.MeshStandardMaterial({ color: 0xa4b0be, metalness: 0.7, roughness: 0.3 });
+
+    // 1. Massive Sloped Concrete Dam Wall
+    const damBody = new THREE.Mesh(new THREE.BoxGeometry(crestWidth + 6, height, length), concreteMat);
+    damBody.position.set(0, height / 2, 0);
+    damBody.castShadow = true;
+    damBody.receiveShadow = true;
+    group.add(damBody);
+
+    // Sloped Spillway Face on Downstream Side
+    const spillwayFace = new THREE.Mesh(new THREE.BoxGeometry(8.0, height, length), darkConcreteMat);
+    spillwayFace.position.set(6.0, height / 2 - 1.5, 0);
+    spillwayFace.rotation.z = -0.32;
+    group.add(spillwayFace);
+
+    // 2. Crest Roadway on Top of Dam
+    const crestRoad = new THREE.Mesh(new THREE.BoxGeometry(crestWidth, 0.25, length), asphaltMat);
+    crestRoad.position.set(0, height + 0.1, 0);
+    group.add(crestRoad);
+
+    for (let rz = -length / 2 + 4; rz <= length / 2 - 4; rz += 6.0) {
+        const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 3.0), yellowStripeMat);
+        stripe.position.set(0, height + 0.24, rz);
+        group.add(stripe);
+    }
+
+    // Steel Safety Crash Barriers
+    for (const side of [-1, 1]) {
+        const barrier = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.1, length), railMat);
+        barrier.position.set(side * (crestWidth / 2 - 0.2), height + 0.65, 0);
+        group.add(barrier);
+    }
+
+    // 3. Hydroelectric Intake & Control Towers
+    for (const tz of [-20, 20]) {
+        const tower = new THREE.Mesh(new THREE.BoxGeometry(4.2, 5.5, 5.2), concreteMat);
+        tower.position.set(-2.0, height + 2.75, tz);
+        tower.castShadow = true;
+        group.add(tower);
+
+        const win = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.8, 0.1), glassMat);
+        win.position.set(-2.0, height + 3.2, tz + 2.65);
+        group.add(win);
+    }
+
+    // 4. Spillway Chutes & Floodgates (Downstream)
+    for (let sz = -18; sz <= 18; sz += 12) {
+        const chutePillar = new THREE.Mesh(new THREE.BoxGeometry(1.8, height + 1.2, 2.0), darkConcreteMat);
+        chutePillar.position.set(2.8, height / 2 + 0.6, sz);
+        group.add(chutePillar);
+    }
+
+    obstacles.push({
+        x,
+        z,
+        w: 24,
+        d: 78,
+        bottom: 0,
+        top: height + 0.25
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: 24,
+        d: 78,
+        h: height + 0.25,
+        style: 'flat',
+        rotY,
+        roofHeight: 0
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
 // Master Building Creator
 function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }) {
     if (style === 'cottage') {
@@ -866,6 +1443,18 @@ function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }
     }
     if (style === 'villa') {
         createLowPolyModernVilla({ x, z, width, depth, height, rotY });
+        return;
+    }
+    if (style === 'donut') {
+        createGiantDonutDiner({ x, z, rotY });
+        return;
+    }
+    if (style === 'hospital') {
+        createCityHospital({ x, z, rotY });
+        return;
+    }
+    if (style === 'police') {
+        createPoliceHeadquarters({ x, z, rotY });
         return;
     }
 
@@ -982,9 +1571,21 @@ function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }
 // Generate Massive Urban & Suburban Districts
 function generateMassiveCity() {
     // ==========================================
-    // 1. DOWNTOWN INNER CITY (High-Rise Towers)
-    // Organized in urban grid blocks with streets
+    // 1. DOWNTOWN INNER CITY & ICONIC LANDMARKS
+    // Strategic placement: Hospital, Police HQ, Donut Diner & High-Rise Towers
     // ==========================================
+    // 1. Hospital in Medical District (North-East Downtown)
+    createCityHospital({ x: 56, z: -56, rotY: 0 });
+
+    // 2. Police Headquarters in Municipal District (South-West Downtown)
+    createPoliceHeadquarters({ x: -56, z: -56, rotY: 0 });
+
+    // 3. Giant Donut Diner in Commercial District (North-West Downtown)
+    createGiantDonutDiner({ x: 56, z: 56, rotY: 0 });
+
+    // 4. Hydroelectric Concrete Dam & Reservoir Barrier (North-West Canyon)
+    createHydroelectricDam({ x: -180, z: 230, rotY: -0.42 });
+
     const downtownBlocks = [
         { xs: [28, 56, 84], zs: [28, 56, 84] },
         { xs: [-84, -56, -28], zs: [28, 56, 84] },
@@ -994,6 +1595,10 @@ function generateMassiveCity() {
     for (const b of downtownBlocks) {
         for (const x of b.xs) {
             for (const z of b.zs) {
+                // Skip the 3 dedicated landmark parcel locations
+                if ((x === 56 && z === -56) || (x === -56 && z === -56) || (x === 56 && z === 56)) {
+                    continue;
+                }
                 const w = 14 + Math.random() * 6;
                 const d = 14 + Math.random() * 6;
                 const h = 14 + Math.random() * 20;
@@ -1155,12 +1760,47 @@ generateMassiveCity();
 // ==========================================
 // 6b. Procedural Water Bodies & 3D Rolling Terrain Elevation
 // ==========================================
+const riverWaypoints = [
+    { x: -180, z: 230 }, // Dam spillway outlet
+    { x: -140, z: 245 },
+    { x: -90, z: 260 },  // Passes through Emerald Lake
+    { x: -30, z: 275 },
+    { x: 40, z: 260 },
+    { x: 120, z: 230 },
+    { x: 200, z: 195 },
+    { x: 260, z: 180 }   // Empties into Eastern Delta
+];
+
+function getRiverDistance(x, z) {
+    let minDist = 9999;
+    for (let i = 0; i < riverWaypoints.length - 1; i++) {
+        const p1 = riverWaypoints[i];
+        const p2 = riverWaypoints[i + 1];
+        const dx = p2.x - p1.x;
+        const dz = p2.z - p1.z;
+        const l2 = dx * dx + dz * dz;
+        if (l2 === 0) continue;
+        let t = ((x - p1.x) * dx + (z - p1.z) * dz) / l2;
+        t = Math.max(0, Math.min(1, t));
+        const projX = p1.x + t * dx;
+        const projZ = p1.z + t * dz;
+        const d = Math.hypot(x - projX, z - projZ);
+        if (d < minDist) minDist = d;
+    }
+    return minDist;
+}
+
 function getWaterLevel(x, z) {
     for (const lake of waterBodies) {
         const dist = Math.hypot(x - lake.x, z - lake.z);
         if (dist <= lake.radius) {
             return lake.waterLevel;
         }
+    }
+    // Check winding river channel
+    const riverDist = getRiverDistance(x, z);
+    if (riverDist <= 10.0 && x > -180) {
+        return 0.0;
     }
     // Check luxury villa swimming pools
     for (const b of buildings) {
@@ -1187,11 +1827,22 @@ function getTerrainHeight(x, z) {
         if (dist < lake.radius) {
             const t = dist / lake.radius;
             const depthFactor = Math.cos(t * Math.PI * 0.5);
+            if (lake.name === 'alpine_reservoir') {
+                return lake.waterLevel - lake.bedDepth * depthFactor;
+            }
             return lake.bedDepth * depthFactor;
         }
     }
 
-    // 2. City Core & Road Flattening Factor
+    // 2. Riverbed Channel
+    const riverDist = getRiverDistance(x, z);
+    if (riverDist < 12.0 && x > -180) {
+        const t = riverDist / 12.0;
+        const depthFactor = Math.cos(t * Math.PI * 0.5);
+        return -2.4 * depthFactor;
+    }
+
+    // 3. City Core & Road Flattening Factor
     let elevationFactor = 1.0;
     const distFromCenter = Math.max(Math.abs(x), Math.abs(z));
     if (distFromCenter < 125) {
@@ -1230,8 +1881,8 @@ function getTerrainHeight(x, z) {
     for (const b of buildings) {
         const dx = Math.abs(x - b.x);
         const dz = Math.abs(z - b.z);
-        const halfW = b.w / 2 + 4.0;
-        const halfD = b.d / 2 + 4.0;
+        const halfW = (b.w || 14) / 2 + 4.0;
+        const halfD = (b.d || 14) / 2 + 4.0;
         if (dx < halfW && dz < halfD) {
             return 0.0;
         } else if (dx < halfW + 8.0 && dz < halfD + 8.0) {
@@ -1243,10 +1894,16 @@ function getTerrainHeight(x, z) {
 
     if (elevationFactor <= 0.001) return 0.0;
 
-    // 3. Procedural Hills & Mountain Peaks
+    // 4. Procedural Hills, Alpine Reservoir Plateau & Mountain Peaks
     let h = 0.0;
 
-    // North-West Alpine Mountain Peaks & Ridges
+    // North-West Alpine Mountain Peaks & High Reservoir Plateau
+    const dNWRes = Math.hypot(x - (-270), z - 270);
+    if (dNWRes < 90) {
+        const plateauT = Math.max(0, 1 - (dNWRes / 90));
+        h += 7.0 * plateauT;
+    }
+
     const dNW1 = Math.hypot(x - (-260), z - 260);
     h += 14.5 * Math.exp(- (dNW1 * dNW1) / (70 * 70));
 
@@ -1358,6 +2015,31 @@ for (const lake of waterBodies) {
     const foamMesh = new THREE.Mesh(foamGeo, foamMat);
     foamMesh.position.set(lake.x, lake.waterLevel + 0.02, lake.z);
     scene.add(foamMesh);
+}
+
+// Realistic Winding River Water Mesh
+for (let i = 0; i < riverWaypoints.length - 1; i++) {
+    const p1 = riverWaypoints[i];
+    const p2 = riverWaypoints[i + 1];
+    const dx = p2.x - p1.x;
+    const dz = p2.z - p1.z;
+    const segLen = Math.hypot(dx, dz);
+    const segAngle = Math.atan2(dx, dz);
+
+    const rWaterGeo = new THREE.PlaneGeometry(16, segLen + 2.0);
+    rWaterGeo.rotateX(-Math.PI / 2);
+    const rWaterMat = new THREE.MeshStandardMaterial({
+        color: 0x0984e3,
+        roughness: 0.08,
+        metalness: 0.7,
+        transparent: true,
+        opacity: 0.82
+    });
+    const rWaterMesh = new THREE.Mesh(rWaterGeo, rWaterMat);
+    rWaterMesh.position.set((p1.x + p2.x) / 2, 0.0, (p1.z + p2.z) / 2);
+    rWaterMesh.rotation.y = segAngle;
+    scene.add(rWaterMesh);
+    waterMeshes.push({ mesh: rWaterMesh, baseLevel: 0.0, x: (p1.x + p2.x) / 2 });
 }
 
 // 7. Dense Low-Poly Forest Ecosystems & Wilderness Biomes
@@ -1817,6 +2499,26 @@ let wasInWater = false;
 let wasHeadSubmerged = false;
 let drownDamageTimer = 0;
 
+// Biometric Anatomical Skeleton & Bullet Wound State
+let bodyBones = {
+    head: false,
+    torso: false,
+    leftArm: false,
+    rightArm: false,
+    leftLeg: false,
+    rightLeg: false
+};
+let bulletWounds = {
+    head: 0,
+    torso: 0,
+    leftArm: 0,
+    rightArm: 0,
+    leftLeg: 0,
+    rightLeg: 0
+};
+let isBleeding = false;
+let bleedTimer = 0;
+
 function getHUDState() {
     const waterSurface = getWaterLevel(camera.position.x, camera.position.z);
     const inWater = waterSurface > -900 && (camera.position.y - eyeHeight < waterSurface);
@@ -1840,7 +2542,10 @@ function getHUDState() {
         weapon: currentWeapon,
         oxygen,
         isSubmerged,
-        inWater
+        inWater,
+        bodyBones,
+        bulletWounds,
+        isBleeding
     };
 }
 
@@ -2477,6 +3182,8 @@ function startReload() {
     if (isReloading || ammo >= maxAmmo) return;
     isReloading = true;
     aiming = false;
+    const armPenalty = (bodyBones.leftArm || bodyBones.rightArm) ? 1.5 : 1.0;
+    reloadDuration = currentWeapon.reloadTime * armPenalty;
     reloadTimer = reloadDuration;
     reloadPhase = 0;
     if (currentWeapon.id === 'SHOTGUN') {
@@ -2964,7 +3671,8 @@ function shoot() {
     muzzleFlashLight.intensity = currentWeapon.id === 'SNIPER' ? 16 : 8;
     muzzleFlashLight.userData.timer = 0.04;
 
-    gunRecoil = aiming ? currentWeapon.recoilKick * 0.35 : currentWeapon.recoilKick;
+    const armRecoilMult = (bodyBones.leftArm || bodyBones.rightArm) ? 1.4 : 1.0;
+    gunRecoil = (aiming ? currentWeapon.recoilKick * 0.35 : currentWeapon.recoilKick) * armRecoilMult;
 }
 
 // 18. Bullet Holes & Impacts
@@ -3093,9 +3801,13 @@ function updatePlayer(delta) {
     const crouch = (keys["KeyC"] || keys["ControlLeft"] || keys["ControlRight"]) && !onLadder;
     isCrouching = crouch;
 
-    const sprint = !crouch && (keys["ShiftLeft"] || keys["ShiftRight"]);
+    const hasLegFracture = bodyBones.leftLeg || bodyBones.rightLeg;
+    const sprint = !crouch && !hasLegFracture && (keys["ShiftLeft"] || keys["ShiftRight"]);
     const moving = keys["KeyW"] || keys["KeyA"] || keys["KeyS"] || keys["KeyD"];
-    const speed = crouch ? 3.4 : (sprint ? 13 : 7.2);
+    let speed = crouch ? 3.4 : (sprint ? 13 : 7.2);
+    if (hasLegFracture) {
+        speed *= 0.65;
+    }
 
     const targetEyeHeight = crouch ? CROUCH_EYE_HEIGHT : STANDING_EYE_HEIGHT;
     eyeHeight = THREE.MathUtils.lerp(eyeHeight, targetEyeHeight, delta * 14.0);
@@ -3353,8 +4065,9 @@ function updatePlayer(delta) {
         }
 
         // Oxygen & Suffocation / Drowning Management
+        const lungDuration = bodyBones.torso ? 6.0 : 12.0; // Cracked ribs cut lung capacity in half
         if (isHeadSubmerged) {
-            oxygen = Math.max(0, oxygen - (100 / 12.0) * delta); // 12 seconds lung capacity
+            oxygen = Math.max(0, oxygen - (100 / lungDuration) * delta);
             if (oxygen <= 0) {
                 drownDamageTimer -= delta;
                 if (drownDamageTimer <= 0) {
@@ -3371,6 +4084,20 @@ function updatePlayer(delta) {
             }
             oxygen = Math.min(100, oxygen + 48.0 * delta); // Rapidly recovers when breathing on surface
         }
+
+        // Bleeding Tick Management
+        if (isBleeding) {
+            bleedTimer -= delta;
+            if (bleedTimer <= 0) {
+                bleedTimer = 3.5;
+                let totalWounds = 0;
+                for (const k in bulletWounds) totalWounds += bulletWounds[k];
+                if (totalWounds > 0 && health > 1) {
+                    health = Math.max(1, health - 1);
+                    uiManager.updateHUD(getHUDState());
+                }
+            }
+        }
     }
 
     for (let i = enemyManager.medkits.length - 1; i >= 0; i--) {
@@ -3378,6 +4105,10 @@ function updatePlayer(delta) {
         const dist = Math.hypot(camera.position.x - med.position.x, camera.position.z - med.position.z);
         if (dist < 1.6) {
             health = Math.min(maxHealth, health + med.userData.heal);
+            // Treat and repair all bone fractures, close bullet wounds, stop bleeding
+            bodyBones = { head: false, torso: false, leftArm: false, rightArm: false, leftLeg: false, rightLeg: false };
+            bulletWounds = { head: 0, torso: 0, leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0 };
+            isBleeding = false;
             soundEngine.playMedkitPickup();
             scene.remove(med);
             enemyManager.medkits.splice(i, 1);
@@ -3401,6 +4132,41 @@ function damagePlayer(amount, source = 'generic') {
 
     health -= amount;
     uiManager.triggerDamageFlash(source === 'ram' ? 0.95 : 0.65);
+
+    // Anatomical Bone Fractures & Bullet Wound Bleeding
+    if (source === 'fall') {
+        bodyBones.leftLeg = true;
+        bodyBones.rightLeg = true;
+    } else if (source === 'ram' || source === 'car') {
+        bodyBones.torso = true;
+        if (Math.random() < 0.65) bodyBones.leftLeg = true;
+        if (Math.random() < 0.65) bodyBones.rightLeg = true;
+    } else if (source === 'enemy' || source === 'player' || source === 'gunshot') {
+        const roll = Math.random();
+        let hitZone = 'torso';
+        if (roll < 0.10) hitZone = 'head';
+        else if (roll < 0.22) hitZone = 'leftArm';
+        else if (roll < 0.35) hitZone = 'rightArm';
+        else if (roll < 0.50) hitZone = 'leftLeg';
+        else if (roll < 0.65) hitZone = 'rightLeg';
+        else hitZone = 'torso';
+
+        bulletWounds[hitZone] = (bulletWounds[hitZone] || 0) + 1;
+        isBleeding = true;
+
+        if (amount >= 20 || Math.random() < 0.40) {
+            bodyBones[hitZone] = true;
+        }
+    } else if (source === 'explosion') {
+        bodyBones.torso = true;
+        if (Math.random() < 0.5) bodyBones.leftLeg = true;
+        if (Math.random() < 0.5) bodyBones.rightLeg = true;
+        if (Math.random() < 0.5) bodyBones.leftArm = true;
+        if (Math.random() < 0.5) bodyBones.rightArm = true;
+        isBleeding = true;
+        bulletWounds.torso = (bulletWounds.torso || 0) + 1;
+    }
+
     uiManager.updateHUD(getHUDState());
 
     if (health <= 0) {
