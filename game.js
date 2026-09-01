@@ -4188,7 +4188,7 @@ function spawnWave(difficulty) {
 
     if (wave >= (diff.carSpawnWave || 1)) {
         if (vehicleManager.vehicles.length < Math.min(Math.floor(wave / 2) + 1, 2)) {
-            vehicleManager.spawnVehicle(camera.position, diff);
+            vehicleManager.spawnVehicle(camera.position, diff, getSimpleGround);
         }
     }
 }
@@ -4212,7 +4212,7 @@ function updateWaves(delta) {
     carSpawnTimer -= delta;
     if (carSpawnTimer <= 0 && wave >= (diff.carSpawnWave || 1)) {
         if (vehicleManager.vehicles.length < 2) {
-            vehicleManager.spawnVehicle(camera.position, diff);
+            vehicleManager.spawnVehicle(camera.position, diff, getSimpleGround);
         }
         carSpawnTimer = diff.carSpawnInterval || 14;
     }
@@ -4551,7 +4551,7 @@ function animate() {
 
             vehicleManager.update(delta, camera.position, obstacles, (dmg, src) => {
                 damagePlayer(dmg, src);
-            });
+            }, null, getSimpleGround);
         } else {
             // Client only updates bullets visually
             enemyManager.bulletManager.update(delta, camera.position, () => {}, obstacles);

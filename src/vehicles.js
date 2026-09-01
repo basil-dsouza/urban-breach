@@ -428,7 +428,7 @@ export class VehicleManager {
         return car;
     }
 
-    spawnVehicle(playerPos = new THREE.Vector3(0, 1.7, 0), difficulty) {
+    spawnVehicle(playerPos = new THREE.Vector3(0, 1.7, 0), difficulty, getGroundHeight) {
         const car = this.createCarMesh();
         const diff = difficulty || { carSpeed: 22, carDamage: 40 };
 
@@ -462,7 +462,8 @@ export class VehicleManager {
             yaw = sx > playerPos.x ? -Math.PI / 2 : Math.PI / 2; // Face toward player
         }
 
-        car.position.set(sx, 0, sz);
+        const groundY = typeof getGroundHeight === 'function' ? getGroundHeight(sx, sz) : 0;
+        car.position.set(sx, groundY, sz);
         car.rotation.y = yaw;
 
         car.userData.health = 35;
@@ -479,7 +480,7 @@ export class VehicleManager {
         return car;
     }
 
-    update(delta, playerPos, obstacles = [], onPlayerDamaged, onCarExploded) {
+    update(delta, playerPos, obstacles = [], onPlayerDamaged, onCarExploded, getGroundHeight) {
         for (let i = this.vehicles.length - 1; i >= 0; i--) {
             const car = this.vehicles[i];
             if (!car.parent) {
@@ -584,7 +585,32 @@ export class VehicleManager {
                 car.position.z = nextZ;
             }
 
-            // 5. Spin Wheels
+            // 5. Dynamic Terrain Elevation & Slope Conformation (Pitch & Roll)
+            if (typeof getGroundHeight === 'function') {
+                const centerGround = getGroundHeight(car.position.x, car.position.z, car.position.y);
+                car.position.y = THREE.MathUtils.lerp(car.position.y, centerGround, delta * 15.0);
+
+                // Sample front & rear ground for realistic pitch angle
+                const frontX = car.position.x + forwardX * 2.0;
+                const frontZ = car.position.z + forwardZ * 2.0;
+                const rearX = car.position.x - forwardX * 2.0;
+                const rearZ = car.position.z - forwardZ * 2.0;
+                const frontGround = getGroundHeight(frontX, frontZ, car.position.y);
+                const rearGround = getGroundHeight(rearX, rearZ, car.position.y);
+                const targetPitch = Math.atan2(rearGround - frontGround, 4.0);
+
+                // Sample left & right ground for realistic bank roll angle
+                const rightX = forwardZ;
+                const rightZ = -forwardX;
+                const rightGround = getGroundHeight(car.position.x + rightX * 1.2, car.position.z + rightZ * 1.2, car.position.y);
+                const leftGround = getGroundHeight(car.position.x - rightX * 1.2, car.position.z - rightZ * 1.2, car.position.y);
+                const targetRoll = Math.atan2(leftGround - rightGround, 2.4);
+
+                car.rotation.x = THREE.MathUtils.lerp(car.rotation.x, targetPitch, delta * 12.0);
+                car.rotation.z = THREE.MathUtils.lerp(car.rotation.z, targetRoll, delta * 12.0);
+            }
+
+            // 6. Spin Wheels
             for (const wheel of car.userData.wheels) {
                 wheel.children[0].rotation.x += currentSpeed * delta * 2.2;
             }
