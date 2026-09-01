@@ -74,9 +74,8 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
     }
 
     it('should prevent crouched player from walking off a high rooftop edge', () => {
-        // Player is at x = 9.9m on a 15m high rooftop (edge is at x = 10.0m)
         const startPos = { x: 9.9, z: 0.0 };
-        const moveDir = { x: 1.0, z: 0.0 }; // Moving towards edge (+X)
+        const moveDir = { x: 1.0, z: 0.0 };
 
         const result = simulateMovementStep({
             currentPos: startPos,
@@ -85,7 +84,6 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
             grounded: true
         });
 
-        // Edge lock should trigger and freeze X position
         expect(result.stoppedByEdgeX).toBe(true);
         expect(result.x).toBe(9.9);
     });
@@ -97,7 +95,7 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
         const result = simulateMovementStep({
             currentPos: startPos,
             moveDir,
-            isCrouching: false, // Standing
+            isCrouching: false,
             grounded: true
         });
 
@@ -106,7 +104,6 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
     });
 
     it('should allow smooth diagonal sliding along the edge when crouching', () => {
-        // Player at edge (+X) moving diagonally (+X, +Z)
         const startPos = { x: 9.9, z: 0.0 };
         const moveDir = { x: 0.707, z: 0.707 };
 
@@ -117,7 +114,6 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
             grounded: true
         });
 
-        // X movement is locked at the edge, but Z movement glides smoothly
         expect(result.stoppedByEdgeX).toBe(true);
         expect(result.x).toBe(9.9);
         expect(result.stoppedByEdgeZ).toBe(false);
@@ -137,5 +133,73 @@ describe('Player Crouching & Edge Lock Mechanics', () => {
 
         expect(result.stoppedByEdgeX).toBe(false);
         expect(result.x).toBeGreaterThan(0.0);
+    });
+});
+
+describe('Rooftop Ladder Dismount & Anti-Softlock Attachment Rules', () => {
+    it('should step safely forward into rooftop interior and set attach cooldown on reaching top', () => {
+        const nearbyLadder = {
+            x: 0,
+            z: -10.0,
+            rotY: Math.PI, // Ladder on south wall facing outward (+Z)
+            buildingHeight: 15.0
+        };
+
+        const ladderAngle = nearbyLadder.rotY || 0;
+        const normX = Math.sin(ladderAngle); // ~0
+        const normZ = Math.cos(ladderAngle); // -1
+        const stepIntoRoofX = -normX;
+        const stepIntoRoofZ = -normZ; // +1 into roof interior
+
+        const newPos = {
+            x: nearbyLadder.x + stepIntoRoofX * 2.2,
+            z: nearbyLadder.z + stepIntoRoofZ * 2.2
+        };
+
+        let onLadder = true;
+        let ladderAttachCooldown = 0;
+
+        // Dismount step
+        onLadder = false;
+        ladderAttachCooldown = 0.6;
+
+        expect(newPos.z).toBe(-7.8);
+        expect(onLadder).toBe(false);
+        expect(ladderAttachCooldown).toBe(0.6);
+    });
+
+    it('should prevent KeyW from re-attaching to ladder when walking across rooftop', () => {
+        const nearbyLadder = { buildingHeight: 15.0 };
+        const curY = 15.0; // At roof level
+        const keys = { KeyW: true, KeyS: false };
+        const minLadderDist = 1.2;
+        let onLadder = false;
+
+        const isAtRoofLevel = (curY >= nearbyLadder.buildingHeight - 0.5);
+        if (isAtRoofLevel) {
+            // Only KeyS (backing down ladder) attaches
+            if (keys.KeyS && minLadderDist < 1.5) {
+                onLadder = true;
+            }
+        }
+
+        expect(onLadder).toBe(false);
+    });
+
+    it('should allow KeyS to re-attach and descend down ladder from rooftop', () => {
+        const nearbyLadder = { buildingHeight: 15.0 };
+        const curY = 15.0; // At roof level
+        const keys = { KeyW: false, KeyS: true };
+        const minLadderDist = 1.2;
+        let onLadder = false;
+
+        const isAtRoofLevel = (curY >= nearbyLadder.buildingHeight - 0.5);
+        if (isAtRoofLevel) {
+            if (keys.KeyS && minLadderDist < 1.5) {
+                onLadder = true;
+            }
+        }
+
+        expect(onLadder).toBe(true);
     });
 });

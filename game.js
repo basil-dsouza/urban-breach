@@ -2454,6 +2454,7 @@ let pitch = 0;
 let velocityY = 0;
 let grounded = false;
 let onLadder = false;
+let ladderAttachCooldown = 0;
 let isPlayerHidden = false;
 let stealthBreakTimer = 0;
 let ladderSoundCooldown = 0;
@@ -3812,6 +3813,10 @@ function updatePlayer(delta) {
     const targetEyeHeight = crouch ? CROUCH_EYE_HEIGHT : STANDING_EYE_HEIGHT;
     eyeHeight = THREE.MathUtils.lerp(eyeHeight, targetEyeHeight, delta * 14.0);
 
+    if (ladderAttachCooldown > 0) {
+        ladderAttachCooldown -= delta;
+    }
+
     const curY = camera.position.y - eyeHeight;
     let nearbyLadder = null;
     let minLadderDist = Infinity;
@@ -3821,7 +3826,7 @@ function updatePlayer(delta) {
         const dz = camera.position.z - lad.z;
         const distHoriz = Math.hypot(dx, dz);
 
-        if (distHoriz < 1.6 && curY >= -0.5 && curY <= lad.top + 0.8) {
+        if (distHoriz < 2.0 && curY >= -0.5 && curY <= lad.top + 0.8) {
             if (distHoriz < minLadderDist) {
                 minLadderDist = distHoriz;
                 nearbyLadder = lad;
@@ -3829,23 +3834,24 @@ function updatePlayer(delta) {
         }
     }
 
-    // Attach to ladder logic
-    if (nearbyLadder) {
+    // Attach to ladder logic (prevents rooftop softlock)
+    if (nearbyLadder && ladderAttachCooldown <= 0) {
         if (!onLadder) {
-            // From ground / lower height: W or Space attaches
-            if (curY < 2.8 && (keys["KeyW"] || keys["Space"])) {
-                onLadder = true;
-            }
-            // From roof / upper level: moving towards ladder or pressing S attaches to climb down
-            else if (curY >= nearbyLadder.buildingHeight - 1.2 && (keys["KeyS"] || keys["KeyW"])) {
-                onLadder = true;
-            }
-            // Mid-ladder: attaches automatically if in close proximity
-            else if (curY >= 2.8 && curY < nearbyLadder.buildingHeight - 1.2 && minLadderDist < 1.1) {
-                onLadder = true;
+            const isAtRoofLevel = (curY >= nearbyLadder.buildingHeight - 0.5);
+            if (!isAtRoofLevel) {
+                // Below roof level: W, Space, or walking into ladder attaches
+                if (keys["KeyW"] || keys["Space"] || minLadderDist < 1.1) {
+                    onLadder = true;
+                }
+            } else {
+                // ON TOP OF ROOFTOP: ONLY pressing S (moving backwards toward ladder) attaches!
+                // 'W' will NEVER attach while on the roof, allowing free rooftop movement.
+                if (keys["KeyS"] && minLadderDist < 1.5) {
+                    onLadder = true;
+                }
             }
         }
-    } else {
+    } else if (ladderAttachCooldown > 0) {
         onLadder = false;
     }
 
@@ -3876,22 +3882,20 @@ function updatePlayer(delta) {
                 ladderSoundCooldown = 0.24;
             }
 
-            // Stepping forward onto rooftop terrace
+            // Stepping forward onto rooftop terrace safely
             if (isNearRoof) {
-                const toBldgX = (nearbyLadder.buildingX !== undefined ? nearbyLadder.buildingX : nearbyLadder.x) - nearbyLadder.x;
-                const toBldgZ = (nearbyLadder.buildingZ !== undefined ? nearbyLadder.buildingZ : nearbyLadder.z) - nearbyLadder.z;
-                const len = Math.hypot(toBldgX, toBldgZ) || 1.0;
-                const stepX = toBldgX / len;
-                const stepZ = toBldgZ / len;
+                const stepIntoRoofX = -normX;
+                const stepIntoRoofZ = -normZ;
 
-                camera.position.x = nearbyLadder.x + stepX * 1.5;
-                camera.position.z = nearbyLadder.z + stepZ * 1.5;
+                camera.position.x = nearbyLadder.x + stepIntoRoofX * 2.2;
+                camera.position.z = nearbyLadder.z + stepIntoRoofZ * 2.2;
 
                 const roofGround = getSimpleGround(camera.position.x, camera.position.z);
-                camera.position.y = Math.max(nearbyLadder.buildingHeight, roofGround) + eyeHeight;
+                camera.position.y = Math.max(nearbyLadder.buildingHeight + 0.35, roofGround) + eyeHeight;
                 onLadder = false;
                 grounded = true;
                 velocityY = 0;
+                ladderAttachCooldown = 0.6; // 600ms cooldown so player can move freely across the roof
             }
         }
         // Climbing DOWN
@@ -3909,6 +3913,7 @@ function updatePlayer(delta) {
                 onLadder = false;
                 velocityY = 0;
                 grounded = true;
+                ladderAttachCooldown = 0.3;
             }
         }
         // Strafing / Jumping off ladder
@@ -3920,6 +3925,7 @@ function updatePlayer(delta) {
             camera.position.z += sideZ * 3.5 * delta;
             onLadder = false;
             grounded = false;
+            ladderAttachCooldown = 0.4;
         }
     } else {
         const moveVector = new THREE.Vector3();
