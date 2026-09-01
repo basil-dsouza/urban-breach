@@ -359,6 +359,34 @@ export class UIManager {
                 <div class="hud-item hud-diff">
                     <span id="hud-diff-badge" class="hud-badge">SURVIVOR</span>
                 </div>
+
+                <!-- Biometric Anatomical Skeleton & Bone Fracture Paperdoll -->
+                <div id="skeleton-hud-card" class="skeleton-hud-card">
+                    <div class="skeleton-paperdoll-wrapper">
+                        <svg class="skeleton-svg" viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Head / Cranium -->
+                            <path id="bone-head" class="bone-part" d="M30 4 C24 4 20 8 20 14 C20 19 24 22 30 22 C36 22 40 19 40 14 C40 8 36 4 30 4 Z" />
+                            <!-- Spine / Torso / Ribcage -->
+                            <path id="bone-torso" class="bone-part" d="M22 24 L38 24 L36 48 L24 48 Z M20 28 L40 28 M18 34 L42 34 M21 40 L39 40 M30 22 L30 50" />
+                            <!-- Left Arm (Humerus, Forearm) -->
+                            <path id="bone-arm-l" class="bone-part" d="M19 25 L10 38 L8 52" stroke-linecap="round" stroke-linejoin="round" />
+                            <!-- Right Arm (Humerus, Forearm) -->
+                            <path id="bone-arm-r" class="bone-part" d="M41 25 L50 38 L52 52" stroke-linecap="round" stroke-linejoin="round" />
+                            <!-- Left Leg (Femur, Tibia) -->
+                            <path id="bone-leg-l" class="bone-part" d="M25 49 L22 68 L21 86" stroke-linecap="round" stroke-linejoin="round" />
+                            <!-- Right Leg (Femur, Tibia) -->
+                            <path id="bone-leg-r" class="bone-part" d="M35 49 L38 68 L39 86" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div id="skeleton-wounds-layer" class="wounds-layer"></div>
+                    </div>
+                    <div class="skeleton-info-col">
+                        <div class="skeleton-header-row">
+                            <span>ANATOMY</span>
+                            <span id="skeleton-status-badge" class="skeleton-status-tag">OPTIMAL</span>
+                        </div>
+                        <div id="skeleton-debuff-list" class="skeleton-debuff-list"></div>
+                    </div>
+                </div>
             </div>
 
             <div class="hud-top-right">
@@ -392,32 +420,6 @@ export class UIManager {
                 </div>
                 <div class="hud-oxygen-bar-bg">
                     <div id="hud-oxygen-bar-fill" class="hud-oxygen-bar-fill" style="width: 100%;"></div>
-                </div>
-            <!-- Biometric Anatomical Skeleton & Bone Fracture Paperdoll -->
-            <div id="skeleton-hud-card" class="skeleton-hud-card">
-                <div class="skeleton-paperdoll-wrapper">
-                    <svg class="skeleton-svg" viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Head / Cranium -->
-                        <path id="bone-head" class="bone-part" d="M30 4 C24 4 20 8 20 14 C20 19 24 22 30 22 C36 22 40 19 40 14 C40 8 36 4 30 4 Z" />
-                        <!-- Spine / Torso / Ribcage -->
-                        <path id="bone-torso" class="bone-part" d="M22 24 L38 24 L36 48 L24 48 Z M20 28 L40 28 M18 34 L42 34 M21 40 L39 40 M30 22 L30 50" />
-                        <!-- Left Arm (Humerus, Forearm) -->
-                        <path id="bone-arm-l" class="bone-part" d="M19 25 L10 38 L8 52" stroke-linecap="round" stroke-linejoin="round" />
-                        <!-- Right Arm (Humerus, Forearm) -->
-                        <path id="bone-arm-r" class="bone-part" d="M41 25 L50 38 L52 52" stroke-linecap="round" stroke-linejoin="round" />
-                        <!-- Left Leg (Femur, Tibia) -->
-                        <path id="bone-leg-l" class="bone-part" d="M25 49 L22 68 L21 86" stroke-linecap="round" stroke-linejoin="round" />
-                        <!-- Right Leg (Femur, Tibia) -->
-                        <path id="bone-leg-r" class="bone-part" d="M35 49 L38 68 L39 86" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    <div id="skeleton-wounds-layer" class="wounds-layer"></div>
-                </div>
-                <div class="skeleton-info-col">
-                    <div class="skeleton-header-row">
-                        <span>ANATOMY</span>
-                        <span id="skeleton-status-badge" class="skeleton-status-tag">OPTIMAL</span>
-                    </div>
-                    <div id="skeleton-debuff-list" class="skeleton-debuff-list"></div>
                 </div>
             </div>
 
@@ -1240,6 +1242,13 @@ export class UIManager {
             if (boneLegREl) boneLegREl.classList.toggle('bone-fractured', !!bodyBones.rightLeg);
         }
 
+        let totalWounds = 0;
+        if (bulletWounds) {
+            for (const zone in bulletWounds) {
+                totalWounds += (bulletWounds[zone] || 0);
+            }
+        }
+
         // Render Bullet Wound Markers
         if (woundsLayer && bulletWounds) {
             const woundPos = {
@@ -1252,10 +1261,8 @@ export class UIManager {
             };
 
             let woundHtml = '';
-            let totalWounds = 0;
             for (const zone in bulletWounds) {
                 const count = bulletWounds[zone] || 0;
-                totalWounds += count;
                 const positions = woundPos[zone] || [{ top: '50%', left: '50%' }];
                 for (let i = 0; i < Math.min(count, positions.length); i++) {
                     const pos = positions[i];
@@ -1263,36 +1270,36 @@ export class UIManager {
                 }
             }
             woundsLayer.innerHTML = woundHtml;
+        }
 
-            // Generate Debuffs & Status Badges
-            const debuffs = [];
-            const hasFractures = bodyBones && (bodyBones.head || bodyBones.torso || bodyBones.leftArm || bodyBones.rightArm || bodyBones.leftLeg || bodyBones.rightLeg);
+        // Generate Debuffs & Status Badges
+        const debuffs = [];
+        const hasFractures = !!(bodyBones && (bodyBones.head || bodyBones.torso || bodyBones.leftArm || bodyBones.rightArm || bodyBones.leftLeg || bodyBones.rightLeg));
 
-            if (bodyBones) {
-                if (bodyBones.head) debuffs.push('⚡ CRANIAL FRACTURE (+40% SWAY)');
-                if (bodyBones.torso) debuffs.push('⚡ RIBS CRACKED (-50% BREATH)');
-                if (bodyBones.leftArm || bodyBones.rightArm) debuffs.push('⚡ ARM FRACTURED (+50% RELOAD)');
-                if (bodyBones.leftLeg || bodyBones.rightLeg) debuffs.push('⚡ LEG FRACTURED (-35% SPD)');
-            }
-            if (isBleeding || totalWounds > 0) {
-                debuffs.push(`🩸 BLEEDING (${totalWounds} WOUND${totalWounds > 1 ? 'S' : ''})`);
-            }
+        if (bodyBones) {
+            if (bodyBones.head) debuffs.push('⚡ CRANIAL FRACTURE (+40% SWAY)');
+            if (bodyBones.torso) debuffs.push('⚡ RIBS CRACKED (-50% BREATH)');
+            if (bodyBones.leftArm || bodyBones.rightArm) debuffs.push('⚡ ARM FRACTURED (+50% RELOAD)');
+            if (bodyBones.leftLeg || bodyBones.rightLeg) debuffs.push('⚡ LEG FRACTURED (-35% SPD)');
+        }
+        if (isBleeding || totalWounds > 0) {
+            debuffs.push(`🩸 BLEEDING (${totalWounds} WOUND${totalWounds > 1 ? 'S' : ''})`);
+        }
 
-            if (skeletonCard) {
-                skeletonCard.classList.toggle('has-critical-fracture', hasFractures || isBleeding);
+        if (skeletonCard) {
+            skeletonCard.classList.toggle('has-critical-fracture', hasFractures || isBleeding);
+        }
+        if (statusBadge) {
+            if (hasFractures || isBleeding) {
+                statusBadge.textContent = isBleeding ? 'BLEEDING' : 'FRACTURED';
+                statusBadge.className = 'skeleton-status-tag status-impaired';
+            } else {
+                statusBadge.textContent = 'OPTIMAL';
+                statusBadge.className = 'skeleton-status-tag';
             }
-            if (statusBadge) {
-                if (hasFractures || isBleeding) {
-                    statusBadge.textContent = isBleeding ? 'BLEEDING' : 'FRACTURED';
-                    statusBadge.className = 'skeleton-status-tag status-impaired';
-                } else {
-                    statusBadge.textContent = 'OPTIMAL';
-                    statusBadge.className = 'skeleton-status-tag';
-                }
-            }
-            if (debuffListEl) {
-                debuffListEl.innerHTML = debuffs.map(d => `<div class="skeleton-debuff-item ${d.includes('BLEEDING') ? 'debuff-bleed' : ''}">${d}</div>`).join('');
-            }
+        }
+        if (debuffListEl) {
+            debuffListEl.innerHTML = debuffs.map(d => `<div class="skeleton-debuff-item ${d.includes('BLEEDING') ? 'debuff-bleed' : ''}">${d}</div>`).join('');
         }
     }
 

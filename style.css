@@ -1404,9 +1404,6 @@ body {
 /* 24. BIOMETRIC ANATOMICAL SKELETON & BONE FRACTURE HUD     */
 /* ========================================================= */
 .skeleton-hud-card {
-    position: fixed;
-    bottom: 24px;
-    left: 200px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1416,9 +1413,9 @@ body {
     padding: 8px 12px;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 229, 255, 0.15);
     backdrop-filter: blur(8px);
-    z-index: 99990;
     transition: all 0.25s ease;
     user-select: none;
+    pointer-events: auto;
 }
 
 .skeleton-hud-card.has-critical-fracture {
