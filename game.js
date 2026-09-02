@@ -1356,6 +1356,188 @@ function createHydroelectricDam({ x = -180, z = 230, rotY = -0.42 }) {
     staticRaycastTargets.push(group);
 }
 
+// Industrial Shipping Warehouse & Logistics Facility (Corrugated steel siding, concrete loading dock, roll-up shutter doors, rooftop vents)
+function createIndustrialWarehouse({ x, z, width = 28, depth = 20, height = 9.5, rotY = 0 }) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+
+    const darkSteelMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, roughness: 0.75, metalness: 0.35 });
+    const corrugatedMat = new THREE.MeshStandardMaterial({ color: 0x57606f, roughness: 0.85, metalness: 0.2 });
+    const safetyYellowMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.6 });
+    const concreteBaseMat = new THREE.MeshStandardMaterial({ color: 0x747d8c, roughness: 0.95 });
+    const darkDoorMat = new THREE.MeshStandardMaterial({ color: 0x1e272e, roughness: 0.8 });
+
+    // 1. Concrete Loading Dock Base (Foundation skirting)
+    const baseH = 1.2;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(width, baseH, depth), concreteBaseMat);
+    base.position.set(0, baseH / 2, 0);
+    base.castShadow = true;
+    base.receiveShadow = true;
+    group.add(base);
+
+    // 2. Main Corrugated Steel Warehouse Body
+    const bodyH = height - baseH;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(width, bodyH, depth), corrugatedMat);
+    body.position.set(0, baseH + bodyH / 2, 0);
+    body.castShadow = true;
+    body.receiveShadow = true;
+    group.add(body);
+
+    // 3. Roll-up Shutter Loading Dock Doors (Front facade)
+    for (let d = -1; d <= 1; d++) {
+        const doorX = d * (width * 0.28);
+        const door = new THREE.Mesh(new THREE.BoxGeometry(5.2, 4.2, 0.2), darkDoorMat);
+        door.position.set(doorX, baseH + 2.1, depth / 2 + 0.05);
+        group.add(door);
+
+        // Yellow & Black Hazard Stripe Trim above loading bays
+        const hazardTrim = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.4, 0.25), safetyYellowMat);
+        hazardTrim.position.set(doorX, baseH + 4.4, depth / 2 + 0.08);
+        group.add(hazardTrim);
+
+        // Concrete Loading Bay Bumpers
+        for (const bx of [-2.4, 2.4]) {
+            const bumper = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.0, 0.4), darkSteelMat);
+            bumper.position.set(doorX + bx, baseH / 2, depth / 2 + 0.2);
+            group.add(bumper);
+        }
+    }
+
+    // 4. Rooftop Industrial Ventilation Units & Skylights
+    for (const vx of [-width * 0.25, width * 0.25]) {
+        const vent = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 1.8, 12), darkSteelMat);
+        vent.position.set(vx, height + 0.9, 0);
+        group.add(vent);
+
+        const ventCap = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.8, 12), darkSteelMat);
+        ventCap.position.set(vx, height + 2.0, 0);
+        group.add(ventCap);
+    }
+
+    obstacles.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        rotY,
+        bottom: 0,
+        top: height
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        h: height,
+        style: 'warehouse',
+        rotY,
+        roofHeight: 0
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
+// Corporate Glass Skyscraper (Sleek tinted curtain glass, illuminated rooftop helipad, mechanical penthouse, spire beacon)
+function createCorporateSkyscraper({ x, z, width = 22, depth = 22, height = 36, rotY = 0 }) {
+    const group = new THREE.Group();
+    group.position.set(x, 0, z);
+    group.rotation.y = rotY;
+
+    const darkFacadeMat = new THREE.MeshStandardMaterial({ color: 0x1e272e, roughness: 0.6, metalness: 0.3 });
+    const cyanGlassMat = new THREE.MeshStandardMaterial({ color: 0x00cec9, roughness: 0.15, metalness: 0.85, transparent: true, opacity: 0.9 });
+    const chromeTrimMat = new THREE.MeshStandardMaterial({ color: 0xdfe6e9, metalness: 0.9, roughness: 0.2 });
+    const helipadPadMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, roughness: 0.85 });
+
+    // 1. Ground Level Grand Entrance Plaza & Podium
+    const podiumH = 4.5;
+    const podium = new THREE.Mesh(new THREE.BoxGeometry(width + 2.4, podiumH, depth + 2.4), darkFacadeMat);
+    podium.position.set(0, podiumH / 2, 0);
+    podium.castShadow = true;
+    podium.receiveShadow = true;
+    group.add(podium);
+
+    // 2. Main Glass Tower Shaft
+    const towerH = height - podiumH;
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(width, towerH, depth), darkFacadeMat);
+    tower.position.set(0, podiumH + towerH / 2, 0);
+    tower.castShadow = true;
+    tower.receiveShadow = true;
+    group.add(tower);
+
+    // Floor-to-Ceiling Tinted Glass Curtain Bands
+    const floors = Math.floor(towerH / 3.4);
+    for (let f = 0; f < floors; f++) {
+        const fy = podiumH + 1.7 + f * 3.4;
+        const glassBand = new THREE.Mesh(new THREE.BoxGeometry(width + 0.08, 2.2, depth + 0.08), cyanGlassMat);
+        glassBand.position.set(0, fy, 0);
+        group.add(glassBand);
+    }
+
+    // 3. Rooftop Mechanical Penthouse & Crown
+    const crownH = 3.2;
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(width * 0.65, crownH, depth * 0.65), chromeTrimMat);
+    crown.position.set(0, height + crownH / 2, 0);
+    group.add(crown);
+
+    // 4. Rooftop Tactical Helipad
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.2, 0.2, 32), helipadPadMat);
+    pad.position.set(0, height + 0.1, 0);
+    group.add(pad);
+
+    const padRing = new THREE.Mesh(new THREE.RingGeometry(4.4, 4.8, 32), new THREE.MeshBasicMaterial({ color: 0xf1c40f, side: THREE.DoubleSide }));
+    padRing.rotation.x = -Math.PI / 2;
+    padRing.position.set(0, height + 0.22, 0);
+    group.add(padRing);
+
+    // 'H' Helipad Marking
+    const hBarL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 3.2), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    hBarL.position.set(-1.1, height + 0.23, 0);
+    group.add(hBarL);
+    const hBarR = hBarL.clone();
+    hBarR.position.x = 1.1;
+    group.add(hBarR);
+    const hBarC = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 0.5), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    hBarC.position.set(0, height + 0.23, 0);
+    group.add(hBarC);
+
+    // 5. Communications Antenna Spire
+    const antennaH = 9.0;
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.2, antennaH, 8), chromeTrimMat);
+    antenna.position.set(0, height + crownH + antennaH / 2, 0);
+    group.add(antenna);
+
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff4757 }));
+    beacon.position.set(0, height + crownH + antennaH, 0);
+    group.add(beacon);
+
+    obstacles.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        rotY,
+        bottom: 0,
+        top: height
+    });
+
+    buildings.push({
+        x,
+        z,
+        w: width,
+        d: depth,
+        h: height,
+        style: 'skyscraper',
+        rotY,
+        roofHeight: 0
+    });
+
+    scene.add(group);
+    staticRaycastTargets.push(group);
+}
+
 // Master Building Creator
 function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }) {
     if (style === 'cottage') {
@@ -1380,6 +1562,14 @@ function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }
     }
     if (style === 'police') {
         createPoliceHeadquarters({ x, z, rotY });
+        return;
+    }
+    if (style === 'warehouse') {
+        createIndustrialWarehouse({ x, z, width, depth, height, rotY });
+        return;
+    }
+    if (style === 'skyscraper') {
+        createCorporateSkyscraper({ x, z, width, depth, height, rotY });
         return;
     }
 
@@ -1493,22 +1683,15 @@ function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }
     staticRaycastTargets.push(group);
 }
 
-// Generate Massive Urban & Suburban Districts
+// Generate Massive Open World: 3 Major Cities & 5 Distinct Small Towns & Hamlets
 function generateMassiveCity() {
     // ==========================================
-    // 1. DOWNTOWN INNER CITY & ICONIC LANDMARKS
-    // Strategic placement: Hospital, Police HQ, Donut Diner & High-Rise Towers
+    // 1. BIG CITY 1: METRO CENTRAL (Downtown Capital & Financial Core)
     // ==========================================
-    // 1. Hospital in Medical District (North-East Downtown)
     createCityHospital({ x: 56, z: -56, rotY: 0 });
-
-    // 2. Police Headquarters in Municipal District (South-West Downtown)
     createPoliceHeadquarters({ x: -56, z: -56, rotY: 0 });
-
-    // 3. Giant Donut Diner in Commercial District (North-West Downtown)
     createGiantDonutDiner({ x: 56, z: 56, rotY: 0 });
-
-    // 4. Hydroelectric Concrete Dam & Reservoir Barrier (North-West Canyon)
+    createCorporateSkyscraper({ x: -56, z: 56, width: 22, depth: 22, height: 38, rotY: 0 });
     createHydroelectricDam({ x: -180, z: 230, rotY: -0.42 });
 
     const downtownBlocks = [
@@ -1520,21 +1703,62 @@ function generateMassiveCity() {
     for (const b of downtownBlocks) {
         for (const x of b.xs) {
             for (const z of b.zs) {
-                // Skip the 3 dedicated landmark parcel locations
-                if ((x === 56 && z === -56) || (x === -56 && z === -56) || (x === 56 && z === 56)) {
+                if ((x === 56 && z === -56) || (x === -56 && z === -56) || (x === 56 && z === 56) || (x === -56 && z === 56)) {
                     continue;
                 }
                 const w = 14 + Math.random() * 6;
                 const d = 14 + Math.random() * 6;
-                const h = 14 + Math.random() * 20;
+                const h = 16 + Math.random() * 22;
                 createBuilding({ x, z, width: w, depth: d, height: h, style: 'flat' });
             }
         }
     }
 
     // ==========================================
-    // 2. NORTH SUBURB: LUXURY POOL VILLAS
-    // Organic neighborhood with connecting streets, cul-de-sacs, varied rotations, and driveways
+    // 2. BIG CITY 2: EAST PORT & INDUSTRIAL CITY (Manufacturing & Shipping Hub)
+    // ==========================================
+    makeResidentialRoad(280, -40, 9.5, 210, 0);
+    makeResidentialRoad(280, -40, 9.5, 170, Math.PI / 2);
+
+    const eastPortBuildings = [
+        // Industrial Freight Warehouses & Loading Docks
+        { x: 240, z: -40, w: 26, d: 18, h: 9.5, rotY: 0, style: 'warehouse' },
+        { x: 320, z: -40, w: 26, d: 18, h: 9.5, rotY: 0, style: 'warehouse' },
+        { x: 240, z: 20, w: 26, d: 18, h: 9.5, rotY: Math.PI / 2, style: 'warehouse' },
+        { x: 320, z: 20, w: 26, d: 18, h: 9.5, rotY: -Math.PI / 2, style: 'warehouse' },
+        // Corporate Port Logistics Towers & Diners
+        { x: 240, z: -100, w: 22, d: 22, h: 34, rotY: 0, style: 'skyscraper' },
+        { x: 320, z: -100, w: 20, d: 20, h: 28, rotY: 0, style: 'skyscraper' }
+    ];
+    for (const b of eastPortBuildings) {
+        createBuilding(b);
+    }
+    createGiantDonutDiner({ x: 280, z: -100, rotY: Math.PI });
+
+    // ==========================================
+    // 3. BIG CITY 3: SOUTH METRO (Modern Tech Metropolis & Commercial Hub)
+    // ==========================================
+    makeResidentialRoad(60, -340, 9.5, 260, Math.PI / 2);
+    makeResidentialRoad(0, -340, 8.5, 120, 0);
+    makeResidentialRoad(120, -340, 8.5, 120, 0);
+
+    const southMetroBuildings = [
+        { x: 0, z: -300, w: 22, d: 22, h: 42, rotY: 0, style: 'skyscraper' },
+        { x: 120, z: -300, w: 22, d: 22, h: 36, rotY: 0, style: 'skyscraper' },
+        { x: 0, z: -380, w: 20, d: 20, h: 32, rotY: 0, style: 'skyscraper' },
+        { x: 120, z: -380, w: 24, d: 24, h: 40, rotY: 0, style: 'skyscraper' },
+        { x: 60, z: -300, w: 18, d: 18, h: 24, rotY: 0, style: 'flat' },
+        { x: 60, z: -380, w: 18, d: 18, h: 22, rotY: 0, style: 'flat' }
+    ];
+    for (const b of southMetroBuildings) {
+        createBuilding(b);
+    }
+    createPoliceHeadquarters({ x: -55, z: -340, rotY: Math.PI / 2 });
+    createCityHospital({ x: 175, z: -340, rotY: -Math.PI / 2 });
+    createGiantDonutDiner({ x: 60, z: -340, rotY: 0 });
+
+    // ==========================================
+    // 4. SMALL TOWN 1: LAKESIDE HAVEN (North Shore Luxury Villa Town)
     // ==========================================
     makeResidentialRoad(0, 185, 8.5, 460, Math.PI / 2);
     makeResidentialRoad(-170, 212, 7.5, 54, 0);
@@ -1567,22 +1791,39 @@ function generateMassiveCity() {
         { x: 140, z: 162, rotY: 0.15, dw: [140, 185, 140, 170] },
         { x: 198, z: 160, rotY: -0.15, dw: [198, 185, 198, 168] }
     ];
-
     for (const v of northVillas) {
         createBuilding({ x: v.x, z: v.z, width: 16, depth: 15, height: 7.8, style: 'villa', rotY: v.rotY });
         if (v.dw) makeDriveway(v.dw[0], v.dw[1], v.dw[2], v.dw[3]);
     }
 
     // ==========================================
-    // 3. WEST SUBURB: TROPICAL COTTAGES
-    // Organic neighborhood with connecting streets, cul-de-sacs, varied rotations, and driveways
+    // 5. SMALL TOWN 2: PINECREST VILLAGE (North-West Alpine Mountain Hamlet)
+    // ==========================================
+    makeResidentialRoad(-285, 220, 7.5, 140, 0);
+
+    const pinecrestCabins = [
+        { x: -260, z: 180, rotY: 0.3, dw: [-285, 180, -268, 180] },
+        { x: -310, z: 180, rotY: -0.3, dw: [-285, 180, -302, 180] },
+        { x: -260, z: 220, rotY: Math.PI / 2, dw: [-285, 220, -268, 220] },
+        { x: -310, z: 220, rotY: -Math.PI / 2, dw: [-285, 220, -302, 220] },
+        { x: -260, z: 260, rotY: Math.PI - 0.2, dw: [-285, 260, -268, 260] },
+        { x: -310, z: 260, rotY: Math.PI + 0.2, dw: [-285, 260, -302, 260] },
+        { x: -285, z: 285, rotY: Math.PI, dw: [-285, 280, -285, 275] }
+    ];
+    for (const c of pinecrestCabins) {
+        createBuilding({ x: c.x, z: c.z, width: 14, depth: 13, height: 6.2, style: 'cabin', rotY: c.rotY });
+        if (c.dw) makeDriveway(c.dw[0], c.dw[1], c.dw[2], c.dw[3]);
+    }
+
+    // ==========================================
+    // 6. SMALL TOWN 3: PALM VALLEY (West Tropical Coast Town)
     // ==========================================
     makeResidentialRoad(-185, 0, 8.5, 210, 0);
     makeResidentialRoad(-212, 65, 7.5, 54, Math.PI / 2);
     makeResidentialRoad(-212, 0, 7.5, 54, Math.PI / 2);
     makeResidentialRoad(-212, -65, 7.5, 54, Math.PI / 2);
 
-    const westCottages = [
+    const palmValleyCottages = [
         { x: -210, z: 86, rotY: Math.PI, dw: [-210, 65, -210, 80] },
         { x: -210, z: 44, rotY: 0, dw: [-210, 65, -210, 50] },
         { x: -246, z: 65, rotY: -Math.PI / 2, dw: [-235, 65, -240, 65] },
@@ -1600,84 +1841,48 @@ function generateMassiveCity() {
         { x: -160, z: -25, rotY: -Math.PI / 2, dw: [-185, -25, -167, -25] },
         { x: -160, z: -75, rotY: -Math.PI / 2, dw: [-185, -75, -167, -75] }
     ];
-
-    for (const c of westCottages) {
+    for (const c of palmValleyCottages) {
         createBuilding({ x: c.x, z: c.z, width: 13, depth: 12, height: 5.8, style: 'cottage', rotY: c.rotY });
         if (c.dw) makeDriveway(c.dw[0], c.dw[1], c.dw[2], c.dw[3]);
     }
 
     // ==========================================
-    // 4. EAST ALPINE DISTRICT: TIMBER CABINS
-    // Mountain road with scenic cul-de-sacs, driveways, and organic cabin orientations
+    // 7. SMALL TOWN 4: OAKRIDGE (South-West Craftsman Suburb Town)
     // ==========================================
-    makeResidentialRoad(185, 0, 8.5, 210, 0);
-    makeResidentialRoad(212, 65, 7.5, 54, Math.PI / 2);
-    makeResidentialRoad(212, 0, 7.5, 54, Math.PI / 2);
-    makeResidentialRoad(212, -65, 7.5, 54, Math.PI / 2);
+    makeResidentialRoad(-185, -200, 8.5, 120, 0);
+    makeResidentialRoad(-212, -200, 7.5, 60, Math.PI / 2);
 
-    const eastCabins = [
-        { x: 210, z: 86, rotY: Math.PI, dw: [210, 65, 210, 80] },
-        { x: 210, z: 44, rotY: 0, dw: [210, 65, 210, 50] },
-        { x: 246, z: 65, rotY: Math.PI / 2, dw: [235, 65, 240, 65] },
-
-        { x: 210, z: 21, rotY: Math.PI, dw: [210, 0, 210, 15] },
-        { x: 210, z: -21, rotY: 0, dw: [210, 0, 210, -15] },
-        { x: 246, z: 0, rotY: Math.PI / 2, dw: [235, 0, 240, 0] },
-
-        { x: 210, z: -44, rotY: Math.PI, dw: [210, -65, 210, -50] },
-        { x: 210, z: -86, rotY: 0, dw: [210, -65, 210, -80] },
-        { x: 246, z: -65, rotY: Math.PI / 2, dw: [235, -65, 240, -65] },
-
-        { x: 160, z: 75, rotY: Math.PI / 2, dw: [185, 75, 167, 75] },
-        { x: 160, z: 25, rotY: Math.PI / 2, dw: [185, 25, 167, 25] },
-        { x: 160, z: -25, rotY: Math.PI / 2, dw: [185, -25, 167, -25] },
-        { x: 160, z: -75, rotY: Math.PI / 2, dw: [185, -75, 167, -75] }
+    const oakridgeHomes = [
+        { x: -196, z: -205, rotY: -Math.PI / 2, dw: [-185, -205, -190, -205] },
+        { x: -144, z: -218, rotY: Math.PI / 2, dw: [-185, -218, -152, -218] },
+        { x: -170, z: -246, rotY: 0, dw: [-185, -235, -170, -239] },
+        { x: -198, z: -160, rotY: Math.PI - 0.15, dw: [-185, -160, -192, -160] },
+        { x: -140, z: -162, rotY: Math.PI + 0.15, dw: [-185, -162, -148, -162] },
+        { x: -246, z: -200, rotY: -Math.PI / 2, dw: [-235, -200, -240, -200] },
+        { x: -210, z: -170, rotY: Math.PI, dw: [-210, -180, -210, -175] },
+        { x: -210, z: -230, rotY: 0, dw: [-210, -220, -210, -225] }
     ];
-
-    for (const c of eastCabins) {
-        createBuilding({ x: c.x, z: c.z, width: 14, depth: 13, height: 6.2, style: 'cabin', rotY: c.rotY });
-        if (c.dw) makeDriveway(c.dw[0], c.dw[1], c.dw[2], c.dw[3]);
+    for (const h of oakridgeHomes) {
+        createBuilding({ x: h.x, z: h.z, width: 14, depth: 13, height: 6.2, style: 'cabin', rotY: h.rotY });
+        if (h.dw) makeDriveway(h.dw[0], h.dw[1], h.dw[2], h.dw[3]);
     }
 
     // ==========================================
-    // 5. SOUTH SUBURB: CRAFTSMAN SUBURBAN HOMES
-    // Organic neighborhood with parkway, cul-de-sacs, varied rotations, and garage driveways
+    // 8. SMALL TOWN 5: DELTA CROSS (East River Fishing Hamlet)
     // ==========================================
-    makeResidentialRoad(0, -185, 8.5, 460, Math.PI / 2);
-    makeResidentialRoad(-170, -212, 7.5, 54, 0);
-    makeResidentialRoad(-65, -212, 7.5, 54, 0);
-    makeResidentialRoad(65, -212, 7.5, 54, 0);
-    makeResidentialRoad(170, -212, 7.5, 54, 0);
+    makeResidentialRoad(310, 230, 7.5, 120, 0);
 
-    const southHomes = [
-        { x: -196, z: -205, rotY: -Math.PI / 2, dw: [-170, -205, -188, -205] },
-        { x: -144, z: -218, rotY: Math.PI / 2, dw: [-170, -218, -152, -218] },
-        { x: -170, z: -246, rotY: 0, dw: [-170, -235, -170, -239] },
-        { x: -198, z: -160, rotY: Math.PI - 0.15, dw: [-198, -185, -198, -168] },
-        { x: -140, z: -162, rotY: Math.PI + 0.15, dw: [-140, -185, -140, -170] },
-
-        { x: -92, z: -205, rotY: -Math.PI / 2, dw: [-65, -205, -84, -205] },
-        { x: -38, z: -220, rotY: Math.PI / 2, dw: [-65, -220, -46, -220] },
-        { x: -65, z: -248, rotY: 0, dw: [-65, -235, -65, -241] },
-        { x: -92, z: -160, rotY: Math.PI - 0.2, dw: [-92, -185, -92, -168] },
-        { x: -38, z: -162, rotY: Math.PI + 0.2, dw: [-38, -185, -38, -170] },
-
-        { x: 38, z: -220, rotY: -Math.PI / 2, dw: [65, -220, 46, -220] },
-        { x: 92, z: -205, rotY: Math.PI / 2, dw: [65, -205, 84, -205] },
-        { x: 65, z: -248, rotY: 0, dw: [65, -235, 65, -241] },
-        { x: 38, z: -162, rotY: Math.PI - 0.2, dw: [38, -185, 38, -170] },
-        { x: 92, z: -160, rotY: Math.PI + 0.2, dw: [92, -185, 92, -168] },
-
-        { x: 144, z: -218, rotY: -Math.PI / 2, dw: [170, -218, 152, -218] },
-        { x: 196, z: -205, rotY: Math.PI / 2, dw: [170, -205, 188, -205] },
-        { x: 170, z: -246, rotY: 0, dw: [170, -235, 170, -239] },
-        { x: 140, z: -162, rotY: Math.PI - 0.15, dw: [140, -185, 140, -170] },
-        { x: 198, z: -160, rotY: Math.PI + 0.15, dw: [198, -185, 198, -168] }
+    const deltaCrossCottages = [
+        { x: 280, z: 190, rotY: 0.2, dw: [310, 190, 290, 190] },
+        { x: 340, z: 190, rotY: -0.2, dw: [310, 190, 330, 190] },
+        { x: 280, z: 230, rotY: Math.PI / 2, dw: [310, 230, 290, 230] },
+        { x: 340, z: 230, rotY: -Math.PI / 2, dw: [310, 230, 330, 230] },
+        { x: 280, z: 270, rotY: Math.PI, dw: [310, 270, 290, 270] },
+        { x: 340, z: 270, rotY: Math.PI, dw: [310, 270, 330, 270] }
     ];
-
-    for (const h of southHomes) {
-        createBuilding({ x: h.x, z: h.z, width: 14, depth: 13, height: 6.2, style: 'cabin', rotY: h.rotY });
-        if (h.dw) makeDriveway(h.dw[0], h.dw[1], h.dw[2], h.dw[3]);
+    for (const c of deltaCrossCottages) {
+        createBuilding({ x: c.x, z: c.z, width: 13, depth: 12, height: 5.8, style: 'cottage', rotY: c.rotY });
+        if (c.dw) makeDriveway(c.dw[0], c.dw[1], c.dw[2], c.dw[3]);
     }
 }
 generateMassiveCity();
@@ -2305,6 +2510,16 @@ for (const b of buildings) {
         x_l = -(b.w / 2) - 0.22;
         z_l = -5.0;
         theta_l = -Math.PI / 2;
+    } else if (b.style === 'warehouse') {
+        // Industrial Warehouse: East exterior wall
+        x_l = (b.w / 2) + 0.20;
+        z_l = 0;
+        theta_l = Math.PI / 2;
+    } else if (b.style === 'skyscraper') {
+        // Corporate Skyscraper: South exterior wall leading to rooftop helipad
+        x_l = 0;
+        z_l = (b.d || 22) / 2 + 0.20;
+        theta_l = 0;
     } else if (b.style === 'flat') {
         // Downtown High-Rise: South exterior wall
         x_l = 0;
