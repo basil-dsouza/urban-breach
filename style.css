@@ -458,32 +458,6 @@ body {
     gap: 10px;
 }
 
-.radar-wrapper {
-    background: rgba(8, 14, 22, 0.8);
-    border: 1.5px solid rgba(0, 229, 255, 0.4);
-    border-radius: 12px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 229, 255, 0.2);
-    backdrop-filter: blur(10px);
-}
-
-#radar-canvas {
-    border-radius: 50%;
-    display: block;
-}
-
-.radar-label {
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 1.5px;
-    color: #00e5ff;
-    margin-top: 6px;
-    text-transform: uppercase;
-}
-
 .hud-top-right {
     position: absolute;
     top: 20px;
@@ -498,6 +472,54 @@ body {
     position: absolute;
     bottom: 20px;
     right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.minimap-wrapper {
+    background: rgba(8, 14, 22, 0.85);
+    border: 1.5px solid rgba(0, 229, 255, 0.45);
+    border-radius: 14px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 229, 255, 0.25);
+    backdrop-filter: blur(10px);
+    user-select: none;
+}
+
+#radar-canvas {
+    border-radius: 50%;
+    display: block;
+    width: 180px;
+    height: 180px;
+}
+
+.minimap-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 4px 6px 0 6px;
+    box-sizing: border-box;
+}
+
+.minimap-title {
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: #00e5ff;
+    text-transform: uppercase;
+}
+
+.minimap-sub {
+    font-size: 8px;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 1px;
 }
 
 .hud-item {
@@ -1473,11 +1495,49 @@ body {
     stroke-width: 2.2;
 }
 
+.bone-accent {
+    fill: none;
+    stroke: rgba(0, 206, 201, 0.4);
+    stroke-width: 1.0;
+}
+
 .bone-part.bone-fractured {
     stroke: #ff4757 !important;
     fill: rgba(255, 71, 87, 0.6) !important;
     filter: drop-shadow(0 0 6px #ff4757) !important;
     animation: bone-fracture-flash 0.8s infinite alternate;
+}
+
+/* Jagged Bone Crack & Fracture Fissure Overlay */
+.bone-crack {
+    fill: none;
+    stroke: #ffffff;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.bone-crack.crack-visible {
+    opacity: 1 !important;
+    stroke: #ffffff !important;
+    filter: drop-shadow(0 0 4px #ff3838) drop-shadow(0 0 2px #fff) !important;
+    animation: crack-flicker 0.6s infinite alternate !important;
+}
+
+@keyframes crack-flicker {
+    0% {
+        stroke: #ffeaa7;
+        filter: drop-shadow(0 0 3px #ff3838) drop-shadow(0 0 1px #fff);
+        opacity: 0.85;
+    }
+    100% {
+        stroke: #ffffff;
+        filter: drop-shadow(0 0 7px #ff3838) drop-shadow(0 0 3px #ffeaa7);
+        opacity: 1;
+    }
 }
 
 @keyframes bone-fracture-flash {

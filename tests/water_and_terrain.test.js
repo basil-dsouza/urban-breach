@@ -23,14 +23,14 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
         { x: -65, z: 236, w: 16, d: 15, h: 7.8, style: 'villa', rotY: Math.PI },
         { x: -160, z: 242, w: 16, d: 15, h: 7.8, style: 'villa', rotY: Math.PI },
         // East Port & Industrial City
-        { x: 240, z: -40, w: 26, d: 18, h: 9.5, style: 'warehouse', rotY: 0 },
-        { x: 240, z: -100, w: 22, d: 22, h: 34, style: 'skyscraper', rotY: 0 },
+        { x: 235, z: -85, w: 26, d: 18, h: 9.5, style: 'warehouse', rotY: 0 },
+        { x: 235, z: -135, w: 22, d: 22, h: 34, style: 'skyscraper', rotY: 0 },
         // South Metro City
-        { x: 0, z: -300, w: 22, d: 22, h: 42, style: 'skyscraper', rotY: 0 },
+        { x: -45, z: -295, w: 22, d: 22, h: 42, style: 'skyscraper', rotY: 0 },
         // Pinecrest Mountain Village
-        { x: -260, z: 220, w: 14, d: 13, h: 6.2, style: 'cabin', rotY: Math.PI / 2 },
+        { x: -255, z: 220, w: 14, d: 13, h: 6.2, style: 'cabin', rotY: Math.PI / 2 },
         // Delta Cross Fishing Hamlet
-        { x: 280, z: 230, w: 13, d: 12, h: 5.8, style: 'cottage', rotY: Math.PI / 2 }
+        { x: 275, z: 230, w: 13, d: 12, h: 5.8, style: 'cottage', rotY: Math.PI / 2 }
     ];
 
     function getRiverDistance(x, z) {
@@ -182,22 +182,22 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
 
     it('should verify level dry foundations for East Port City, South Metro, and Regional Towns', () => {
         // East Port Warehouse & Skyscraper
-        expect(getWaterLevel(240, -40)).toBe(-999.0);
-        expect(getTerrainHeight(240, -40)).toBe(0.0);
-        expect(getWaterLevel(240, -100)).toBe(-999.0);
-        expect(getTerrainHeight(240, -100)).toBe(0.0);
+        expect(getWaterLevel(235, -85)).toBe(-999.0);
+        expect(getTerrainHeight(235, -85)).toBe(0.0);
+        expect(getWaterLevel(235, -135)).toBe(-999.0);
+        expect(getTerrainHeight(235, -135)).toBe(0.0);
 
         // South Metro Tech Skyscraper
-        expect(getWaterLevel(0, -300)).toBe(-999.0);
-        expect(getTerrainHeight(0, -300)).toBe(0.0);
+        expect(getWaterLevel(-45, -295)).toBe(-999.0);
+        expect(getTerrainHeight(-45, -295)).toBe(0.0);
 
         // Pinecrest Alpine Mountain Village Cabin
-        expect(getWaterLevel(-260, 220)).toBe(-999.0);
-        expect(getTerrainHeight(-260, 220)).toBe(0.0);
+        expect(getWaterLevel(-255, 220)).toBe(-999.0);
+        expect(getTerrainHeight(-255, 220)).toBe(0.0);
 
         // Delta Cross River Hamlet Cottage
-        expect(getWaterLevel(280, 230)).toBe(-999.0);
-        expect(getTerrainHeight(280, 230)).toBe(0.0);
+        expect(getWaterLevel(275, 230)).toBe(-999.0);
+        expect(getTerrainHeight(275, 230)).toBe(0.0);
     });
 
     it('should allow player to walk on modern villa sundeck without phantom collisions', () => {

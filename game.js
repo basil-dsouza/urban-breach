@@ -1721,19 +1721,19 @@ function generateMassiveCity() {
     makeResidentialRoad(280, -40, 9.5, 170, Math.PI / 2);
 
     const eastPortBuildings = [
-        // Industrial Freight Warehouses & Loading Docks
-        { x: 240, z: -40, w: 26, d: 18, h: 9.5, rotY: 0, style: 'warehouse' },
-        { x: 320, z: -40, w: 26, d: 18, h: 9.5, rotY: 0, style: 'warehouse' },
-        { x: 240, z: 20, w: 26, d: 18, h: 9.5, rotY: Math.PI / 2, style: 'warehouse' },
-        { x: 320, z: 20, w: 26, d: 18, h: 9.5, rotY: -Math.PI / 2, style: 'warehouse' },
-        // Corporate Port Logistics Towers & Diners
-        { x: 240, z: -100, w: 22, d: 22, h: 34, rotY: 0, style: 'skyscraper' },
-        { x: 320, z: -100, w: 20, d: 20, h: 28, rotY: 0, style: 'skyscraper' }
+        // Industrial Freight Warehouses & Loading Docks (Set back safely from road corridors)
+        { x: 235, z: -85, w: 26, d: 18, h: 9.5, rotY: 0, style: 'warehouse' },
+        { x: 325, z: -85, w: 26, d: 18, h: 9.5, rotY: 0, style: 'warehouse' },
+        { x: 235, z: 15, w: 26, d: 18, h: 9.5, rotY: Math.PI / 2, style: 'warehouse' },
+        { x: 325, z: 15, w: 26, d: 18, h: 9.5, rotY: -Math.PI / 2, style: 'warehouse' },
+        // Corporate Port Logistics Towers
+        { x: 235, z: -135, w: 22, d: 22, h: 34, rotY: 0, style: 'skyscraper' },
+        { x: 325, z: -135, w: 20, d: 20, h: 28, rotY: 0, style: 'skyscraper' }
     ];
     for (const b of eastPortBuildings) {
         createBuilding(b);
     }
-    createGiantDonutDiner({ x: 280, z: -100, rotY: Math.PI });
+    createGiantDonutDiner({ x: 280, z: -165, rotY: Math.PI });
 
     // ==========================================
     // 3. BIG CITY 3: SOUTH METRO (Modern Tech Metropolis & Commercial Hub)
@@ -1743,19 +1743,19 @@ function generateMassiveCity() {
     makeResidentialRoad(120, -340, 8.5, 120, 0);
 
     const southMetroBuildings = [
-        { x: 0, z: -300, w: 22, d: 22, h: 42, rotY: 0, style: 'skyscraper' },
-        { x: 120, z: -300, w: 22, d: 22, h: 36, rotY: 0, style: 'skyscraper' },
-        { x: 0, z: -380, w: 20, d: 20, h: 32, rotY: 0, style: 'skyscraper' },
-        { x: 120, z: -380, w: 24, d: 24, h: 40, rotY: 0, style: 'skyscraper' },
-        { x: 60, z: -300, w: 18, d: 18, h: 24, rotY: 0, style: 'flat' },
-        { x: 60, z: -380, w: 18, d: 18, h: 22, rotY: 0, style: 'flat' }
+        { x: -45, z: -295, w: 22, d: 22, h: 42, rotY: 0, style: 'skyscraper' },
+        { x: 60, z: -295, w: 24, d: 24, h: 36, rotY: 0, style: 'skyscraper' },
+        { x: 165, z: -295, w: 22, d: 22, h: 38, rotY: 0, style: 'skyscraper' },
+        { x: -45, z: -385, w: 20, d: 20, h: 32, rotY: 0, style: 'skyscraper' },
+        { x: 60, z: -385, w: 24, d: 24, h: 40, rotY: 0, style: 'skyscraper' },
+        { x: 165, z: -385, w: 22, d: 22, h: 34, rotY: 0, style: 'skyscraper' }
     ];
     for (const b of southMetroBuildings) {
         createBuilding(b);
     }
-    createPoliceHeadquarters({ x: -55, z: -340, rotY: Math.PI / 2 });
-    createCityHospital({ x: 175, z: -340, rotY: -Math.PI / 2 });
-    createGiantDonutDiner({ x: 60, z: -340, rotY: 0 });
+    createPoliceHeadquarters({ x: -85, z: -340, rotY: Math.PI / 2 });
+    createCityHospital({ x: 205, z: -340, rotY: -Math.PI / 2 });
+    createGiantDonutDiner({ x: 60, z: -420, rotY: 0 });
 
     // ==========================================
     // 4. SMALL TOWN 1: LAKESIDE HAVEN (North Shore Luxury Villa Town)
@@ -1802,13 +1802,13 @@ function generateMassiveCity() {
     makeResidentialRoad(-285, 220, 7.5, 140, 0);
 
     const pinecrestCabins = [
-        { x: -260, z: 180, rotY: 0.3, dw: [-285, 180, -268, 180] },
-        { x: -310, z: 180, rotY: -0.3, dw: [-285, 180, -302, 180] },
-        { x: -260, z: 220, rotY: Math.PI / 2, dw: [-285, 220, -268, 220] },
-        { x: -310, z: 220, rotY: -Math.PI / 2, dw: [-285, 220, -302, 220] },
-        { x: -260, z: 260, rotY: Math.PI - 0.2, dw: [-285, 260, -268, 260] },
-        { x: -310, z: 260, rotY: Math.PI + 0.2, dw: [-285, 260, -302, 260] },
-        { x: -285, z: 285, rotY: Math.PI, dw: [-285, 280, -285, 275] }
+        { x: -255, z: 180, rotY: 0.3, dw: [-285, 180, -263, 180] },
+        { x: -315, z: 180, rotY: -0.3, dw: [-285, 180, -307, 180] },
+        { x: -255, z: 220, rotY: Math.PI / 2, dw: [-285, 220, -263, 220] },
+        { x: -315, z: 220, rotY: -Math.PI / 2, dw: [-285, 220, -307, 220] },
+        { x: -255, z: 260, rotY: Math.PI - 0.2, dw: [-285, 260, -263, 260] },
+        { x: -315, z: 260, rotY: Math.PI + 0.2, dw: [-285, 260, -307, 260] },
+        { x: -285, z: 305, rotY: Math.PI, dw: [-285, 290, -285, 298] }
     ];
     for (const c of pinecrestCabins) {
         createBuilding({ x: c.x, z: c.z, width: 14, depth: 13, height: 6.2, style: 'cabin', rotY: c.rotY });
@@ -1873,12 +1873,12 @@ function generateMassiveCity() {
     makeResidentialRoad(310, 230, 7.5, 120, 0);
 
     const deltaCrossCottages = [
-        { x: 280, z: 190, rotY: 0.2, dw: [310, 190, 290, 190] },
-        { x: 340, z: 190, rotY: -0.2, dw: [310, 190, 330, 190] },
-        { x: 280, z: 230, rotY: Math.PI / 2, dw: [310, 230, 290, 230] },
-        { x: 340, z: 230, rotY: -Math.PI / 2, dw: [310, 230, 330, 230] },
-        { x: 280, z: 270, rotY: Math.PI, dw: [310, 270, 290, 270] },
-        { x: 340, z: 270, rotY: Math.PI, dw: [310, 270, 330, 270] }
+        { x: 275, z: 190, rotY: 0.2, dw: [310, 190, 283, 190] },
+        { x: 345, z: 190, rotY: -0.2, dw: [310, 190, 337, 190] },
+        { x: 275, z: 230, rotY: Math.PI / 2, dw: [310, 230, 283, 230] },
+        { x: 345, z: 230, rotY: -Math.PI / 2, dw: [310, 230, 337, 230] },
+        { x: 275, z: 270, rotY: Math.PI, dw: [310, 270, 283, 270] },
+        { x: 345, z: 270, rotY: Math.PI, dw: [310, 270, 337, 270] }
     ];
     for (const c of deltaCrossCottages) {
         createBuilding({ x: c.x, z: c.z, width: 13, depth: 12, height: 5.8, style: 'cottage', rotY: c.rotY });
@@ -4814,7 +4814,7 @@ function animate() {
         }
         updateAimAndGun(delta, moving, sprint);
 
-        // Render Heading-Up Tactical Radar
+        // Render Heading-Up Tactical Topographic Minimap
         uiManager.updateRadar({
             playerPos: camera.position,
             playerYaw: yaw,
@@ -4823,7 +4823,10 @@ function animate() {
             buildings,
             ladders,
             medkits: enemyManager.medkits.map(m => m.position),
-            grenades: activeGrenades
+            grenades: activeGrenades,
+            waterBodies,
+            riverWaypoints,
+            getTerrainHeight
         }, delta);
 
     }

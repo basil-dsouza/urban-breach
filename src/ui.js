@@ -339,18 +339,12 @@ export class UIManager {
         this.scope.style.display = 'none';
         this.uiRoot.appendChild(this.scope);
 
-        // 5. In-Game HUD with Tactical Radar & Ladder Prompt
+        // 5. In-Game HUD with Tactical Minimap & Ladder Prompt
         this.hud = document.createElement('div');
         this.hud.id = 'game-hud';
         this.hud.style.display = 'none';
         this.hud.innerHTML = `
             <div class="hud-top-left">
-                <!-- Tactical Radar Canvas -->
-                <div class="radar-wrapper">
-                    <canvas id="radar-canvas"></canvas>
-                    <div class="radar-label">TACTICAL SCANNER</div>
-                </div>
-
                 <div class="hud-item hud-hp">
                     <span class="hud-icon">❤️</span>
                     <span class="hud-label">HP:</span>
@@ -364,20 +358,51 @@ export class UIManager {
                 <div id="skeleton-hud-card" class="skeleton-hud-card">
                     <div class="skeleton-paperdoll-wrapper">
                         <svg class="skeleton-svg" viewBox="0 0 70 100" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Human Silhouette Ghost -->
-                            <path class="body-silhouette" d="M35,6 C30,6 26,10 26,16 C26,21 29,24 33,25 L22,28 L14,44 L11,62 L15,63 L19,47 L25,36 L25,58 L20,78 L18,94 L24,95 L27,79 L32,60 L35,60 L38,60 L43,79 L46,95 L52,94 L50,78 L45,58 L45,36 L51,47 L55,63 L59,62 L56,44 L48,28 L37,25 C41,24 44,21 44,16 C44,10 40,6 35,6 Z" />
-                            <!-- Cranium / Skull -->
-                            <ellipse id="bone-head" class="bone-part bone-head" cx="35" cy="15" rx="7.5" ry="9" />
-                            <!-- Torso / Spine / Ribcage -->
-                            <path id="bone-torso" class="bone-part bone-torso" d="M27,27 L43,27 L40,54 L30,54 Z M25,32 L45,32 M26,38 L44,38 M28,44 L42,44 M35,27 L35,56" />
-                            <!-- Left Arm -->
-                            <path id="bone-arm-l" class="bone-part bone-limb" d="M24,28 L15,44 L12,60" />
-                            <!-- Right Arm -->
-                            <path id="bone-arm-r" class="bone-part bone-limb" d="M46,28 L55,44 L58,60" />
-                            <!-- Left Leg -->
-                            <path id="bone-leg-l" class="bone-part bone-limb" d="M30,56 L24,76 L22,94" />
-                            <!-- Right Leg -->
-                            <path id="bone-leg-r" class="bone-part bone-limb" d="M40,56 L46,76 L48,94" />
+                            <!-- Human Silhouette Ghost Background -->
+                            <path class="body-silhouette" d="M35,4 C29,4 25,8 25,14 C25,19 28,23 32,24 L21,27 L13,43 L10,61 L14,62 L18,46 L24,35 L24,57 L19,77 L17,93 L23,94 L26,78 L31,59 L35,59 L39,59 L44,78 L47,94 L53,93 L51,77 L46,57 L46,35 L52,46 L56,62 L60,61 L57,43 L49,27 L38,24 C42,23 45,19 45,14 C45,8 41,4 35,4 Z" />
+                            
+                            <!-- 1. Head / Skull (Cranium & Jaw) -->
+                            <g id="bone-group-head">
+                                <ellipse id="bone-head" class="bone-part bone-head" cx="35" cy="14" rx="7.5" ry="8.5" />
+                                <path class="bone-accent" d="M32,14 A1.2,1.2 0 1,1 32,13.9 M38,14 A1.2,1.2 0 1,1 38,13.9 M32,19 L38,19" />
+                                <!-- Jagged Skull Fracture Line -->
+                                <path id="crack-head" class="bone-crack" d="M33,9 L36,12 L34,15 L38,18 L35,21" />
+                            </g>
+
+                            <!-- 2. Torso (Spine, Ribcage & Pelvis) -->
+                            <g id="bone-group-torso">
+                                <path id="bone-torso" class="bone-part bone-torso" d="M26,26 L44,26 L41,53 L29,53 Z M24,31 L46,31 M25,37 L45,37 M27,43 L43,43 M29,49 L41,49 M35,25 L35,55" />
+                                <!-- Jagged Rib & Spine Fracture Lines -->
+                                <path id="crack-torso" class="bone-crack" d="M25,32 L32,34 L29,38 L36,41 M35,27 L33,33 L37,39 L34,46" />
+                            </g>
+
+                            <!-- 3. Left Arm (Humerus, Forearm, Hand) -->
+                            <g id="bone-group-arm-l">
+                                <path id="bone-arm-l" class="bone-part bone-limb" d="M24,27 L14,43 L11,59" />
+                                <!-- Transverse Arm Fracture Break -->
+                                <path id="crack-arm-l" class="bone-crack" d="M21,32 L16,36 L20,39 L15,43" />
+                            </g>
+
+                            <!-- 4. Right Arm (Humerus, Forearm, Hand) -->
+                            <g id="bone-group-arm-r">
+                                <path id="bone-arm-r" class="bone-part bone-limb" d="M46,27 L56,43 L59,59" />
+                                <!-- Transverse Arm Fracture Break -->
+                                <path id="crack-arm-r" class="bone-crack" d="M49,32 L54,36 L50,39 L55,43" />
+                            </g>
+
+                            <!-- 5. Left Leg (Femur, Knee, Shin, Foot) -->
+                            <g id="bone-group-leg-l">
+                                <path id="bone-leg-l" class="bone-part bone-limb" d="M29,55 L24,75 L21,93" />
+                                <!-- Jagged Femur Compound Fracture -->
+                                <path id="crack-leg-l" class="bone-crack" d="M29,62 L24,67 L28,72 L23,77" />
+                            </g>
+
+                            <!-- 6. Right Leg (Femur, Knee, Shin, Foot) -->
+                            <g id="bone-group-leg-r">
+                                <path id="bone-leg-r" class="bone-part bone-limb" d="M41,55 L46,75 L49,93" />
+                                <!-- Jagged Femur Compound Fracture -->
+                                <path id="crack-leg-r" class="bone-crack" d="M41,62 L46,67 L42,72 L47,77" />
+                            </g>
                         </svg>
                         <div id="skeleton-wounds-layer" class="wounds-layer"></div>
                     </div>
@@ -426,6 +451,16 @@ export class UIManager {
             </div>
 
             <div class="hud-bottom-right">
+                <!-- Tactical Topographic Minimap Canvas -->
+                <div class="minimap-wrapper">
+                    <canvas id="radar-canvas"></canvas>
+                    <div class="minimap-header">
+                        <span class="minimap-title">GPS MINIMAP</span>
+                        <span class="minimap-sub">TACTICAL OPS</span>
+                    </div>
+                </div>
+
+                <!-- Weapon & Ammo Card -->
                 <div class="hud-weapon-card">
                     <div id="hud-weapon-name" class="weapon-name">M16/M4A1 CARBINE</div>
                     <div class="weapon-ammo-row">
@@ -1230,6 +1265,14 @@ export class UIManager {
         const boneArmREl = document.getElementById('bone-arm-r');
         const boneLegLEl = document.getElementById('bone-leg-l');
         const boneLegREl = document.getElementById('bone-leg-r');
+
+        const crackHeadEl = document.getElementById('crack-head');
+        const crackTorsoEl = document.getElementById('crack-torso');
+        const crackArmLEl = document.getElementById('crack-arm-l');
+        const crackArmREl = document.getElementById('crack-arm-r');
+        const crackLegLEl = document.getElementById('crack-leg-l');
+        const crackLegREl = document.getElementById('crack-leg-r');
+
         const woundsLayer = document.getElementById('skeleton-wounds-layer');
         const skeletonCard = document.getElementById('skeleton-hud-card');
         const statusBadge = document.getElementById('skeleton-status-badge');
@@ -1242,6 +1285,13 @@ export class UIManager {
             if (boneArmREl) boneArmREl.classList.toggle('bone-fractured', !!bodyBones.rightArm);
             if (boneLegLEl) boneLegLEl.classList.toggle('bone-fractured', !!bodyBones.leftLeg);
             if (boneLegREl) boneLegREl.classList.toggle('bone-fractured', !!bodyBones.rightLeg);
+
+            if (crackHeadEl) crackHeadEl.classList.toggle('crack-visible', !!bodyBones.head);
+            if (crackTorsoEl) crackTorsoEl.classList.toggle('crack-visible', !!bodyBones.torso);
+            if (crackArmLEl) crackArmLEl.classList.toggle('crack-visible', !!bodyBones.leftArm);
+            if (crackArmREl) crackArmREl.classList.toggle('crack-visible', !!bodyBones.rightArm);
+            if (crackLegLEl) crackLegLEl.classList.toggle('crack-visible', !!bodyBones.leftLeg);
+            if (crackLegREl) crackLegREl.classList.toggle('crack-visible', !!bodyBones.rightLeg);
         }
 
         let totalWounds = 0;
