@@ -448,7 +448,11 @@ function makeDriveway(x1, z1, x2, z2, width = 4.2) {
 
 // 6. Hyper-Realistic Architecture Matching Reference Images
 // Image 1: Tropical Terracotta Clay-Tile Villa (Terracotta hipped roof, covered verandah, white pillars, coach lanterns, stone path)
-function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8, rotY = 0 }) {
+function createLowPolyCottage({ x, z, width, depth, height, w, d, h, rotY = 0 }) {
+    const finalW = width || w || 13;
+    const finalD = depth || d || 12;
+    const finalH = height || h || 5.8;
+
     const group = new THREE.Group();
     group.position.set(x, 0, z);
     group.rotation.y = rotY;
@@ -464,18 +468,18 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8, rotY
     const pathMat = new THREE.MeshStandardMaterial({ color: 0xd2b48c, roughness: 0.95 });
 
     const baseH = 0.8;
-    const wallH = height - baseH;
+    const wallH = finalH - baseH;
 
     // 1. Dark Stone Foundation Skirting Base
-    const base = new THREE.Mesh(new THREE.BoxGeometry(width + 0.3, baseH, depth + 0.3), darkBaseMat);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(finalW + 0.3, baseH, finalD + 0.3), darkBaseMat);
     base.position.y = baseH / 2;
     base.castShadow = true;
     base.receiveShadow = true;
     group.add(base);
 
     // 2. Main Warm-White Stucco Body
-    const body = new THREE.Mesh(new THREE.BoxGeometry(width, wallH, depth * 0.82), whiteStuccoMat);
-    body.position.set(0, baseH + wallH / 2, -depth * 0.09);
+    const body = new THREE.Mesh(new THREE.BoxGeometry(finalW, wallH, finalD * 0.82), whiteStuccoMat);
+    body.position.set(0, baseH + wallH / 2, -finalD * 0.09);
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
@@ -584,7 +588,11 @@ function createLowPolyCottage({ x, z, width = 13, depth = 12, height = 5.8, rotY
 }
 
 // Image 2: American Craftsman Suburban Residence (Multi-gable slate roof, dark sage lap siding, double garage, craftsman tapered pillars)
-function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rotY = 0 }) {
+function createLowPolyLogCabin({ x, z, width, depth, height, w, d, h, rotY = 0 }) {
+    const finalW = width || w || 14;
+    const finalD = depth || d || 13;
+    const finalH = height || h || 6.2;
+
     const group = new THREE.Group();
     group.position.set(x, 0, z);
     group.rotation.y = rotY;
@@ -597,27 +605,27 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rot
     const glassMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff, roughness: 0.15, metalness: 0.4, transparent: true, opacity: 0.85 });
 
     // 1. Main Craftsman House Body (Sage Horizontal Siding)
-    const bodyW = width * 0.58;
-    const bodyD = depth * 0.88;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(bodyW, height, bodyD), sageSidingMat);
-    body.position.set(-width * 0.21, height / 2, -depth * 0.06);
+    const bodyW = finalW * 0.58;
+    const bodyD = finalD * 0.88;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(bodyW, finalH, bodyD), sageSidingMat);
+    body.position.set(-finalW * 0.21, finalH / 2, -finalD * 0.06);
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
 
     // 2. Integrated Double Garage Wing
-    const garageW = width * 0.44;
-    const garageD = depth * 0.78;
-    const garageH = height * 0.78;
+    const garageW = finalW * 0.44;
+    const garageD = finalD * 0.78;
+    const garageH = finalH * 0.78;
     const garage = new THREE.Mesh(new THREE.BoxGeometry(garageW, garageH, garageD), sageSidingMat);
-    garage.position.set(width * 0.28, garageH / 2, depth * 0.05);
+    garage.position.set(finalW * 0.28, garageH / 2, finalD * 0.05);
     garage.castShadow = true;
     garage.receiveShadow = true;
     group.add(garage);
 
     // Double Carriage Wooden Garage Doors with Transom Panes
     for (let g = 0; g < 2; g++) {
-        const gX = width * 0.17 + g * (garageW * 0.48);
+        const gX = finalW * 0.17 + g * (garageW * 0.48);
         const gDoor = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.8, 0.12), garageDoorWoodMat);
         gDoor.position.set(gX, 1.4, depth * 0.44 + 0.06);
         group.add(gDoor);
@@ -660,8 +668,8 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rot
     group.add(gRoof);
 
     // 4. Craftsman Front Portico Entry with Tapered Pillars on Masonry Pedestals
-    const porticoX = -width * 0.15;
-    const porticoZ = depth * 0.42;
+    const porticoX = -finalW * 0.15;
+    const porticoZ = finalD * 0.42;
 
     const entryStep = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.4, 1.6), stoneMasonryMat);
     entryStep.position.set(porticoX, 0.2, porticoZ);
@@ -689,28 +697,28 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rot
 
     // 5. Craftsman Multi-Pane Double-Hung Windows
     const win1 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.0, 0.1), glassMat);
-    win1.position.set(-width * 0.36, 3.0, depth * 0.38 + 0.06);
+    win1.position.set(-finalW * 0.36, 3.0, finalD * 0.38 + 0.06);
     group.add(win1);
     const win1Frame = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.3, 0.06), trimWhiteMat);
-    win1Frame.position.set(-width * 0.36, 3.0, depth * 0.38 + 0.03);
+    win1Frame.position.set(-finalW * 0.36, 3.0, finalD * 0.38 + 0.03);
     group.add(win1Frame);
 
     obstacles.push({
         x,
         z,
-        w: width,
-        d: depth,
+        w: finalW,
+        d: finalD,
         rotY,
         bottom: 0,
-        top: height
+        top: finalH
     });
 
     buildings.push({
         x,
         z,
-        w: width,
-        d: depth,
-        h: height,
+        w: finalW,
+        d: finalD,
+        h: finalH,
         style: 'cabin',
         rotY,
         roofHeight: mainRoofH
@@ -721,7 +729,11 @@ function createLowPolyLogCabin({ x, z, width = 14, depth = 13, height = 6.2, rot
 }
 
 // Image 3: Contemporary Modern Minimalist Luxury Villa (Cantilevered flat dark roofs, floor-to-ceiling glass curtain walls, teak sundeck, pergola & pool)
-function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, rotY = 0 }) {
+function createLowPolyModernVilla({ x, z, width, depth, height, w, d, h, rotY = 0 }) {
+    const finalW = width || w || 16;
+    const finalD = depth || d || 15;
+    const finalH = height || h || 7.8;
+
     const group = new THREE.Group();
     group.position.set(x, 0, z);
     group.rotation.y = rotY;
@@ -736,44 +748,44 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, 
     const planterMat = new THREE.MeshStandardMaterial({ color: 0x718093, roughness: 0.85 });
     const shrubMat = new THREE.MeshStandardMaterial({ color: 0x2ed573, roughness: 0.8, flatShading: true });
 
-    const groundH = height * 0.52;
-    const upperH = height * 0.48;
+    const groundH = finalH * 0.52;
+    const upperH = finalH * 0.48;
 
     // 1. Ground Floor Pristine White Monolith
-    const groundBody = new THREE.Mesh(new THREE.BoxGeometry(width * 0.65, groundH, depth * 0.75), pristineWhiteMat);
-    groundBody.position.set(-width * 0.15, groundH / 2, -depth * 0.05);
+    const groundBody = new THREE.Mesh(new THREE.BoxGeometry(finalW * 0.65, groundH, finalD * 0.75), pristineWhiteMat);
+    groundBody.position.set(-finalW * 0.15, groundH / 2, -finalD * 0.05);
     groundBody.castShadow = true;
     groundBody.receiveShadow = true;
     group.add(groundBody);
 
     // 2. Cantilevered Charcoal Upper Volume
-    const upperBody = new THREE.Mesh(new THREE.BoxGeometry(width * 0.72, upperH, depth * 0.82), charcoalSlateMat);
+    const upperBody = new THREE.Mesh(new THREE.BoxGeometry(finalW * 0.72, upperH, finalD * 0.82), charcoalSlateMat);
     upperBody.position.set(0, groundH + upperH / 2, 0);
     upperBody.castShadow = true;
     upperBody.receiveShadow = true;
     group.add(upperBody);
 
     // 3. Wide Cantilevered Overhang Roof with Deep Soffit
-    const mainRoof = new THREE.Mesh(new THREE.BoxGeometry(width * 0.82, 0.32, depth * 0.92), darkRoofMat);
-    mainRoof.position.set(0, height + 0.16, 0);
+    const mainRoof = new THREE.Mesh(new THREE.BoxGeometry(finalW * 0.82, 0.32, finalD * 0.92), darkRoofMat);
+    mainRoof.position.set(0, finalH + 0.16, 0);
     mainRoof.castShadow = true;
     group.add(mainRoof);
 
     // 4. Panoramic Floor-to-Ceiling Glass Walls
-    const glassW = width * 0.46;
+    const glassW = finalW * 0.46;
     const glassH = groundH * 0.82;
     const groundGlass = new THREE.Mesh(new THREE.BoxGeometry(glassW, glassH, 0.08), panoramicGlassMat);
-    groundGlass.position.set(-width * 0.15, groundH * 0.5, depth * 0.32 + 0.05);
+    groundGlass.position.set(-finalW * 0.15, groundH * 0.5, finalD * 0.32 + 0.05);
     group.add(groundGlass);
 
-    const upperGlass = new THREE.Mesh(new THREE.BoxGeometry(width * 0.48, upperH * 0.78, 0.08), panoramicGlassMat);
-    upperGlass.position.set(-width * 0.05, groundH + upperH * 0.5, depth * 0.41 + 0.05);
+    const upperGlass = new THREE.Mesh(new THREE.BoxGeometry(finalW * 0.48, upperH * 0.78, 0.08), panoramicGlassMat);
+    upperGlass.position.set(-finalW * 0.05, groundH + upperH * 0.5, finalD * 0.41 + 0.05);
     group.add(upperGlass);
 
     // 5. Vertical Teak Architectural Louver Screen
     for (let s = 0; s < 7; s++) {
         const slat = new THREE.Mesh(new THREE.BoxGeometry(0.12, upperH * 0.9, 0.35), teakWoodMat);
-        slat.position.set(width * 0.18 + s * 0.32, groundH + upperH * 0.5, depth * 0.41 + 0.12);
+        slat.position.set(finalW * 0.18 + s * 0.32, groundH + upperH * 0.5, finalD * 0.41 + 0.12);
         slat.castShadow = true;
         group.add(slat);
     }
@@ -781,21 +793,21 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, 
     // 6. Integrated Concrete Planter Boxes with Lush Shrubbery
     const planterW = 3.6;
     const planter = new THREE.Mesh(new THREE.BoxGeometry(planterW, 0.7, 1.2), planterMat);
-    planter.position.set(-width * 0.36, 0.35, depth * 0.38 + 1.0);
+    planter.position.set(-finalW * 0.36, 0.35, finalD * 0.38 + 1.0);
     group.add(planter);
 
     for (let s = -1; s <= 1; s++) {
         const shrub = new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 1), shrubMat);
-        shrub.position.set(-width * 0.36 + s * 1.0, 0.85, depth * 0.38 + 1.0);
+        shrub.position.set(-finalW * 0.36 + s * 1.0, 0.85, finalD * 0.38 + 1.0);
         group.add(shrub);
     }
 
     // 7. Raised Teak Sundeck Patio, Pergola & Swimming Pool
-    const deckW = width * 0.52;
-    const deckD = depth * 0.68;
+    const deckW = finalW * 0.52;
+    const deckD = finalD * 0.68;
     const deckH = 0.35;
-    const deckX = width * 0.44;
-    const deckZ = depth * 0.34;
+    const deckX = finalW * 0.44;
+    const deckZ = finalD * 0.34;
     const sundeck = new THREE.Mesh(new THREE.BoxGeometry(deckW, deckH, deckD), teakWoodMat);
     sundeck.position.set(deckX, deckH / 2, deckZ);
     sundeck.receiveShadow = true;
@@ -831,19 +843,19 @@ function createLowPolyModernVilla({ x, z, width = 16, depth = 15, height = 7.8, 
     obstacles.push({
         x,
         z,
-        w: width * 0.72,
-        d: depth * 0.82,
+        w: finalW * 0.72,
+        d: finalD * 0.82,
         rotY,
         bottom: 0,
-        top: height
+        top: finalH
     });
 
     buildings.push({
         x,
         z,
-        w: width,
-        d: depth,
-        h: height,
+        w: finalW,
+        d: finalD,
+        h: finalH,
         style: 'villa',
         rotY,
         roofHeight: 0
@@ -1357,7 +1369,11 @@ function createHydroelectricDam({ x = -180, z = 230, rotY = -0.42 }) {
 }
 
 // Industrial Shipping Warehouse & Logistics Facility (Corrugated steel siding, concrete loading dock, roll-up shutter doors, rooftop vents)
-function createIndustrialWarehouse({ x, z, width = 28, depth = 20, height = 9.5, rotY = 0 }) {
+function createIndustrialWarehouse({ x, z, width, depth, height, w, d, h, rotY = 0 }) {
+    const finalW = width || w || 28;
+    const finalD = depth || d || 20;
+    const finalH = height || h || 9.5;
+
     const group = new THREE.Group();
     group.position.set(x, 0, z);
     group.rotation.y = rotY;
@@ -1370,15 +1386,15 @@ function createIndustrialWarehouse({ x, z, width = 28, depth = 20, height = 9.5,
 
     // 1. Concrete Loading Dock Base (Foundation skirting)
     const baseH = 1.2;
-    const base = new THREE.Mesh(new THREE.BoxGeometry(width, baseH, depth), concreteBaseMat);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(finalW, baseH, finalD), concreteBaseMat);
     base.position.set(0, baseH / 2, 0);
     base.castShadow = true;
     base.receiveShadow = true;
     group.add(base);
 
     // 2. Main Corrugated Steel Warehouse Body
-    const bodyH = height - baseH;
-    const body = new THREE.Mesh(new THREE.BoxGeometry(width, bodyH, depth), corrugatedMat);
+    const bodyH = finalH - baseH;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(finalW, bodyH, finalD), corrugatedMat);
     body.position.set(0, baseH + bodyH / 2, 0);
     body.castShadow = true;
     body.receiveShadow = true;
@@ -1386,51 +1402,51 @@ function createIndustrialWarehouse({ x, z, width = 28, depth = 20, height = 9.5,
 
     // 3. Roll-up Shutter Loading Dock Doors (Front facade)
     for (let d = -1; d <= 1; d++) {
-        const doorX = d * (width * 0.28);
+        const doorX = d * (finalW * 0.28);
         const door = new THREE.Mesh(new THREE.BoxGeometry(5.2, 4.2, 0.2), darkDoorMat);
-        door.position.set(doorX, baseH + 2.1, depth / 2 + 0.05);
+        door.position.set(doorX, baseH + 2.1, finalD / 2 + 0.05);
         group.add(door);
 
         // Yellow & Black Hazard Stripe Trim above loading bays
         const hazardTrim = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.4, 0.25), safetyYellowMat);
-        hazardTrim.position.set(doorX, baseH + 4.4, depth / 2 + 0.08);
+        hazardTrim.position.set(doorX, baseH + 4.4, finalD / 2 + 0.08);
         group.add(hazardTrim);
 
         // Concrete Loading Bay Bumpers
         for (const bx of [-2.4, 2.4]) {
             const bumper = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.0, 0.4), darkSteelMat);
-            bumper.position.set(doorX + bx, baseH / 2, depth / 2 + 0.2);
+            bumper.position.set(doorX + bx, baseH / 2, finalD / 2 + 0.2);
             group.add(bumper);
         }
     }
 
     // 4. Rooftop Industrial Ventilation Units & Skylights
-    for (const vx of [-width * 0.25, width * 0.25]) {
+    for (const vx of [-finalW * 0.25, finalW * 0.25]) {
         const vent = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 1.8, 12), darkSteelMat);
-        vent.position.set(vx, height + 0.9, 0);
+        vent.position.set(vx, finalH + 0.9, 0);
         group.add(vent);
 
         const ventCap = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.8, 12), darkSteelMat);
-        ventCap.position.set(vx, height + 2.0, 0);
+        ventCap.position.set(vx, finalH + 2.0, 0);
         group.add(ventCap);
     }
 
     obstacles.push({
         x,
         z,
-        w: width,
-        d: depth,
+        w: finalW,
+        d: finalD,
         rotY,
         bottom: 0,
-        top: height
+        top: finalH
     });
 
     buildings.push({
         x,
         z,
-        w: width,
-        d: depth,
-        h: height,
+        w: finalW,
+        d: finalD,
+        h: finalH,
         style: 'warehouse',
         rotY,
         roofHeight: 0
@@ -1441,7 +1457,11 @@ function createIndustrialWarehouse({ x, z, width = 28, depth = 20, height = 9.5,
 }
 
 // Corporate Glass Skyscraper (Sleek tinted curtain glass, illuminated rooftop helipad, mechanical penthouse, spire beacon)
-function createCorporateSkyscraper({ x, z, width = 22, depth = 22, height = 36, rotY = 0 }) {
+function createCorporateSkyscraper({ x, z, width, depth, height, w, d, h, rotY = 0 }) {
+    const finalW = width || w || 22;
+    const finalD = depth || d || 22;
+    const finalH = height || h || 36;
+
     const group = new THREE.Group();
     group.position.set(x, 0, z);
     group.rotation.y = rotY;
@@ -1453,15 +1473,15 @@ function createCorporateSkyscraper({ x, z, width = 22, depth = 22, height = 36, 
 
     // 1. Ground Level Grand Entrance Plaza & Podium
     const podiumH = 4.5;
-    const podium = new THREE.Mesh(new THREE.BoxGeometry(width + 2.4, podiumH, depth + 2.4), darkFacadeMat);
+    const podium = new THREE.Mesh(new THREE.BoxGeometry(finalW + 2.4, podiumH, finalD + 2.4), darkFacadeMat);
     podium.position.set(0, podiumH / 2, 0);
     podium.castShadow = true;
     podium.receiveShadow = true;
     group.add(podium);
 
     // 2. Main Glass Tower Shaft
-    const towerH = height - podiumH;
-    const tower = new THREE.Mesh(new THREE.BoxGeometry(width, towerH, depth), darkFacadeMat);
+    const towerH = finalH - podiumH;
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(finalW, towerH, finalD), darkFacadeMat);
     tower.position.set(0, podiumH + towerH / 2, 0);
     tower.castShadow = true;
     tower.receiveShadow = true;
@@ -1471,64 +1491,64 @@ function createCorporateSkyscraper({ x, z, width = 22, depth = 22, height = 36, 
     const floors = Math.floor(towerH / 3.4);
     for (let f = 0; f < floors; f++) {
         const fy = podiumH + 1.7 + f * 3.4;
-        const glassBand = new THREE.Mesh(new THREE.BoxGeometry(width + 0.08, 2.2, depth + 0.08), cyanGlassMat);
+        const glassBand = new THREE.Mesh(new THREE.BoxGeometry(finalW + 0.08, 2.2, finalD + 0.08), cyanGlassMat);
         glassBand.position.set(0, fy, 0);
         group.add(glassBand);
     }
 
     // 3. Rooftop Mechanical Penthouse & Crown
     const crownH = 3.2;
-    const crown = new THREE.Mesh(new THREE.BoxGeometry(width * 0.65, crownH, depth * 0.65), chromeTrimMat);
-    crown.position.set(0, height + crownH / 2, 0);
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(finalW * 0.65, crownH, finalD * 0.65), chromeTrimMat);
+    crown.position.set(0, finalH + crownH / 2, 0);
     group.add(crown);
 
     // 4. Rooftop Tactical Helipad
     const pad = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.2, 0.2, 32), helipadPadMat);
-    pad.position.set(0, height + 0.1, 0);
+    pad.position.set(0, finalH + 0.1, 0);
     group.add(pad);
 
     const padRing = new THREE.Mesh(new THREE.RingGeometry(4.4, 4.8, 32), new THREE.MeshBasicMaterial({ color: 0xf1c40f, side: THREE.DoubleSide }));
     padRing.rotation.x = -Math.PI / 2;
-    padRing.position.set(0, height + 0.22, 0);
+    padRing.position.set(0, finalH + 0.22, 0);
     group.add(padRing);
 
     // 'H' Helipad Marking
     const hBarL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 3.2), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    hBarL.position.set(-1.1, height + 0.23, 0);
+    hBarL.position.set(-1.1, finalH + 0.23, 0);
     group.add(hBarL);
     const hBarR = hBarL.clone();
     hBarR.position.x = 1.1;
     group.add(hBarR);
     const hBarC = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 0.5), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    hBarC.position.set(0, height + 0.23, 0);
+    hBarC.position.set(0, finalH + 0.23, 0);
     group.add(hBarC);
 
     // 5. Communications Antenna Spire
     const antennaH = 9.0;
     const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.2, antennaH, 8), chromeTrimMat);
-    antenna.position.set(0, height + crownH + antennaH / 2, 0);
+    antenna.position.set(0, finalH + crownH + antennaH / 2, 0);
     group.add(antenna);
 
     const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff4757 }));
-    beacon.position.set(0, height + crownH + antennaH, 0);
+    beacon.position.set(0, finalH + crownH + antennaH, 0);
     group.add(beacon);
 
     obstacles.push({
         x,
         z,
-        w: width,
-        d: depth,
+        w: finalW,
+        d: finalD,
         rotY,
         bottom: 0,
-        top: height
+        top: finalH
     });
 
     buildings.push({
         x,
         z,
-        w: width,
-        d: depth,
-        h: height,
+        w: finalW,
+        d: finalD,
+        h: finalH,
         style: 'skyscraper',
         rotY,
         roofHeight: 0
@@ -1539,17 +1559,21 @@ function createCorporateSkyscraper({ x, z, width = 22, depth = 22, height = 36, 
 }
 
 // Master Building Creator
-function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }) {
+function createBuilding({ x, z, width, depth, height, w, d, h, style = 'flat', rotY = 0 }) {
+    const finalW = width || w || 16;
+    const finalD = depth || d || 16;
+    const finalH = height || h || 14;
+
     if (style === 'cottage') {
-        createLowPolyCottage({ x, z, width, depth, height, rotY });
+        createLowPolyCottage({ x, z, width: finalW, depth: finalD, height: finalH, rotY });
         return;
     }
     if (style === 'cabin') {
-        createLowPolyLogCabin({ x, z, width, depth, height, rotY });
+        createLowPolyLogCabin({ x, z, width: finalW, depth: finalD, height: finalH, rotY });
         return;
     }
     if (style === 'villa') {
-        createLowPolyModernVilla({ x, z, width, depth, height, rotY });
+        createLowPolyModernVilla({ x, z, width: finalW, depth: finalD, height: finalH, rotY });
         return;
     }
     if (style === 'donut') {
@@ -1565,11 +1589,11 @@ function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }
         return;
     }
     if (style === 'warehouse') {
-        createIndustrialWarehouse({ x, z, width, depth, height, rotY });
+        createIndustrialWarehouse({ x, z, width: finalW, depth: finalD, height: finalH, rotY });
         return;
     }
     if (style === 'skyscraper') {
-        createCorporateSkyscraper({ x, z, width, depth, height, rotY });
+        createCorporateSkyscraper({ x, z, width: finalW, depth: finalD, height: finalH, rotY });
         return;
     }
 
@@ -1584,55 +1608,55 @@ function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }
     );
     const bodyMat = new THREE.MeshStandardMaterial({ color: houseColor, roughness: 0.85 });
 
-    const body = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), bodyMat);
-    body.position.y = height / 2;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(finalW, finalH, finalD), bodyMat);
+    body.position.y = finalH / 2;
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
 
-    const roofBorder = new THREE.Mesh(new THREE.BoxGeometry(width + 0.4, 0.4, depth + 0.4), darkMat);
-    roofBorder.position.y = height + 0.2;
+    const roofBorder = new THREE.Mesh(new THREE.BoxGeometry(finalW + 0.4, 0.4, finalD + 0.4), darkMat);
+    roofBorder.position.y = finalH + 0.2;
     roofBorder.castShadow = true;
     group.add(roofBorder);
 
     const hvac = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.6, 2.4), darkMat);
-    hvac.position.set(width / 4, height + 0.8, depth / 4);
+    hvac.position.set(finalW / 4, finalH + 0.8, finalD / 4);
     hvac.castShadow = true;
     group.add(hvac);
 
-    const hvacTop = height + 1.6;
+    const hvacTop = finalH + 1.6;
     obstacles.push({
-        x: x + width / 4,
-        z: z + depth / 4,
+        x: x + finalW / 4,
+        z: z + finalD / 4,
         w: 2.6,
         d: 2.6,
-        bottom: height - 0.5,
+        bottom: finalH - 0.5,
         top: hvacTop
     });
 
     let towerData = null;
-    if (height > 16) {
+    if (finalH > 16) {
         const tower = new THREE.Mesh(
             new THREE.CylinderGeometry(1.8, 1.8, 2.8, 10),
             new THREE.MeshStandardMaterial({ color: 0x5a483a, roughness: 0.9 })
         );
-        tower.position.set(-width / 4, height + 2.2, -depth / 4);
+        tower.position.set(-finalW / 4, finalH + 2.2, -finalD / 4);
         tower.castShadow = true;
         group.add(tower);
 
-        const towerTop = height + 2.2 + 1.4;
+        const towerTop = finalH + 2.2 + 1.4;
         obstacles.push({
-            x: x - width / 4,
-            z: z - depth / 4,
+            x: x - finalW / 4,
+            z: z - finalD / 4,
             w: 3.8,
             d: 3.8,
-            bottom: height - 0.5,
+            bottom: finalH - 0.5,
             top: towerTop
         });
 
         towerData = {
-            x: x - width / 4,
-            z: z - depth / 4,
+            x: x - finalW / 4,
+            z: z - finalD / 4,
             radius: 1.9,
             top: towerTop
         };
@@ -1641,40 +1665,40 @@ function createBuilding({ x, z, width, depth, height, style = 'flat', rotY = 0 }
     const bldgData = {
         x,
         z,
-        w: width,
-        d: depth,
-        h: height,
+        w: finalW,
+        d: finalD,
+        h: finalH,
         style: 'flat',
         roofHeight: 0,
-        hvac: { x: x + width / 4, z: z + depth / 4, w: 2.6, d: 2.6, top: height + 1.6 },
+        hvac: { x: x + finalW / 4, z: z + finalD / 4, w: 2.6, d: 2.6, top: finalH + 1.6 },
         tower: towerData
     };
 
     obstacles.push({
         x,
         z,
-        w: width,
-        d: depth,
+        w: finalW,
+        d: finalD,
         bottom: 0,
-        top: height
+        top: finalH
     });
 
     buildings.push(bldgData);
 
-    const floors = Math.max(1, Math.floor(height / 3.2));
-    const columns = Math.max(2, Math.floor(width / 3.2));
+    const floors = Math.max(1, Math.floor(finalH / 3.2));
+    const columns = Math.max(2, Math.floor(finalW / 3.2));
 
     for (let floor = 0; floor < floors; floor++) {
         for (let col = 0; col < columns; col++) {
             const win = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.4, 0.08), glassMat);
-            const wx = -width / 2 + (col + 0.6) * (width / columns);
+            const wx = -finalW / 2 + (col + 0.6) * (finalW / columns);
             const wy = 2 + floor * 3.2;
-            const wz = depth / 2 + 0.04;
+            const wz = finalD / 2 + 0.04;
             win.position.set(wx, wy, wz);
             group.add(win);
 
             const winBack = win.clone();
-            winBack.position.z = -depth / 2 - 0.04;
+            winBack.position.z = -finalD / 2 - 0.04;
             group.add(winBack);
         }
     }

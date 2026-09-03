@@ -5,7 +5,7 @@
  */
 
 export class TacticalRadar {
-    constructor(canvas, radius = 90) {
+    constructor(canvas, radius = 130) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.size = radius * 2;
@@ -69,12 +69,12 @@ export class TacticalRadar {
         ctx.clip();
 
         // 1. Tactical Ground Base Shading
-        ctx.fillStyle = '#0f172a';
+        ctx.fillStyle = '#0b1320';
         ctx.fillRect(0, 0, this.size, this.size);
 
         // 2. Topographic Terrain Elevation Grid (Hills, Mountains, Valleys)
         if (getTerrainHeight) {
-            const stepMeters = 16;
+            const stepMeters = 14;
             const steps = Math.ceil(this.radarRange / stepMeters) + 1;
             const pxBase = Math.floor(playerPos.x / stepMeters) * stepMeters;
             const pzBase = Math.floor(playerPos.z / stepMeters) * stepMeters;
@@ -87,19 +87,19 @@ export class TacticalRadar {
 
                     if (Math.abs(elev) > 0.5) {
                         const pt = this.worldToRadar(wx, wz, playerPos.x, playerPos.z, playerYaw);
-                        const radiusPx = stepMeters * scale * 0.9;
+                        const radiusPx = stepMeters * scale * 0.95;
 
                         if (elev > 8.0) {
                             // High Alpine Mountains & Plateaus (Rocky slate / charcoal)
-                            ctx.fillStyle = 'rgba(100, 116, 139, 0.45)';
+                            ctx.fillStyle = 'rgba(100, 116, 139, 0.5)';
                         } else if (elev > 3.0) {
                             // Rolling Hills & Ridges (Olive ridge)
-                            ctx.fillStyle = 'rgba(74, 107, 65, 0.35)';
+                            ctx.fillStyle = 'rgba(74, 107, 65, 0.4)';
                         } else if (elev < -0.5) {
                             // River Valley / Depression
-                            ctx.fillStyle = 'rgba(2, 132, 199, 0.25)';
+                            ctx.fillStyle = 'rgba(2, 132, 199, 0.3)';
                         } else {
-                            ctx.fillStyle = 'rgba(30, 41, 59, 0.3)';
+                            ctx.fillStyle = 'rgba(30, 41, 59, 0.35)';
                         }
 
                         ctx.beginPath();
@@ -108,7 +108,7 @@ export class TacticalRadar {
 
                         // Topographic Elevation Contour Lines
                         if (elev > 4.0) {
-                            ctx.strokeStyle = elev > 8.0 ? 'rgba(148, 163, 184, 0.3)' : 'rgba(74, 222, 128, 0.25)';
+                            ctx.strokeStyle = elev > 8.0 ? 'rgba(148, 163, 184, 0.4)' : 'rgba(74, 222, 128, 0.3)';
                             ctx.lineWidth = 1;
                             ctx.beginPath();
                             ctx.arc(pt.x, pt.y, radiusPx * 0.6, 0, Math.PI * 2);
@@ -132,7 +132,7 @@ export class TacticalRadar {
 
             ctx.fillStyle = '#0284c7';
             ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(pt.x, pt.y, radPx, 0, Math.PI * 2);
             ctx.fill();
@@ -153,7 +153,7 @@ export class TacticalRadar {
 
         if (defaultWaypoints.length > 1) {
             ctx.strokeStyle = '#0284c7';
-            ctx.lineWidth = 10 * scale;
+            ctx.lineWidth = 12 * scale;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.beginPath();
@@ -198,7 +198,7 @@ export class TacticalRadar {
             const p2 = this.worldToRadar(rd.x2, rd.z2, playerPos.x, playerPos.z, playerYaw);
 
             ctx.strokeStyle = '#334155';
-            ctx.lineWidth = Math.max(3, rd.w * scale);
+            ctx.lineWidth = Math.max(3.5, rd.w * scale);
             ctx.lineCap = 'square';
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
@@ -206,7 +206,7 @@ export class TacticalRadar {
             ctx.stroke();
 
             // Road center dashed line
-            ctx.strokeStyle = 'rgba(241, 245, 249, 0.4)';
+            ctx.strokeStyle = 'rgba(241, 245, 249, 0.45)';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
@@ -229,32 +229,32 @@ export class TacticalRadar {
                 { x: b.x + (-halfW * cosR - halfD * sinR), z: b.z + (-halfW * sinR + halfD * cosR) }
             ].map(c => this.worldToRadar(c.x, c.z, playerPos.x, playerPos.z, playerYaw));
 
-            let strokeCol = 'rgba(0, 229, 255, 0.5)';
-            let fillCol = 'rgba(0, 229, 255, 0.15)';
+            let strokeCol = 'rgba(0, 229, 255, 0.6)';
+            let fillCol = 'rgba(0, 229, 255, 0.2)';
 
             if (b.style === 'skyscraper') {
                 strokeCol = '#00cec9';
-                fillCol = 'rgba(0, 206, 201, 0.35)';
+                fillCol = 'rgba(0, 206, 201, 0.4)';
             } else if (b.style === 'warehouse') {
                 strokeCol = '#94a3b8';
-                fillCol = 'rgba(148, 163, 184, 0.3)';
+                fillCol = 'rgba(148, 163, 184, 0.35)';
             } else if (b.style === 'hospital') {
                 strokeCol = '#ef4444';
-                fillCol = 'rgba(239, 68, 68, 0.35)';
+                fillCol = 'rgba(239, 68, 68, 0.4)';
             } else if (b.style === 'police') {
                 strokeCol = '#3b82f6';
-                fillCol = 'rgba(59, 130, 246, 0.35)';
+                fillCol = 'rgba(59, 130, 246, 0.4)';
             } else if (b.style === 'donut') {
                 strokeCol = '#f59e0b';
-                fillCol = 'rgba(245, 158, 11, 0.35)';
+                fillCol = 'rgba(245, 158, 11, 0.4)';
             } else if (b.style === 'villa' || b.style === 'cottage' || b.style === 'cabin') {
                 strokeCol = '#cbd5e1';
-                fillCol = 'rgba(203, 213, 225, 0.2)';
+                fillCol = 'rgba(203, 213, 225, 0.25)';
             }
 
             ctx.fillStyle = fillCol;
             ctx.strokeStyle = strokeCol;
-            ctx.lineWidth = 1.2;
+            ctx.lineWidth = 1.4;
 
             ctx.beginPath();
             ctx.moveTo(corners[0].x, corners[0].y);
@@ -271,10 +271,10 @@ export class TacticalRadar {
             const pt = this.worldToRadar(lad.x, lad.z, playerPos.x, playerPos.z, playerYaw);
             if (pt.inRange) {
                 ctx.fillStyle = '#10b981';
-                ctx.fillRect(pt.x - 3.5, pt.y - 4.5, 1.8, 9);
-                ctx.fillRect(pt.x + 1.7, pt.y - 4.5, 1.8, 9);
-                ctx.fillRect(pt.x - 3.5, pt.y - 2.5, 7, 1.5);
-                ctx.fillRect(pt.x - 3.5, pt.y + 1.5, 7, 1.5);
+                ctx.fillRect(pt.x - 4, pt.y - 5.5, 2, 11);
+                ctx.fillRect(pt.x + 2, pt.y - 5.5, 2, 11);
+                ctx.fillRect(pt.x - 4, pt.y - 3, 8, 1.8);
+                ctx.fillRect(pt.x - 4, pt.y + 1.5, 8, 1.8);
             }
         }
 
@@ -283,8 +283,8 @@ export class TacticalRadar {
             const pt = this.worldToRadar(med.x, med.z, playerPos.x, playerPos.z, playerYaw);
             if (pt.inRange) {
                 ctx.fillStyle = '#34d399';
-                ctx.fillRect(pt.x - 1, pt.y - 4, 2, 8);
-                ctx.fillRect(pt.x - 4, pt.y - 1, 8, 2);
+                ctx.fillRect(pt.x - 1.5, pt.y - 5, 3, 10);
+                ctx.fillRect(pt.x - 5, pt.y - 1.5, 10, 3);
             }
         }
 
@@ -294,9 +294,9 @@ export class TacticalRadar {
             if (pt.inRange) {
                 ctx.fillStyle = '#f97316';
                 ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 1;
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                ctx.arc(pt.x, pt.y, 4, 0, Math.PI * 2);
+                ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.stroke();
             }
@@ -308,9 +308,9 @@ export class TacticalRadar {
             if (pt.inRange) {
                 ctx.fillStyle = '#fbbf24';
                 ctx.strokeStyle = '#ef4444';
-                ctx.lineWidth = 1.5;
-                ctx.fillRect(pt.x - 4.5, pt.y - 4.5, 9, 9);
-                ctx.strokeRect(pt.x - 4.5, pt.y - 4.5, 9, 9);
+                ctx.lineWidth = 2;
+                ctx.fillRect(pt.x - 5.5, pt.y - 5.5, 11, 11);
+                ctx.strokeRect(pt.x - 5.5, pt.y - 5.5, 11, 11);
             }
         }
 
@@ -322,23 +322,33 @@ export class TacticalRadar {
                 const isGunner = enemy.userData.archetype === 'gunner';
                 ctx.fillStyle = isGunner ? '#ef4444' : '#f97316';
                 ctx.shadowColor = ctx.fillStyle;
-                ctx.shadowBlur = 5;
+                ctx.shadowBlur = 6;
 
                 ctx.beginPath();
-                ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2);
+                ctx.arc(pt.x, pt.y, 4.5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
         }
 
         // 12. Range Rings & Concentric Markers
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.2)';
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.22)';
         ctx.lineWidth = 1;
-        const rings = [0.33, 0.66, 1.0];
-        for (const frac of rings) {
+        const rings = [
+            { frac: 0.33, dist: '40m' },
+            { frac: 0.66, dist: '80m' },
+            { frac: 1.0, dist: '120m' }
+        ];
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = 'rgba(0, 229, 255, 0.45)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+
+        for (const rInfo of rings) {
             ctx.beginPath();
-            ctx.arc(cx, cy, r * frac, 0, Math.PI * 2);
+            ctx.arc(cx, cy, r * rInfo.frac, 0, Math.PI * 2);
             ctx.stroke();
+            ctx.fillText(rInfo.dist, cx, cy - r * rInfo.frac + 11);
         }
 
         // Crosshairs
@@ -364,20 +374,20 @@ export class TacticalRadar {
         ctx.fillStyle = 'rgba(0, 229, 255, 0.12)';
         ctx.beginPath();
         ctx.moveTo(cx, cy);
-        ctx.lineTo(cx - 24, cy - 50);
-        ctx.lineTo(cx + 24, cy - 50);
+        ctx.lineTo(cx - 32, cy - 65);
+        ctx.lineTo(cx + 32, cy - 65);
         ctx.closePath();
         ctx.fill();
 
         // 15. Center Player Icon (Cyan Chevron)
         ctx.fillStyle = '#00e5ff';
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(cx, cy - 7);
-        ctx.lineTo(cx - 5, cy + 5);
-        ctx.lineTo(cx, cy + 2.5);
-        ctx.lineTo(cx + 5, cy + 5);
+        ctx.moveTo(cx, cy - 9);
+        ctx.lineTo(cx - 6, cy + 6);
+        ctx.lineTo(cx, cy + 3);
+        ctx.lineTo(cx + 6, cy + 6);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
@@ -391,23 +401,30 @@ export class TacticalRadar {
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Cardinal Markers (N, E, S, W) rotated by player yaw
-        ctx.font = 'bold 10px monospace';
+        // Cardinal & Intercardinal Markers rotated by player yaw
+        ctx.font = 'bold 11px monospace';
         ctx.fillStyle = '#00e5ff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
         const dirs = [
-            { label: 'N', angle: 0 },
-            { label: 'E', angle: Math.PI / 2 },
-            { label: 'S', angle: Math.PI },
-            { label: 'W', angle: -Math.PI / 2 }
+            { label: 'N', angle: 0, major: true },
+            { label: 'E', angle: Math.PI / 2, major: true },
+            { label: 'S', angle: Math.PI, major: true },
+            { label: 'W', angle: -Math.PI / 2, major: true },
+            { label: 'NE', angle: Math.PI / 4, major: false },
+            { label: 'SE', angle: 3 * Math.PI / 4, major: false },
+            { label: 'SW', angle: -3 * Math.PI / 4, major: false },
+            { label: 'NW', angle: -Math.PI / 4, major: false }
         ];
 
         for (const d of dirs) {
             const textAngle = d.angle - playerYaw - Math.PI / 2;
-            const tx = cx + Math.cos(textAngle) * (r - 10);
-            const ty = cy + Math.sin(textAngle) * (r - 10);
+            const dist = d.major ? r - 12 : r - 10;
+            const tx = cx + Math.cos(textAngle) * dist;
+            const ty = cy + Math.sin(textAngle) * dist;
+            ctx.font = d.major ? 'bold 11px monospace' : '8px monospace';
+            ctx.fillStyle = d.major ? '#00e5ff' : 'rgba(0, 229, 255, 0.5)';
             ctx.fillText(d.label, tx, ty);
         }
     }

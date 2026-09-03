@@ -357,59 +357,154 @@ export class UIManager {
                 <!-- Biometric Anatomical Skeleton & Bone Fracture Paperdoll -->
                 <div id="skeleton-hud-card" class="skeleton-hud-card">
                     <div class="skeleton-paperdoll-wrapper">
-                        <svg class="skeleton-svg" viewBox="0 0 70 100" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Human Silhouette Ghost Background -->
-                            <path class="body-silhouette" d="M35,4 C29,4 25,8 25,14 C25,19 28,23 32,24 L21,27 L13,43 L10,61 L14,62 L18,46 L24,35 L24,57 L19,77 L17,93 L23,94 L26,78 L31,59 L35,59 L39,59 L44,78 L47,94 L53,93 L51,77 L46,57 L46,35 L52,46 L56,62 L60,61 L57,43 L49,27 L38,24 C42,23 45,19 45,14 C45,8 41,4 35,4 Z" />
+                        <svg class="skeleton-svg" viewBox="0 0 100 160" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <radialGradient id="xray-glow" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" stop-color="#00cec9" stop-opacity="0.35"/>
+                                    <stop offset="100%" stop-color="#00cec9" stop-opacity="0"/>
+                                </radialGradient>
+                            </defs>
                             
-                            <!-- 1. Head / Skull (Cranium & Jaw) -->
+                            <!-- Ghost Human Body Silhouette Contour -->
+                            <path class="body-silhouette" d="
+                                M50,4 C42,4 37,9 37,17 C37,23 40,28 44,30
+                                C36,33 26,42 22,54 L14,76 L11,96 L15,97 L18,80 L23,66 L25,48
+                                L26,76 L23,104 L21,126 L19,148 L25,150 L27,132 L31,108 L34,88
+                                L42,88 L46,88 L49,108 L53,132 L55,150 L61,148 L59,126 L57,104
+                                L54,76 L55,48 L57,66 L62,80 L65,97 L69,96 L66,76 L58,54
+                                C54,42 44,33 36,30 C60,28 63,23 63,17 C63,9 58,4 50,4 Z
+                            " />
+
+                            <!-- Background Grid Scan Lines -->
+                            <line x1="10" y1="35" x2="90" y2="35" class="scan-grid-line" />
+                            <line x1="10" y1="70" x2="90" y2="70" class="scan-grid-line" />
+                            <line x1="10" y1="120" x2="90" y2="120" class="scan-grid-line" />
+
+                            <!-- 1. Head / Skull (Cranium, Orbits, Nasal, Cheekbones, Mandible) -->
                             <g id="bone-group-head">
-                                <ellipse id="bone-head" class="bone-part bone-head" cx="35" cy="14" rx="7.5" ry="8.5" />
-                                <path class="bone-accent" d="M32,14 A1.2,1.2 0 1,1 32,13.9 M38,14 A1.2,1.2 0 1,1 38,13.9 M32,19 L38,19" />
-                                <!-- Jagged Skull Fracture Line -->
-                                <path id="crack-head" class="bone-crack" d="M33,9 L36,12 L34,15 L38,18 L35,21" />
+                                <!-- Neurocranium Dome -->
+                                <path id="bone-head" class="bone-part bone-skull" d="
+                                    M39,16 C39,7.5 44,4 50,4 C56,4 61,7.5 61,16
+                                    C61,21.5 58.5,24 56,25.5 L55.5,28 L44.5,28 L44,25.5
+                                    C41.5,24 39,21.5 39,16 Z
+                                " />
+                                <!-- Eye Orbits -->
+                                <ellipse cx="45.5" cy="15" rx="3.0" ry="3.6" class="bone-cavity" />
+                                <ellipse cx="54.5" cy="15" rx="3.0" ry="3.6" class="bone-cavity" />
+                                <!-- Nasal Aperture -->
+                                <path d="M50,16.5 L48.4,20.8 L51.6,20.8 Z" class="bone-cavity" />
+                                <!-- Zygomatic Arches / Cheekbones & Maxilla Arch -->
+                                <path d="M41,18.5 C43,21.5 45,22.5 47,22.5 M59,18.5 C57,21.5 55,22.5 53,22.5" class="bone-accent" />
+                                <!-- Articulated Mandible (Jawbone) & Teeth Rows -->
+                                <path class="bone-part bone-jaw" d="M44.5,25.5 L44.5,29 C44.5,32 46.8,33 50,33 C53.2,33 55.5,32 55.5,29 L55.5,25.5" />
+                                <path d="M46.5,26.5 L53.5,26.5 M46.5,28 L53.5,28 M48,25.5 L48,29 M50,25.5 L50,29 M52,25.5 L52,29" class="bone-accent" />
+                                <!-- Branching Skull Fracture Crack -->
+                                <path id="crack-head" class="bone-crack" d="M41,10 L47,13 L44,17 L52,20 L48,25 M47,13 L53,12 M44,17 L41,19" />
                             </g>
 
-                            <!-- 2. Torso (Spine, Ribcage & Pelvis) -->
+                            <!-- Cervical Spine (C1 - C7) -->
+                            <path class="bone-vertebrae" d="M48.5,30 L51.5,30 M48,32 L52,32 M48,34 L52,34 M47.5,36 L52.5,36" />
+
+                            <!-- 2. Torso (Clavicles, Sternum, Curved Ribcage, Spine & Pelvis) -->
                             <g id="bone-group-torso">
-                                <path id="bone-torso" class="bone-part bone-torso" d="M26,26 L44,26 L41,53 L29,53 Z M24,31 L46,31 M25,37 L45,37 M27,43 L43,43 M29,49 L41,49 M35,25 L35,55" />
-                                <!-- Jagged Rib & Spine Fracture Lines -->
-                                <path id="crack-torso" class="bone-crack" d="M25,32 L32,34 L29,38 L36,41 M35,27 L33,33 L37,39 L34,46" />
+                                <!-- Clavicles (Collarbones) -->
+                                <path class="bone-clavicle" d="M50,36 C43,34 37,35 31,38 M50,36 C57,34 63,35 69,38" />
+                                <!-- Scapular Shoulder Blades -->
+                                <path class="bone-scapula" d="M33,39 L27,45 L32,53 L35,46 Z M67,39 L73,45 L68,53 L65,46 Z" />
+                                <!-- Sternum (Breastbone with Manubrium & Xiphoid Process) -->
+                                <path class="bone-sternum" d="M48.5,37 L51.5,37 L52.5,43 L51.5,57 L50,60 L48.5,57 L47.5,43 Z" />
+                                <!-- Thoracic & Lumbar Segmented Spine -->
+                                <path class="bone-vertebrae" d="M48,63 L52,63 M48,66 L52,66 M48,69 L52,69" />
+                                <!-- 7 Pairs of Anatomical Curved Costal Ribs -->
+                                <path id="bone-torso" class="bone-part bone-ribs" d="
+                                    M48.5,39.5 C42,38.5 35,41 31,45 M51.5,39.5 C58,38.5 65,41 69,45
+                                    M48.5,43 C40,42 32,45 29,50 M51.5,43 C60,42 68,45 71,50
+                                    M48.5,46.5 C39,45.5 30,49 28,55 M51.5,46.5 C61,45.5 70,49 72,55
+                                    M48.5,50 C39,49.5 29,53.5 28,60 M51.5,50 C61,49.5 71,53.5 72,60
+                                    M48.5,53.5 C40,53.5 31,58.5 30,65 M51.5,53.5 C60,53.5 69,58.5 70,65
+                                    M48.5,57 C42,57.5 34,62.5 33,69 M51.5,57 C58,57.5 66,62.5 67,69
+                                    M49,60.5 C44,61.5 38,65.5 37,71 M51,60.5 C56,61.5 62,65.5 63,71
+                                " />
+                                <!-- Pelvic Girdle (Iliac Crests, Sacrum & Pubic Symphysis) -->
+                                <path class="bone-pelvis" d="
+                                    M47,70 L53,70 L51.5,81 L48.5,81 Z
+                                    M47,70 C40,68 32,70 30,76 C28,82 33,86 38,85 C43,84 45,80 46,76 Z
+                                    M53,70 C60,68 68,70 70,76 C72,82 67,86 62,85 C57,84 55,80 54,76 Z
+                                    M45,83 C48,87 52,87 55,83
+                                " />
+                                <ellipse cx="38.5" cy="80.5" rx="3.5" ry="3.5" class="bone-cavity" />
+                                <ellipse cx="61.5" cy="80.5" rx="3.5" ry="3.5" class="bone-cavity" />
+                                <!-- Comminuted Ribs & Spinal Fracture Crack -->
+                                <path id="crack-torso" class="bone-crack" d="M33,46 L42,49 L49,48 L57,54 M49,48 L48,57 L52,63 M42,49 L40,56" />
                             </g>
 
-                            <!-- 3. Left Arm (Humerus, Forearm, Hand) -->
+                            <!-- 3. Left Arm (Humerus, Dual Radius/Ulna, Wrist & Hand) -->
                             <g id="bone-group-arm-l">
-                                <path id="bone-arm-l" class="bone-part bone-limb" d="M24,27 L14,43 L11,59" />
-                                <!-- Transverse Arm Fracture Break -->
-                                <path id="crack-arm-l" class="bone-crack" d="M21,32 L16,36 L20,39 L15,43" />
+                                <circle cx="30" cy="39" r="2.2" class="bone-joint" />
+                                <path id="bone-arm-l" class="bone-part bone-limb" d="
+                                    M30,40 C27,48 23,56 19,65
+                                    M18,66 L14,85 M20,67 L16,86
+                                    M15,87 L12,95 M14,87 L11,96 M16,87 L14,97 M18,87 L17,95
+                                " />
+                                <circle cx="19" cy="65.5" r="2" class="bone-joint" />
+                                <!-- Arm Fracture Fissure Crack -->
+                                <path id="crack-arm-l" class="bone-crack" d="M28,50 L23,53 L26,58 L20,60 M20,73 L16,76 L19,80 L14,83" />
                             </g>
 
-                            <!-- 4. Right Arm (Humerus, Forearm, Hand) -->
+                            <!-- 4. Right Arm (Humerus, Dual Radius/Ulna, Wrist & Hand) -->
                             <g id="bone-group-arm-r">
-                                <path id="bone-arm-r" class="bone-part bone-limb" d="M46,27 L56,43 L59,59" />
-                                <!-- Transverse Arm Fracture Break -->
-                                <path id="crack-arm-r" class="bone-crack" d="M49,32 L54,36 L50,39 L55,43" />
+                                <circle cx="70" cy="39" r="2.2" class="bone-joint" />
+                                <path id="bone-arm-r" class="bone-part bone-limb" d="
+                                    M70,40 C73,48 77,56 81,65
+                                    M82,66 L86,85 M80,67 L84,86
+                                    M85,87 L88,95 M86,87 L89,96 M84,87 L86,97 M82,87 L83,95
+                                " />
+                                <circle cx="81" cy="65.5" r="2" class="bone-joint" />
+                                <!-- Arm Fracture Fissure Crack -->
+                                <path id="crack-arm-r" class="bone-crack" d="M72,50 L77,53 L74,58 L80,60 M80,73 L84,76 L81,80 L86,83" />
                             </g>
 
-                            <!-- 5. Left Leg (Femur, Knee, Shin, Foot) -->
+                            <!-- 5. Left Leg (Femur, Trochanter, Patella, Tibia/Fibula, Foot) -->
                             <g id="bone-group-leg-l">
-                                <path id="bone-leg-l" class="bone-part bone-limb" d="M29,55 L24,75 L21,93" />
-                                <!-- Jagged Femur Compound Fracture -->
-                                <path id="crack-leg-l" class="bone-crack" d="M29,62 L24,67 L28,72 L23,77" />
+                                <circle cx="36" cy="84" r="2.4" class="bone-joint" />
+                                <path id="bone-leg-l" class="bone-part bone-limb" d="
+                                    M36,85 C33,96 31,108 31,119
+                                    M30,124 L26,148 M27,126 L23,147
+                                    M25,149 L21,157 L18,158 M25,149 L23,158
+                                " />
+                                <ellipse cx="31" cy="120.5" rx="2.5" ry="2.5" class="bone-patella" />
+                                <!-- Femur / Tibia Compound Fracture Crack -->
+                                <path id="crack-leg-l" class="bone-crack" d="M36,98 L30,102 L34,108 L28,112 M29,133 L24,137 L28,141 L23,145" />
                             </g>
 
-                            <!-- 6. Right Leg (Femur, Knee, Shin, Foot) -->
+                            <!-- 6. Right Leg (Femur, Trochanter, Patella, Tibia/Fibula, Foot) -->
                             <g id="bone-group-leg-r">
-                                <path id="bone-leg-r" class="bone-part bone-limb" d="M41,55 L46,75 L49,93" />
-                                <!-- Jagged Femur Compound Fracture -->
-                                <path id="crack-leg-r" class="bone-crack" d="M41,62 L46,67 L42,72 L47,77" />
+                                <circle cx="64" cy="84" r="2.4" class="bone-joint" />
+                                <path id="bone-leg-r" class="bone-part bone-limb" d="
+                                    M64,85 C67,96 69,108 69,119
+                                    M70,124 L74,148 M73,126 L77,147
+                                    M75,149 L79,157 L82,158 M75,149 L77,158
+                                " />
+                                <ellipse cx="69" cy="120.5" rx="2.5" ry="2.5" class="bone-patella" />
+                                <!-- Femur / Tibia Compound Fracture Crack -->
+                                <path id="crack-leg-r" class="bone-crack" d="M64,98 L70,102 L66,108 L72,112 M71,133 L76,137 L72,141 L77,145" />
                             </g>
                         </svg>
                         <div id="skeleton-wounds-layer" class="wounds-layer"></div>
                     </div>
                     <div class="skeleton-info-col">
                         <div class="skeleton-header-row">
-                            <span>ANATOMY</span>
+                            <span>BIOMETRICS</span>
                             <span id="skeleton-status-badge" class="skeleton-status-tag">OPTIMAL</span>
+                        </div>
+                        <div class="skeleton-ecg-container">
+                            <svg class="skeleton-ecg-svg" viewBox="0 0 100 20">
+                                <path class="ecg-line" d="M0,10 L25,10 L30,3 L35,17 L40,6 L45,14 L50,10 L75,10 L80,3 L85,17 L90,6 L95,14 L100,10" />
+                            </svg>
+                        </div>
+                        <div class="skeleton-vitals-row">
+                            <span class="vital-item">PULSE: <b id="vital-pulse">76</b> BPM</span>
+                            <span class="vital-item">O₂: <b id="vital-o2">99%</b></span>
                         </div>
                         <div id="skeleton-debuff-list" class="skeleton-debuff-list"></div>
                     </div>
@@ -635,7 +730,7 @@ export class UIManager {
         // Initialize Radar
         const radarCanvas = document.getElementById('radar-canvas');
         if (radarCanvas) {
-            this.radar = new TacticalRadar(radarCanvas, 75);
+            this.radar = new TacticalRadar(radarCanvas, 130);
         }
 
         this.bindEvents();
@@ -1304,12 +1399,12 @@ export class UIManager {
         // Render Bullet Wound Markers
         if (woundsLayer && bulletWounds) {
             const woundPos = {
-                head: [ { top: '15%', left: '50%' } ],
-                torso: [ { top: '34%', left: '46%' }, { top: '42%', left: '54%' }, { top: '36%', left: '56%' } ],
-                leftArm: [ { top: '38%', left: '20%' }, { top: '48%', left: '16%' } ],
-                rightArm: [ { top: '38%', left: '80%' }, { top: '48%', left: '84%' } ],
-                leftLeg: [ { top: '65%', left: '38%' }, { top: '80%', left: '36%' } ],
-                rightLeg: [ { top: '65%', left: '62%' }, { top: '80%', left: '64%' } ]
+                head: [ { top: '12%', left: '50%' } ],
+                torso: [ { top: '34%', left: '50%' }, { top: '42%', left: '44%' }, { top: '38%', left: '58%' } ],
+                leftArm: [ { top: '38%', left: '22%' }, { top: '50%', left: '16%' } ],
+                rightArm: [ { top: '38%', left: '78%' }, { top: '50%', left: '84%' } ],
+                leftLeg: [ { top: '65%', left: '32%' }, { top: '82%', left: '26%' } ],
+                rightLeg: [ { top: '65%', left: '68%' }, { top: '82%', left: '74%' } ]
             };
 
             let woundHtml = '';
@@ -1336,6 +1431,23 @@ export class UIManager {
         }
         if (isBleeding || totalWounds > 0) {
             debuffs.push(`🩸 BLEEDING (${totalWounds} WOUND${totalWounds > 1 ? 'S' : ''})`);
+        }
+
+        // Dynamic ECG Pulse and Vitals
+        const pulseEl = document.getElementById('vital-pulse');
+        const o2El = document.getElementById('vital-o2');
+        if (pulseEl) {
+            let bpm = 74;
+            if (isBleeding) bpm += 35;
+            if (hasFractures) bpm += 25;
+            if (totalWounds > 0) bpm += totalWounds * 8;
+            pulseEl.textContent = `${Math.min(175, bpm)}`;
+            pulseEl.style.color = (hasFractures || isBleeding) ? '#ff4757' : '#00e5ff';
+        }
+        if (o2El) {
+            const oxyVal = isBleeding ? Math.max(70, 99 - totalWounds * 7) : 99;
+            o2El.textContent = `${oxyVal}%`;
+            o2El.style.color = oxyVal < 85 ? '#ff4757' : '#00cec9';
         }
 
         if (skeletonCard) {

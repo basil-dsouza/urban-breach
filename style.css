@@ -479,23 +479,23 @@ body {
 }
 
 .minimap-wrapper {
-    background: rgba(8, 14, 22, 0.85);
-    border: 1.5px solid rgba(0, 229, 255, 0.45);
-    border-radius: 14px;
-    padding: 6px;
+    background: rgba(6, 11, 18, 0.9);
+    border: 2px solid rgba(0, 229, 255, 0.55);
+    border-radius: 16px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 229, 255, 0.25);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 229, 255, 0.35);
+    backdrop-filter: blur(12px);
     user-select: none;
 }
 
 #radar-canvas {
     border-radius: 50%;
     display: block;
-    width: 180px;
-    height: 180px;
+    width: 260px;
+    height: 260px;
 }
 
 .minimap-header {
@@ -503,23 +503,24 @@ body {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 4px 6px 0 6px;
+    padding: 6px 8px 0 8px;
     box-sizing: border-box;
 }
 
 .minimap-title {
-    font-size: 9.5px;
+    font-size: 10.5px;
     font-weight: 900;
-    letter-spacing: 1.5px;
+    letter-spacing: 1.8px;
     color: #00e5ff;
     text-transform: uppercase;
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
 }
 
 .minimap-sub {
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 700;
     color: #94a3b8;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
 }
 
 .hud-item {
@@ -1428,84 +1429,152 @@ body {
 .skeleton-hud-card {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: rgba(10, 16, 24, 0.75);
-    border: 1px solid rgba(0, 229, 255, 0.25);
-    border-radius: 10px;
-    padding: 6px 10px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(8px);
+    gap: 12px;
+    background: rgba(8, 14, 24, 0.88);
+    border: 1.5px solid rgba(0, 229, 255, 0.4);
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 229, 255, 0.2);
+    backdrop-filter: blur(10px);
     transition: all 0.25s ease;
     user-select: none;
     pointer-events: auto;
 }
 
 .skeleton-hud-card.has-critical-fracture {
-    border-color: rgba(255, 71, 87, 0.6);
-    box-shadow: 0 0 14px rgba(255, 71, 87, 0.25);
+    border-color: rgba(255, 71, 87, 0.8);
+    box-shadow: 0 0 18px rgba(255, 71, 87, 0.35);
+    background: rgba(24, 10, 14, 0.9);
 }
 
 .skeleton-paperdoll-wrapper {
     position: relative;
-    width: 48px;
-    height: 74px;
+    width: 86px;
+    height: 138px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(0, 229, 255, 0.15);
-    border-radius: 6px;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 206, 201, 0.08) 0%, rgba(5, 10, 18, 0.8) 100%);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 8px;
     padding: 2px;
+    overflow: hidden;
 }
 
 .skeleton-svg {
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 0 3px rgba(0, 206, 201, 0.35));
+    filter: drop-shadow(0 0 4px rgba(0, 206, 201, 0.45));
+}
+
+.scan-grid-line {
+    stroke: rgba(0, 229, 255, 0.12);
+    stroke-width: 0.6;
+    stroke-dasharray: 2, 2;
 }
 
 .body-silhouette {
-    fill: rgba(0, 229, 255, 0.05);
-    stroke: rgba(0, 229, 255, 0.2);
-    stroke-width: 0.8;
+    fill: rgba(0, 229, 255, 0.04);
+    stroke: rgba(0, 229, 255, 0.22);
+    stroke-width: 0.9;
 }
 
+/* Realistic Anatomical X-Ray Bone Shaders */
 .bone-part {
     stroke: #00cec9;
-    stroke-width: 2.0;
+    stroke-width: 1.6;
     stroke-linecap: round;
     stroke-linejoin: round;
-    fill: rgba(0, 206, 201, 0.2);
-    filter: drop-shadow(0 0 2px rgba(0, 206, 201, 0.5));
+    fill: rgba(0, 206, 201, 0.22);
+    filter: drop-shadow(0 0 2px rgba(0, 206, 201, 0.6));
     transition: all 0.2s ease;
 }
 
-.bone-head {
-    fill: rgba(0, 206, 201, 0.3);
-    stroke-width: 1.6;
+.bone-skull {
+    fill: rgba(0, 206, 201, 0.32);
+    stroke-width: 1.5;
 }
 
-.bone-torso {
-    stroke-width: 1.6;
+.bone-cavity {
+    fill: #061017;
+    stroke: rgba(0, 206, 201, 0.6);
+    stroke-width: 0.7;
+}
+
+.bone-jaw {
     fill: rgba(0, 206, 201, 0.22);
+    stroke-width: 1.3;
+}
+
+.bone-vertebrae {
+    stroke: #00e5ff;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    opacity: 0.85;
+}
+
+.bone-clavicle {
+    fill: none;
+    stroke: #00e5ff;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+}
+
+.bone-scapula {
+    fill: rgba(0, 206, 201, 0.16);
+    stroke: rgba(0, 206, 201, 0.65);
+    stroke-width: 0.9;
+}
+
+.bone-sternum {
+    fill: rgba(0, 206, 201, 0.35);
+    stroke: #00cec9;
+    stroke-width: 1.3;
+}
+
+.bone-ribs {
+    fill: none;
+    stroke: #00cec9;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+}
+
+.bone-pelvis {
+    fill: rgba(0, 206, 201, 0.28);
+    stroke: #00cec9;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
 }
 
 .bone-limb {
     fill: none;
-    stroke-width: 2.2;
+    stroke-width: 1.8;
+}
+
+.bone-joint {
+    fill: #00cec9;
+    stroke: rgba(255, 255, 255, 0.7);
+    stroke-width: 0.6;
+}
+
+.bone-patella {
+    fill: rgba(0, 206, 201, 0.5);
+    stroke: #00e5ff;
+    stroke-width: 0.8;
 }
 
 .bone-accent {
     fill: none;
-    stroke: rgba(0, 206, 201, 0.4);
-    stroke-width: 1.0;
+    stroke: rgba(0, 206, 201, 0.5);
+    stroke-width: 0.9;
 }
 
+/* Bone Fracture Trauma States */
 .bone-part.bone-fractured {
-    stroke: #ff4757 !important;
-    fill: rgba(255, 71, 87, 0.6) !important;
-    filter: drop-shadow(0 0 6px #ff4757) !important;
-    animation: bone-fracture-flash 0.8s infinite alternate;
+    stroke: #ff3838 !important;
+    fill: rgba(255, 56, 56, 0.6) !important;
+    filter: drop-shadow(0 0 8px #ff3838) !important;
+    animation: bone-fracture-flash 0.7s infinite alternate;
 }
 
 /* Jagged Bone Crack & Fracture Fissure Overlay */
@@ -1523,8 +1592,8 @@ body {
 .bone-crack.crack-visible {
     opacity: 1 !important;
     stroke: #ffffff !important;
-    filter: drop-shadow(0 0 4px #ff3838) drop-shadow(0 0 2px #fff) !important;
-    animation: crack-flicker 0.6s infinite alternate !important;
+    filter: drop-shadow(0 0 5px #ff2a2a) drop-shadow(0 0 2px #fff) !important;
+    animation: crack-flicker 0.45s infinite alternate !important;
 }
 
 @keyframes crack-flicker {
@@ -1535,14 +1604,14 @@ body {
     }
     100% {
         stroke: #ffffff;
-        filter: drop-shadow(0 0 7px #ff3838) drop-shadow(0 0 3px #ffeaa7);
+        filter: drop-shadow(0 0 8px #ff2a2a) drop-shadow(0 0 3px #ffeaa7);
         opacity: 1;
     }
 }
 
 @keyframes bone-fracture-flash {
     0% { filter: drop-shadow(0 0 2px #ff4757); opacity: 0.75; }
-    100% { filter: drop-shadow(0 0 8px #ff4757); opacity: 1.0; }
+    100% { filter: drop-shadow(0 0 9px #ff4757); opacity: 1.0; }
 }
 
 .wounds-layer {
@@ -1556,26 +1625,26 @@ body {
 
 .bullet-wound-marker {
     position: absolute;
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     background: #ff4757;
-    border: 1px solid #ffffff;
+    border: 1.5px solid #ffffff;
     border-radius: 50%;
-    box-shadow: 0 0 6px #ff4757;
+    box-shadow: 0 0 8px #ff4757;
     transform: translate(-50%, -50%);
-    animation: wound-bleed-pulse 0.8s infinite alternate;
+    animation: wound-bleed-pulse 0.7s infinite alternate;
 }
 
 @keyframes wound-bleed-pulse {
-    0% { transform: translate(-50%, -50%) scale(0.9); box-shadow: 0 0 3px #ff4757; }
-    100% { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 8px #ff4757; }
+    0% { transform: translate(-50%, -50%) scale(0.85); box-shadow: 0 0 4px #ff4757; }
+    100% { transform: translate(-50%, -50%) scale(1.3); box-shadow: 0 0 10px #ff4757; }
 }
 
 .skeleton-info-col {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    min-width: 110px;
+    gap: 4px;
+    min-width: 125px;
 }
 
 .skeleton-header-row {
@@ -1584,7 +1653,7 @@ body {
     justify-content: space-between;
     font-size: 10px;
     font-weight: 800;
-    letter-spacing: 1px;
+    letter-spacing: 1.2px;
     color: #00cec9;
     text-transform: uppercase;
 }
@@ -1592,16 +1661,70 @@ body {
 .skeleton-status-tag {
     font-size: 9px;
     font-weight: 800;
-    padding: 1px 4px;
+    padding: 1px 5px;
     border-radius: 3px;
     background: rgba(0, 206, 201, 0.15);
     color: #00cec9;
+    border: 1px solid rgba(0, 206, 201, 0.3);
 }
 
 .skeleton-status-tag.status-impaired {
-    background: rgba(255, 71, 87, 0.2);
+    background: rgba(255, 71, 87, 0.25);
     color: #ff4757;
-    border: 1px solid rgba(255, 71, 87, 0.4);
+    border: 1px solid rgba(255, 71, 87, 0.5);
+    animation: status-tag-pulse 0.8s infinite alternate;
+}
+
+@keyframes status-tag-pulse {
+    0% { opacity: 0.8; }
+    100% { opacity: 1.0; box-shadow: 0 0 6px rgba(255, 71, 87, 0.6); }
+}
+
+.skeleton-ecg-container {
+    width: 100%;
+    height: 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 229, 255, 0.15);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.skeleton-ecg-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.ecg-line {
+    fill: none;
+    stroke: #00e5ff;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 2px #00e5ff);
+    stroke-dasharray: 100;
+    animation: ecg-sweep 1.8s linear infinite;
+}
+
+@keyframes ecg-sweep {
+    0% { stroke-dashoffset: 100; }
+    100% { stroke-dashoffset: 0; }
+}
+
+.skeleton-vitals-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9px;
+    font-weight: 700;
+    color: #94a3b8;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
+.skeleton-vitals-row b {
+    color: #00e5ff;
 }
 
 .skeleton-debuff-list {
@@ -1618,9 +1741,13 @@ body {
     display: flex;
     align-items: center;
     gap: 3px;
+    background: rgba(255, 71, 87, 0.1);
+    padding: 1px 4px;
+    border-radius: 3px;
 }
 
 .skeleton-debuff-item.debuff-bleed {
     color: #ff4757;
     font-weight: 800;
+    background: rgba(255, 71, 87, 0.2);
 }
