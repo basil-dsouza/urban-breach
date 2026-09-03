@@ -559,6 +559,10 @@ export class VehicleManager {
             let hitObstacle = false;
 
             for (const obs of obstacles) {
+                // Skip obstacles far from the vehicle
+                const maxSpan = (obs.w > obs.d ? obs.w : obs.d) * 0.75 + 4.0;
+                if (Math.abs(nextX - obs.x) > maxSpan || Math.abs(nextZ - obs.z) > maxSpan) continue;
+
                 // Only test obstacles at ground level (exclude rooftop chimneys/towers)
                 if ((obs.bottom || 0) > 2.0) continue;
 

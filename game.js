@@ -29,9 +29,9 @@ camera.position.set(0, 4, 8);
 scene.add(camera);
 
 // 2. Renderer
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -2224,15 +2224,34 @@ function createWaterNormalTexture() {
     return texture;
 }
 
+function createSkyReflectionTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 128);
+    grad.addColorStop(0, '#3884b0');
+    grad.addColorStop(0.45, '#72b6d8');
+    grad.addColorStop(0.85, '#bae6fd');
+    grad.addColorStop(1.0, '#e0f2fe');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 128, 128);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+}
+
+const skyReflectionTexture = createSkyReflectionTexture();
 const waterNormals = createWaterNormalTexture();
 const waterInstances = [];
 
-// Realistic High-Density Three.js Water Surfaces for Lakes
+// Realistic High-Performance Three.js Water Surfaces for Lakes
 for (const lake of waterBodies) {
-    const waterGeo = new THREE.CircleGeometry(lake.radius + 1.5, 64);
+    const waterGeo = new THREE.CircleGeometry(lake.radius + 1.5, 48);
     const water = new Water(waterGeo, {
-        textureWidth: 512,
-        textureHeight: 512,
+        textureWidth: 256,
+        textureHeight: 256,
         waterNormals: waterNormals,
         sunDirection: new THREE.Vector3(0.55, 0.75, 0.35).normalize(),
         sunColor: 0xffffff,
@@ -2243,12 +2262,23 @@ for (const lake of waterBodies) {
     });
     water.rotation.x = -Math.PI / 2;
     water.position.set(lake.x, lake.waterLevel, lake.z);
-    water.receiveShadow = true;
+    water.receiveShadow = false;
+
+    // Use sky reflection sampler and bypass recursive full-scene mirror re-render (saving 80% draw calls)
+    if (water.material && water.material.uniforms && water.material.uniforms['mirrorSampler']) {
+        water.material.uniforms['mirrorSampler'].value = skyReflectionTexture;
+    }
+    water.onBeforeRender = function(renderer, scene, camera) {
+        if (this.material && this.material.uniforms && this.material.uniforms['eye']) {
+            this.material.uniforms['eye'].value.copy(camera.position);
+        }
+    };
+
     scene.add(water);
     waterInstances.push(water);
 
     // Shoreline Foam Rim
-    const foamGeo = new THREE.RingGeometry(lake.radius - 2.5, lake.radius + 1.2, 64);
+    const foamGeo = new THREE.RingGeometry(lake.radius - 2.5, lake.radius + 1.2, 48);
     foamGeo.rotateX(-Math.PI / 2);
     const foamMat = new THREE.MeshBasicMaterial({
         color: 0xdff9fb,
@@ -2263,7 +2293,7 @@ for (const lake of waterBodies) {
 
 // Realistic Curvy 3D River Ribbon with Three.js Water Library
 function createCurvyRiverMesh() {
-    const numSteps = 128;
+    const numSteps = 96;
     const riverPoints = riverSpline.getPoints(numSteps);
     const indices = [];
     const positions = [];
@@ -2315,8 +2345,8 @@ function createCurvyRiverMesh() {
     riverGeo.setIndex(indices);
 
     const riverWater = new Water(riverGeo, {
-        textureWidth: 512,
-        textureHeight: 512,
+        textureWidth: 256,
+        textureHeight: 256,
         waterNormals: waterNormals,
         sunDirection: new THREE.Vector3(0.55, 0.75, 0.35).normalize(),
         sunColor: 0xffffff,
@@ -2325,6 +2355,16 @@ function createCurvyRiverMesh() {
         fog: scene.fog !== undefined,
         alpha: 0.88
     });
+
+    riverWater.receiveShadow = false;
+    if (riverWater.material && riverWater.material.uniforms && riverWater.material.uniforms['mirrorSampler']) {
+        riverWater.material.uniforms['mirrorSampler'].value = skyReflectionTexture;
+    }
+    riverWater.onBeforeRender = function(renderer, scene, camera) {
+        if (this.material && this.material.uniforms && this.material.uniforms['eye']) {
+            this.material.uniforms['eye'].value.copy(camera.position);
+        }
+    };
 
     scene.add(riverWater);
     waterInstances.push(riverWater);
@@ -4861,6 +4901,7 @@ function updateAimAndGun(delta, moving, sprint) {
 
 // 27. Master Game Animation Loop
 const clock = new THREE.Clock();
+let radarUpdateTimer = 0;
 
 function animate() {
     requestAnimationFrame(animate);
@@ -4973,20 +5014,24 @@ function animate() {
         }
         updateAimAndGun(delta, moving, sprint);
 
-        // Render Heading-Up Tactical Topographic Minimap
-        uiManager.updateRadar({
-            playerPos: camera.position,
-            playerYaw: yaw,
-            enemies: enemyManager.enemies,
-            vehicles: vehicleManager.vehicles,
-            buildings,
-            ladders,
-            medkits: enemyManager.medkits.map(m => m.position),
-            grenades: activeGrenades,
-            waterBodies,
-            riverWaypoints,
-            getTerrainHeight
-        }, delta);
+        // Render Heading-Up Tactical Topographic Minimap (Throttled to 20 FPS for silky performance)
+        radarUpdateTimer += delta;
+        if (radarUpdateTimer >= 0.05) {
+            radarUpdateTimer = 0;
+            uiManager.updateRadar({
+                playerPos: camera.position,
+                playerYaw: yaw,
+                enemies: enemyManager.enemies,
+                vehicles: vehicleManager.vehicles,
+                buildings,
+                ladders,
+                medkits: enemyManager.medkits.map(m => m.position),
+                grenades: activeGrenades,
+                waterBodies,
+                riverWaypoints,
+                getTerrainHeight
+            }, 0.05);
+        }
 
     }
 

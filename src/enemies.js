@@ -85,8 +85,26 @@ export function lineIntersectsBox(p1, p2, box) {
 
 export function hasLineOfSight(p1, p2, obstacles = []) {
     if (!obstacles || obstacles.length === 0) return true;
+
+    // Fast 2D ray segment bounding box
+    const minRayX = Math.min(p1.x, p2.x) - 1.0;
+    const maxRayX = Math.max(p1.x, p2.x) + 1.0;
+    const minRayZ = Math.min(p1.z, p2.z) - 1.0;
+    const maxRayZ = Math.max(p1.z, p2.z) + 1.0;
+
     for (let i = 0; i < obstacles.length; i++) {
         const obs = obstacles[i];
+        const halfSpan = (obs.w > obs.d ? obs.w : obs.d) * 0.75 + 1.0;
+        // Fast AABB rejection: if obstacle is outside the ray volume, skip immediately
+        if (
+            obs.x + halfSpan < minRayX ||
+            obs.x - halfSpan > maxRayX ||
+            obs.z + halfSpan < minRayZ ||
+            obs.z - halfSpan > maxRayZ
+        ) {
+            continue;
+        }
+
         if (lineIntersectsBox(p1, p2, obs)) {
             return false;
         }
@@ -95,7 +113,7 @@ export function hasLineOfSight(p1, p2, obstacles = []) {
 }
 
 /**
- * Slide-and-Collide Horizontal Obstacle Movement for Ground Humanoids
+ * Slide-and-Collide Horizontal Obstacle Movement for Ground Humanoids with AABB Broadphase
  */
 export function moveEnemyWithCollision(enemy, moveX, moveZ, obstacles = []) {
     const radius = 0.40;
@@ -107,6 +125,10 @@ export function moveEnemyWithCollision(enemy, moveX, moveZ, obstacles = []) {
     if (obstacles && obstacles.length > 0) {
         for (let i = 0; i < obstacles.length; i++) {
             const obs = obstacles[i];
+            // Fast distance broadphase: skip obstacles far from this enemy
+            const maxReach = (obs.w > obs.d ? obs.w : obs.d) * 0.75 + 1.5;
+            if (Math.abs(targetX - obs.x) > maxReach || Math.abs(enemy.position.z - obs.z) > maxReach) continue;
+
             const obsBottom = obs.bottom !== undefined ? obs.bottom : 0;
             const obsTop = obs.top !== undefined ? obs.top : 20;
             // Ignore obstacles above or below enemy
@@ -141,6 +163,10 @@ export function moveEnemyWithCollision(enemy, moveX, moveZ, obstacles = []) {
     if (obstacles && obstacles.length > 0) {
         for (let i = 0; i < obstacles.length; i++) {
             const obs = obstacles[i];
+            // Fast distance broadphase: skip obstacles far from this enemy
+            const maxReach = (obs.w > obs.d ? obs.w : obs.d) * 0.75 + 1.5;
+            if (Math.abs(enemy.position.x - obs.x) > maxReach || Math.abs(targetZ - obs.z) > maxReach) continue;
+
             const obsBottom = obs.bottom !== undefined ? obs.bottom : 0;
             const obsTop = obs.top !== undefined ? obs.top : 20;
             if (currentY + 1.8 < obsBottom || currentY > obsTop - 0.2) continue;

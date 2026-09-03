@@ -74,7 +74,7 @@ export class TacticalRadar {
 
         // 2. Topographic Terrain Elevation Grid (Hills, Mountains, Valleys)
         if (getTerrainHeight) {
-            const stepMeters = 14;
+            const stepMeters = 24;
             const steps = Math.ceil(this.radarRange / stepMeters) + 1;
             const pxBase = Math.floor(playerPos.x / stepMeters) * stepMeters;
             const pzBase = Math.floor(playerPos.z / stepMeters) * stepMeters;
@@ -127,6 +127,12 @@ export class TacticalRadar {
         ];
 
         for (const lake of defaultLakes) {
+            const dLakeX = lake.x - playerPos.x;
+            const dLakeZ = lake.z - playerPos.z;
+            if (Math.abs(dLakeX) > this.radarRange + lake.radius + 10 || Math.abs(dLakeZ) > this.radarRange + lake.radius + 10) {
+                continue;
+            }
+
             const pt = this.worldToRadar(lake.x, lake.z, playerPos.x, playerPos.z, playerYaw);
             const radPx = lake.radius * scale;
 
@@ -197,6 +203,15 @@ export class TacticalRadar {
         ];
 
         for (const rd of roads) {
+            const minRx = Math.min(rd.x1, rd.x2) - 10;
+            const maxRx = Math.max(rd.x1, rd.x2) + 10;
+            const minRz = Math.min(rd.z1, rd.z2) - 10;
+            const maxRz = Math.max(rd.z1, rd.z2) + 10;
+            if (playerPos.x < minRx - this.radarRange || playerPos.x > maxRx + this.radarRange ||
+                playerPos.z < minRz - this.radarRange || playerPos.z > maxRz + this.radarRange) {
+                continue;
+            }
+
             const p1 = this.worldToRadar(rd.x1, rd.z1, playerPos.x, playerPos.z, playerYaw);
             const p2 = this.worldToRadar(rd.x2, rd.z2, playerPos.x, playerPos.z, playerYaw);
 
@@ -219,6 +234,13 @@ export class TacticalRadar {
 
         // 6. Buildings & Landmark Footprints
         for (const b of buildings) {
+            // Distance-cull buildings that are far outside the radar radius
+            const dBx = b.x - playerPos.x;
+            const dBz = b.z - playerPos.z;
+            if (Math.abs(dBx) > this.radarRange + 25 || Math.abs(dBz) > this.radarRange + 25) {
+                continue;
+            }
+
             const halfW = (b.w || 14) / 2;
             const halfD = (b.d || 14) / 2;
             const rot = b.rotY || 0;
