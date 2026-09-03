@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Water } from 'three/examples/jsm/objects/Water.js';
 import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from './src/difficulty.js';
 import { SpreadSystem } from './src/spread.js';
 import { GrenadePhysics } from './src/grenades.js';
@@ -145,11 +146,19 @@ function initObjectPools() {
 }
 initObjectPools();
 
-// 5. Multi-Lane Road System with Clean Non-Intersecting Markings & Continuous Curbs
-function makeRoad(x, z, width, length, rotation = 0) {
+// 5. Multi-Lane Road System with Clean Non-Intersecting Markings & Segmented Spans
+function makeRoadSpan(x1, z1, x2, z2, width) {
+    const dx = x2 - x1;
+    const dz = z2 - z1;
+    const length = Math.hypot(dx, dz);
+    if (length < 0.5) return;
+    const angle = Math.atan2(dx, dz);
+    const midX = (x1 + x2) / 2;
+    const midZ = (z1 + z2) / 2;
+
     const roadGroup = new THREE.Group();
-    roadGroup.position.set(x, 0, z);
-    roadGroup.rotation.y = rotation;
+    roadGroup.position.set(midX, 0, midZ);
+    roadGroup.rotation.y = angle;
 
     // Rich Dark Asphalt Surface
     const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x1f2429, roughness: 0.90 });
@@ -161,58 +170,47 @@ function makeRoad(x, z, width, length, rotation = 0) {
     road.receiveShadow = true;
     roadGroup.add(road);
 
-    // Continuous Spans between intersection plazas at -120, 0, +120
     const sideW = 2.4;
-    const laneSpans = [
-        [-length / 2, -130.4],
-        [-109.6, -10.4],
-        [10.4, 109.6],
-        [130.4, length / 2]
-    ];
-
     const yellowLineMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, roughness: 0.7 });
     const whiteLineMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.7 });
     const curbStoneMat = new THREE.MeshStandardMaterial({ color: 0x57606f, roughness: 0.92 });
     const concreteSidewalkMat = new THREE.MeshStandardMaterial({ color: 0x95a5a6, roughness: 0.88 });
 
-    for (const [startZ, endZ] of laneSpans) {
-        const spanLength = endZ - startZ;
-        const centerZ = (startZ + endZ) / 2;
+    // Concrete Sidewalks & Continuous Dark Granite Curb Stones along span
+    for (const side of [-1, 1]) {
+        const sideX = side * (width / 2 + sideW / 2);
+        const sidewalk = new THREE.Mesh(new THREE.BoxGeometry(sideW, 0.14, length), concreteSidewalkMat);
+        sidewalk.position.set(sideX, 0.07, 0);
+        sidewalk.receiveShadow = true;
+        roadGroup.add(sidewalk);
 
-        // Concrete Sidewalks & Continuous Dark Granite Curb Stones
-        for (const side of [-1, 1]) {
-            const sideX = side * (width / 2 + sideW / 2);
-            const sidewalk = new THREE.Mesh(new THREE.BoxGeometry(sideW, 0.14, spanLength), concreteSidewalkMat);
-            sidewalk.position.set(sideX, 0.07, centerZ);
-            sidewalk.receiveShadow = true;
-            roadGroup.add(sidewalk);
+        const curb = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, length), curbStoneMat);
+        curb.position.set(side * (width / 2 + 0.12), 0.08, 0);
+        curb.receiveShadow = true;
+        roadGroup.add(curb);
+    }
 
-            const curb = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.16, spanLength), curbStoneMat);
-            curb.position.set(side * (width / 2 + 0.12), 0.08, centerZ);
-            curb.receiveShadow = true;
-            roadGroup.add(curb);
-        }
+    // Solid White Outer Fog Lines (Edge of roadway)
+    for (const side of [-1, 1]) {
+        const fogLine = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.065, length), whiteLineMat);
+        fogLine.position.set(side * (width / 2 - 0.45), 0.06, 0);
+        roadGroup.add(fogLine);
+    }
 
-        // Solid White Outer Fog Lines (Edge of roadway)
-        for (const side of [-1, 1]) {
-            const fogLine = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.065, spanLength), whiteLineMat);
-            fogLine.position.set(side * (width / 2 - 0.45), 0.06, centerZ);
-            roadGroup.add(fogLine);
-        }
+    // Double Solid Yellow Centerlines
+    for (const offset of [-0.25, 0.25]) {
+        const doubleYellow = new THREE.Mesh(
+            new THREE.BoxGeometry(0.14, 0.065, length),
+            yellowLineMat
+        );
+        doubleYellow.position.set(offset, 0.06, 0);
+        roadGroup.add(doubleYellow);
+    }
 
-        // Double Solid Yellow Centerlines
-        for (const offset of [-0.25, 0.25]) {
-            const doubleYellow = new THREE.Mesh(
-                new THREE.BoxGeometry(0.14, 0.065, spanLength),
-                yellowLineMat
-            );
-            doubleYellow.position.set(offset, 0.06, centerZ);
-            roadGroup.add(doubleYellow);
-        }
-
-        // White Dashed Lane Dividers
+    // White Dashed Lane Dividers
+    if (width >= 12) {
         for (const laneOffset of [-width / 4, width / 4]) {
-            for (let i = startZ + 4; i < endZ - 4; i += 7) {
+            for (let i = -length / 2 + 4; i < length / 2 - 4; i += 7) {
                 const dash = new THREE.Mesh(
                     new THREE.BoxGeometry(0.18, 0.065, 3.5),
                     whiteLineMat
@@ -239,7 +237,7 @@ function createIntersection(x, z, widthX = 16, widthZ = 16) {
     const ironMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, metalness: 0.7, roughness: 0.5 });
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x2f3640, metalness: 0.75, roughness: 0.4 });
 
-    // 1. Center Asphalt Junction Box
+    // 1. Center Asphalt Junction Box (Standalone non-overlapping)
     const asphalt = new THREE.Mesh(new THREE.BoxGeometry(widthX, 0.05, widthZ), asphaltMat);
     asphalt.position.set(0, 0.025, 0);
     asphalt.receiveShadow = true;
@@ -366,15 +364,7 @@ function createIntersection(x, z, widthX = 16, widthZ = 16) {
     staticRaycastTargets.push(interGroup);
 }
 
-// Build Grand Road Grid
-makeRoad(0, 0, 16, 960, 0);                 // Main North-South Central Avenue
-makeRoad(0, 0, 16, 960, Math.PI / 2);       // Main East-West Central Boulevard
-makeRoad(120, 0, 14, 960, 0);               // East Avenue
-makeRoad(-120, 0, 14, 960, 0);              // West Avenue
-makeRoad(0, 120, 14, 960, Math.PI / 2);     // North Boulevard
-makeRoad(0, -120, 14, 960, Math.PI / 2);    // South Boulevard
-
-// Build Grand Realistic Intersections at All Grid Crossings
+// Build Grand Realistic Intersections at All 9 Grid Crossings
 createIntersection(0, 0, 16, 16);             // Grand Central Crossing
 createIntersection(120, 0, 14, 16);           // East Avenue & Central Boulevard
 createIntersection(-120, 0, 14, 16);          // West Avenue & Central Boulevard
@@ -385,14 +375,41 @@ createIntersection(-120, 120, 14, 14);        // North-West Crossing
 createIntersection(120, -120, 14, 14);        // South-East Crossing
 createIntersection(-120, -120, 14, 14);       // South-West Crossing
 
+// Build Clean Segmented Highway Avenues (North-South: X = 0, -120, 120) strictly between intersections
+for (const aveX of [-120, 0, 120]) {
+    const w = aveX === 0 ? 16 : 14;
+    makeRoadSpan(aveX, -480, aveX, -128, w);
+    makeRoadSpan(aveX, -112, aveX, -8, w);
+    makeRoadSpan(aveX, 8, aveX, 112, w);
+    makeRoadSpan(aveX, 128, aveX, 480, w);
+}
+
+// Build Clean Segmented Highway Boulevards (East-West: Z = 0, -120, 120) strictly between intersections
+for (const bvdZ of [-120, 0, 120]) {
+    const w = bvdZ === 0 ? 16 : 14;
+    makeRoadSpan(-480, bvdZ, -128, bvdZ, w);
+    makeRoadSpan(-112, bvdZ, -8, bvdZ, w);
+    makeRoadSpan(8, bvdZ, 112, bvdZ, w);
+    makeRoadSpan(128, bvdZ, 480, bvdZ, w);
+}
+
 // Residential Neighborhood Streets & Driveways
 const residentialRoadSegments = [];
 
-function makeResidentialRoad(x, z, width = 8, length = 60, angle = 0) {
+function makeResidentialRoad(x1, z1, x2, z2, width = 8) {
+    const dx = x2 - x1;
+    const dz = z2 - z1;
+    const length = Math.hypot(dx, dz);
+    if (length < 0.5) return;
+    const angle = Math.atan2(dx, dz);
+    const midX = (x1 + x2) / 2;
+    const midZ = (z1 + z2) / 2;
+
     const roadGroup = new THREE.Group();
-    roadGroup.position.set(x, 0.02, z);
+    roadGroup.position.set(midX, 0.02, midZ);
     roadGroup.rotation.y = angle;
 
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x222f3e, roughness: 0.90 });
     const roadGeo = new THREE.PlaneGeometry(width, length);
     const road = new THREE.Mesh(roadGeo, roadMat);
     road.rotation.x = -Math.PI / 2;
@@ -424,7 +441,7 @@ function makeResidentialRoad(x, z, width = 8, length = 60, angle = 0) {
     scene.add(roadGroup);
     staticRaycastTargets.push(roadGroup);
 
-    residentialRoadSegments.push({ x, z, width, length, angle });
+    residentialRoadSegments.push({ x: midX, z: midZ, width, length, angle });
 }
 
 function makeDriveway(x1, z1, x2, z2, width = 4.2) {
@@ -1741,8 +1758,9 @@ function generateMassiveCity() {
     // ==========================================
     // 2. BIG CITY 2: EAST PORT & INDUSTRIAL CITY (Manufacturing & Shipping Hub)
     // ==========================================
-    makeResidentialRoad(280, -40, 9.5, 210, 0);
-    makeResidentialRoad(280, -40, 9.5, 170, Math.PI / 2);
+    makeResidentialRoad(280, -145, 280, 65, 9.5);
+    makeResidentialRoad(195, -40, 275, -40, 9.5);
+    makeResidentialRoad(285, -40, 365, -40, 9.5);
 
     const eastPortBuildings = [
         // Industrial Freight Warehouses & Loading Docks (Set back safely from road corridors)
@@ -1762,9 +1780,11 @@ function generateMassiveCity() {
     // ==========================================
     // 3. BIG CITY 3: SOUTH METRO (Modern Tech Metropolis & Commercial Hub)
     // ==========================================
-    makeResidentialRoad(60, -340, 9.5, 260, Math.PI / 2);
-    makeResidentialRoad(0, -340, 8.5, 120, 0);
-    makeResidentialRoad(120, -340, 8.5, 120, 0);
+    makeResidentialRoad(-70, -340, 190, -340, 9.5);
+    makeResidentialRoad(0, -400, 0, -345, 8.5);
+    makeResidentialRoad(0, -335, 0, -280, 8.5);
+    makeResidentialRoad(120, -400, 120, -345, 8.5);
+    makeResidentialRoad(120, -335, 120, -280, 8.5);
 
     const southMetroBuildings = [
         { x: -45, z: -295, w: 22, d: 22, h: 42, rotY: 0, style: 'skyscraper' },
@@ -1784,11 +1804,11 @@ function generateMassiveCity() {
     // ==========================================
     // 4. SMALL TOWN 1: LAKESIDE HAVEN (North Shore Luxury Villa Town)
     // ==========================================
-    makeResidentialRoad(0, 185, 8.5, 460, Math.PI / 2);
-    makeResidentialRoad(-170, 205, 7.5, 40, 0);
-    makeResidentialRoad(-65, 205, 7.5, 40, 0);
-    makeResidentialRoad(65, 205, 7.5, 40, 0);
-    makeResidentialRoad(170, 205, 7.5, 40, 0);
+    makeResidentialRoad(-230, 185, 230, 185, 8.5);
+    makeResidentialRoad(-170, 189.5, -170, 225, 7.5);
+    makeResidentialRoad(-65, 189.5, -65, 225, 7.5);
+    makeResidentialRoad(65, 189.5, 65, 225, 7.5);
+    makeResidentialRoad(170, 189.5, 170, 225, 7.5);
 
     const northVillas = [
         { x: -196, z: 205, rotY: Math.PI / 2, dw: [-170, 205, -188, 205] },
@@ -1823,7 +1843,7 @@ function generateMassiveCity() {
     // ==========================================
     // 5. SMALL TOWN 2: PINECREST VILLAGE (North-West Alpine Mountain Hamlet)
     // ==========================================
-    makeResidentialRoad(-285, 175, 7.5, 120, 0);
+    makeResidentialRoad(-285, 120, -285, 230, 7.5);
 
     const pinecrestCabins = [
         { x: -255, z: 140, rotY: 0.3, dw: [-285, 140, -263, 140] },
@@ -1842,10 +1862,10 @@ function generateMassiveCity() {
     // ==========================================
     // 6. SMALL TOWN 3: PALM VALLEY (West Tropical Coast Town)
     // ==========================================
-    makeResidentialRoad(-185, 0, 8.5, 210, 0);
-    makeResidentialRoad(-212, 65, 7.5, 54, Math.PI / 2);
-    makeResidentialRoad(-212, 0, 7.5, 54, Math.PI / 2);
-    makeResidentialRoad(-212, -65, 7.5, 54, Math.PI / 2);
+    makeResidentialRoad(-185, -105, -185, 105, 8.5);
+    makeResidentialRoad(-235, 65, -189.5, 65, 7.5);
+    makeResidentialRoad(-235, 0, -189.5, 0, 7.5);
+    makeResidentialRoad(-235, -65, -189.5, -65, 7.5);
 
     const palmValleyCottages = [
         { x: -210, z: 86, rotY: Math.PI, dw: [-210, 65, -210, 80] },
@@ -1873,8 +1893,8 @@ function generateMassiveCity() {
     // ==========================================
     // 7. SMALL TOWN 4: OAKRIDGE (South-West Craftsman Suburb Town)
     // ==========================================
-    makeResidentialRoad(-185, -200, 8.5, 120, 0);
-    makeResidentialRoad(-212, -200, 7.5, 60, Math.PI / 2);
+    makeResidentialRoad(-185, -260, -185, -140, 8.5);
+    makeResidentialRoad(-235, -200, -189.5, -200, 7.5);
 
     const oakridgeHomes = [
         { x: -196, z: -205, rotY: -Math.PI / 2, dw: [-185, -205, -190, -205] },
@@ -1894,7 +1914,7 @@ function generateMassiveCity() {
     // ==========================================
     // 8. SMALL TOWN 5: DELTA CROSS (East River Fishing Hamlet)
     // ==========================================
-    makeResidentialRoad(340, 275, 7.5, 140, 0);
+    makeResidentialRoad(340, 220, 340, 330, 7.5);
 
     const deltaCrossCottages = [
         { x: 315, z: 240, rotY: 0.2, dw: [340, 240, 323, 240] },
@@ -2172,183 +2192,60 @@ scene.add(ground);
 staticRaycastTargets.push(ground);
 
 // ==========================================
-// 6c. High-Density Dynamic 3D Wave Water System & Curvy River Ribbon
+// 6c. Official Three.js Water Library Integration & Curvy River
 // ==========================================
-const waterMaterials = [];
-
-function createDynamicWaterMaterial(options = {}) {
-    const isCircular = options.isCircular ? 1.0 : 0.0;
-    const radius = options.radius || 40.0;
-    const center = options.center || new THREE.Vector2(0, 0);
-    const opacity = options.opacity !== undefined ? options.opacity : 0.84;
-    const waveHeight = options.waveHeight !== undefined ? options.waveHeight : 0.38;
-
-    const uniforms = {
-        uTime: { value: 0.0 },
-        uSunDir: { value: new THREE.Vector3(0.55, 0.75, 0.35).normalize() },
-        uDeepColor: { value: new THREE.Color(0x002447) },
-        uShallowColor: { value: new THREE.Color(0x00b4d8) },
-        uFoamColor: { value: new THREE.Color(0xe0fbfc) },
-        uSkyColor: { value: new THREE.Color(0x38bdf8) },
-        uWaveHeight: { value: waveHeight },
-        uOpacity: { value: opacity },
-        uIsCircular: { value: isCircular },
-        uRadius: { value: radius },
-        uCenter: { value: center }
-    };
-
-    const vertexShader = `
-        uniform float uTime;
-        uniform float uWaveHeight;
-        
-        varying vec3 vWorldPosition;
-        varying vec3 vNormal;
-        varying float vWaveDisp;
-        varying vec2 vUv;
-        
-        vec3 gerstnerWave(vec3 p, vec2 dir, float steepness, float wavelength, float speed, float time, inout vec3 tangent, inout vec3 binormal) {
-            float k = 6.2831853 / wavelength;
-            float c = sqrt(9.8 / k) * speed;
-            vec2 d = normalize(dir);
-            float f = k * (dot(d, p.xz) - c * time);
-            float a = (steepness / k) * uWaveHeight;
-            
-            tangent += vec3(
-                -d.x * d.x * (steepness * sin(f)),
-                d.x * (steepness * cos(f)),
-                -d.x * d.y * (steepness * sin(f))
-            );
-            binormal += vec3(
-                -d.x * d.y * (steepness * sin(f)),
-                d.y * (steepness * cos(f)),
-                -d.y * d.y * (steepness * sin(f))
-            );
-            
-            return vec3(
-                d.x * (a * cos(f)),
-                a * sin(f),
-                d.y * (a * cos(f))
-            );
+function createWaterNormalTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(512, 512);
+    const data = imgData.data;
+    for (let y = 0; y < 512; y++) {
+        for (let x = 0; x < 512; x++) {
+            const u = x / 512;
+            const v = y / 512;
+            const n1 = Math.sin(u * 28.0) * Math.cos(v * 28.0);
+            const n2 = Math.sin(u * 56.0 + 1.2) * Math.cos(v * 42.0 + 0.8);
+            const n3 = Math.sin((u + v) * 72.0) * 0.5;
+            const nx = (n1 * 0.5 + n2 * 0.3 + n3 * 0.2) * 0.5 + 0.5;
+            const ny = (Math.cos(u * 32.0) * Math.sin(v * 32.0) * 0.5 + 0.5);
+            const idx = (y * 512 + x) * 4;
+            data[idx] = Math.floor(nx * 255);
+            data[idx + 1] = Math.floor(ny * 255);
+            data[idx + 2] = 235;
+            data[idx + 3] = 255;
         }
-        
-        void main() {
-            vUv = uv;
-            vec4 worldPos = modelMatrix * vec4(position, 1.0);
-            vec3 p = worldPos.xyz;
-            
-            vec3 tangent = vec3(1.0, 0.0, 0.0);
-            vec3 binormal = vec3(0.0, 0.0, 1.0);
-            vec3 disp = vec3(0.0);
-            
-            // 4 Multi-directional Gerstner wave harmonics
-            disp += gerstnerWave(p, vec2(1.0, 0.25), 0.18, 12.0, 1.2, uTime, tangent, binormal);
-            disp += gerstnerWave(p, vec2(-0.35, 0.92), 0.14, 7.5, 1.4, uTime, tangent, binormal);
-            disp += gerstnerWave(p, vec2(0.65, -0.75), 0.10, 4.8, 1.7, uTime, tangent, binormal);
-            disp += gerstnerWave(p, vec2(-0.8, -0.3), 0.06, 2.8, 2.1, uTime, tangent, binormal);
-            
-            // Micro ripples
-            float microRipple = sin(p.x * 2.2 + uTime * 3.0) * cos(p.z * 2.2 + uTime * 2.6) * 0.035 * uWaveHeight;
-            disp.y += microRipple;
-            
-            vWaveDisp = disp.y;
-            vec3 normal = normalize(cross(binormal, tangent));
-            vNormal = normal;
-            
-            worldPos.xyz += disp;
-            vWorldPosition = worldPos.xyz;
-            
-            gl_Position = projectionMatrix * viewMatrix * worldPos;
-        }
-    `;
-
-    const fragmentShader = `
-        uniform vec3 uSunDir;
-        uniform vec3 uDeepColor;
-        uniform vec3 uShallowColor;
-        uniform vec3 uFoamColor;
-        uniform vec3 uSkyColor;
-        uniform float uOpacity;
-        uniform float uIsCircular;
-        uniform float uRadius;
-        uniform vec2 uCenter;
-        uniform vec3 cameraPosition;
-        
-        varying vec3 vWorldPosition;
-        varying vec3 vNormal;
-        varying float vWaveDisp;
-        varying vec2 vUv;
-        
-        void main() {
-            if (uIsCircular > 0.5) {
-                float distFromCenter = length(vWorldPosition.xz - uCenter);
-                if (distFromCenter > uRadius + 0.8) {
-                    discard;
-                }
-            }
-            
-            vec3 viewDir = normalize(cameraPosition - vWorldPosition);
-            vec3 normal = normalize(vNormal);
-            if (!gl_FrontFacing) normal = -normal;
-            
-            // Fresnel View-dependent Reflection
-            float fresnel = pow(1.0 - max(0.0, dot(viewDir, normal)), 3.5);
-            fresnel = clamp(fresnel, 0.0, 1.0);
-            
-            // Blinn-Phong Specular Sunlight Highlight
-            vec3 halfVec = normalize(uSunDir + viewDir);
-            float spec = pow(max(0.0, dot(normal, halfVec)), 72.0);
-            
-            // Depth & Wave Height Color Blend
-            float heightFactor = clamp((vWaveDisp + 0.16) / 0.36, 0.0, 1.0);
-            vec3 waterColor = mix(uDeepColor, uShallowColor, heightFactor * 0.65 + fresnel * 0.35);
-            
-            // Diffuse Sunlight & Specular Glint
-            float diffuse = max(0.0, dot(normal, uSunDir)) * 0.35 + 0.65;
-            vec3 finalColor = waterColor * diffuse + vec3(1.0, 0.98, 0.92) * (spec * 1.1);
-            
-            // Foam Crests on High Wave Peaks
-            float foamFactor = smoothstep(0.12, 0.28, vWaveDisp);
-            finalColor = mix(finalColor, uFoamColor, foamFactor * 0.8);
-            
-            // Sky Reflection Tint
-            finalColor = mix(finalColor, uSkyColor, fresnel * 0.4);
-            
-            gl_FragColor = vec4(finalColor, uOpacity);
-        }
-    `;
-
-    const mat = new THREE.ShaderMaterial({
-        uniforms,
-        vertexShader,
-        fragmentShader,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false
-    });
-
-    waterMaterials.push(mat);
-    return mat;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
 }
 
-// Realistic High-Density Dynamic Wave Water Surfaces for Lakes
+const waterNormals = createWaterNormalTexture();
+const waterInstances = [];
+
+// Realistic High-Density Three.js Water Surfaces for Lakes
 for (const lake of waterBodies) {
-    // High-density 128x128 segment plane geometry
-    const waterGeo = new THREE.PlaneGeometry(lake.radius * 2.2, lake.radius * 2.2, 128, 128);
-    waterGeo.rotateX(-Math.PI / 2);
-
-    const waterMat = createDynamicWaterMaterial({
-        isCircular: true,
-        radius: lake.radius,
-        center: new THREE.Vector2(lake.x, lake.z),
-        opacity: 0.84,
-        waveHeight: lake.name === 'alpine_reservoir' ? 0.32 : 0.36
+    const waterGeo = new THREE.CircleGeometry(lake.radius + 1.5, 64);
+    const water = new Water(waterGeo, {
+        textureWidth: 512,
+        textureHeight: 512,
+        waterNormals: waterNormals,
+        sunDirection: new THREE.Vector3(0.55, 0.75, 0.35).normalize(),
+        sunColor: 0xffffff,
+        waterColor: lake.name === 'alpine_reservoir' ? 0x003d66 : 0x006680,
+        distortionScale: 4.5,
+        fog: scene.fog !== undefined,
+        alpha: 0.86
     });
-
-    const waterMesh = new THREE.Mesh(waterGeo, waterMat);
-    waterMesh.position.set(lake.x, lake.waterLevel, lake.z);
-    waterMesh.receiveShadow = true;
-    scene.add(waterMesh);
-    waterMeshes.push({ mesh: waterMesh, baseLevel: lake.waterLevel, x: lake.x });
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(lake.x, lake.waterLevel, lake.z);
+    water.receiveShadow = true;
+    scene.add(water);
+    waterInstances.push(water);
 
     // Shoreline Foam Rim
     const foamGeo = new THREE.RingGeometry(lake.radius - 2.5, lake.radius + 1.2, 64);
@@ -2364,7 +2261,7 @@ for (const lake of waterBodies) {
     scene.add(foamMesh);
 }
 
-// Realistic Curvy 3D River Ribbon Geometry
+// Realistic Curvy 3D River Ribbon with Three.js Water Library
 function createCurvyRiverMesh() {
     const numSteps = 128;
     const riverPoints = riverSpline.getPoints(numSteps);
@@ -2417,15 +2314,20 @@ function createCurvyRiverMesh() {
     riverGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     riverGeo.setIndex(indices);
 
-    const riverMat = createDynamicWaterMaterial({
-        isCircular: false,
-        opacity: 0.85,
-        waveHeight: 0.30
+    const riverWater = new Water(riverGeo, {
+        textureWidth: 512,
+        textureHeight: 512,
+        waterNormals: waterNormals,
+        sunDirection: new THREE.Vector3(0.55, 0.75, 0.35).normalize(),
+        sunColor: 0xffffff,
+        waterColor: 0x005577,
+        distortionScale: 3.8,
+        fog: scene.fog !== undefined,
+        alpha: 0.88
     });
 
-    const riverMesh = new THREE.Mesh(riverGeo, riverMat);
-    scene.add(riverMesh);
-    waterMeshes.push({ mesh: riverMesh, baseLevel: 0.0, x: 40 });
+    scene.add(riverWater);
+    waterInstances.push(riverWater);
 }
 createCurvyRiverMesh();
 
@@ -5063,15 +4965,12 @@ function animate() {
 
     }
 
-    // High-Performance Dynamic 3D Wave Water Simulation
+    // High-Performance Three.js Water Library Simulation
     const animTime = clock.getElapsedTime();
-    for (const mat of waterMaterials) {
-        if (mat.uniforms && mat.uniforms.uTime) {
-            mat.uniforms.uTime.value = animTime;
+    for (const water of waterInstances) {
+        if (water.material && water.material.uniforms && water.material.uniforms['time']) {
+            water.material.uniforms['time'].value = animTime * 0.5;
         }
-    }
-    for (const w of waterMeshes) {
-        w.mesh.position.y = w.baseLevel + Math.sin(animTime * 1.5 + (w.x || 0) * 0.04) * 0.02;
     }
 
     uiManager.updateDamageFlash(delta);
