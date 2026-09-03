@@ -25,7 +25,9 @@ export const DIFFICULTY_LEVELS = {
         carSpawnInterval: 30,
         carSpeed: 12,
         carDamage: 20,
-        medkitDropChance: 0.65
+        medkitDropChance: 0.65,
+        scalingBase: 1.30,
+        tierMultiplier: 0.80
     },
     MEDIUM: {
         id: 'MEDIUM',
@@ -49,7 +51,9 @@ export const DIFFICULTY_LEVELS = {
         carSpawnInterval: 20,
         carSpeed: 18,
         carDamage: 35,
-        medkitDropChance: 0.45
+        medkitDropChance: 0.45,
+        scalingBase: 1.50, // 1.5x scale every 7 rounds for Survivor baseline
+        tierMultiplier: 1.00
     },
     HARD: {
         id: 'HARD',
@@ -73,7 +77,9 @@ export const DIFFICULTY_LEVELS = {
         carSpawnInterval: 14,
         carSpeed: 25,
         carDamage: 55,
-        medkitDropChance: 0.28
+        medkitDropChance: 0.28,
+        scalingBase: 1.68,
+        tierMultiplier: 1.30
     },
     NIGHTMARE: {
         id: 'NIGHTMARE',
@@ -97,7 +103,9 @@ export const DIFFICULTY_LEVELS = {
         carSpawnInterval: 9,
         carSpeed: 32,
         carDamage: 75,
-        medkitDropChance: 0.15
+        medkitDropChance: 0.15,
+        scalingBase: 1.88,
+        tierMultiplier: 1.65
     }
 };
 
@@ -112,4 +120,76 @@ export function setDifficulty(difficultyKey) {
 
 export function getDifficulty() {
     return currentDifficulty;
+}
+
+/**
+ * Calculates progressive wave scaling for enemy counts and attributes.
+ * Baseline: 1.5x scale every 7 rounds for SURVIVOR (Medium).
+ * Difficulty multipliers dynamically tune growth rate and base numbers.
+ *
+ * @param {number} wave Current wave number (1-based)
+ * @param {object} difficulty Difficulty configuration object
+ * @returns {object} Scaled attributes for normal enemies and boss encounters
+ */
+export function getWaveEnemyScaling(wave = 1, difficulty = currentDifficulty) {
+    const diff = difficulty || currentDifficulty;
+    const baseRate = diff.scalingBase || 1.50;
+    const tierMult = diff.tierMultiplier || 1.00;
+
+    // Continuous 7-round exponential growth factor: (baseRate)^((w - 1) / 7)
+    const roundStep = Math.max(0, (wave - 1) / 7.0);
+    const waveMultiplier = Math.pow(baseRate, roundStep);
+
+    // Enemy Count Scaling: starts at initialEnemies, compounds per roundStep
+    const countMultiplier = Math.pow(baseRate * 0.92, roundStep);
+    const enemyCount = Math.min(
+        Math.round((diff.initialEnemies * countMultiplier) + (wave - 1) * 0.8),
+        Math.round(diff.maxEnemies * Math.min(waveMultiplier, 3.2))
+    );
+
+    // Enemy Health Scaling
+    const enemyHealth = Math.max(1, Math.round(diff.enemyHealth * waveMultiplier));
+
+    // Enemy Movement Speed Scaling (gradual and capped for playability)
+    const speedMultiplier = Math.min(1.0 + (waveMultiplier - 1.0) * 0.20, 1.65);
+    const enemySpeedMin = diff.enemySpeedMin * speedMultiplier;
+    const enemySpeedMax = diff.enemySpeedMax * speedMultiplier;
+
+    // Enemy Damage Scaling
+    const damageMultiplier = Math.min(1.0 + (waveMultiplier - 1.0) * 0.38, 2.6);
+    const enemyGunDamage = Math.max(1, Math.round(diff.enemyGunDamage * damageMultiplier));
+    const enemyMeleeDamage = Math.max(2, Math.round(diff.enemyMeleeDamage * damageMultiplier));
+
+    // Enemy Shoot Interval Scaling (higher waves fire more aggressively)
+    const intervalDivisor = Math.min(1.0 + (waveMultiplier - 1.0) * 0.22, 2.0);
+    const enemyShootIntervalMin = Math.max(0.45, diff.enemyShootIntervalMin / intervalDivisor);
+    const enemyShootIntervalMax = Math.max(0.90, diff.enemyShootIntervalMax / intervalDivisor);
+
+    // Boss Attributes for Wave 5, 10, 15, 20...
+    const isBossWave = (wave % 5 === 0);
+    const bossLevel = Math.max(1, Math.floor(wave / 5));
+    // Boss scales progressively 1.5x on subsequent boss encounters (Wave 5 = 1x, Wave 10 = 1.5x, Wave 15 = 2.25x)
+    const bossMultiplier = Math.pow(1.5, bossLevel - 1) * tierMult;
+    const bossHealth = Math.round(350 * bossMultiplier);
+    const bossDamage = Math.round((diff.enemyGunDamage * 1.5 + 4) * Math.min(1.0 + (bossLevel - 1) * 0.25, 2.5));
+    const bossSpeed = (diff.enemySpeedMin * 1.1) * Math.min(1.0 + (bossLevel - 1) * 0.08, 1.35);
+
+    return {
+        wave,
+        waveMultiplier,
+        tierMult,
+        enemyCount,
+        enemyHealth,
+        enemySpeedMin,
+        enemySpeedMax,
+        enemyGunDamage,
+        enemyMeleeDamage,
+        enemyShootIntervalMin,
+        enemyShootIntervalMax,
+        isBossWave,
+        bossLevel,
+        bossHealth,
+        bossDamage,
+        bossSpeed
+    };
 }

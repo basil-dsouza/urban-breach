@@ -522,6 +522,20 @@ export class UIManager {
                 </div>
             </div>
 
+            <!-- Top-Center Boss Health Bar HUD -->
+            <div id="hud-boss-container" class="hud-boss-container" style="display:none;">
+                <div class="hud-boss-header">
+                    <span class="hud-boss-icon">💀</span>
+                    <span id="hud-boss-title" class="hud-boss-title">JUGGERNAUT MACHINE GUNNER</span>
+                    <span id="hud-boss-wave-badge" class="hud-boss-badge">WAVE 5 BOSS</span>
+                    <span id="hud-boss-hp-text" class="hud-boss-hp-text">350 / 350 HP</span>
+                </div>
+                <div class="hud-boss-bar-bg">
+                    <div id="hud-boss-bar-fill" class="hud-boss-bar-fill" style="width: 100%;"></div>
+                    <div id="hud-boss-bar-pulse" class="hud-boss-bar-pulse"></div>
+                </div>
+            </div>
+
             <!-- Stealth, Ladder, Crouch & Oxygen prompts -->
             <div id="hud-stealth-prompt" class="hud-stealth-prompt" style="display:none;">
                 🌿 <span>STEALTH</span> HIDDEN IN FOLIAGE
@@ -1482,6 +1496,66 @@ export class UIManager {
         if (currentOpacity > 0.01) {
             const nextOpacity = Math.max(0, currentOpacity - delta * 4.5);
             this.damageFlash.style.background = `rgba(255, 0, 0, ${nextOpacity})`;
+        }
+    }
+
+    showBossHP(bossName = 'JUGGERNAUT MACHINE GUNNER', currentHp = 350, maxHp = 350, wave = 5) {
+        const bossContainer = document.getElementById('hud-boss-container');
+        const titleEl = document.getElementById('hud-boss-title');
+        const badgeEl = document.getElementById('hud-boss-wave-badge');
+        const textEl = document.getElementById('hud-boss-hp-text');
+        const fillEl = document.getElementById('hud-boss-bar-fill');
+
+        if (titleEl) titleEl.textContent = bossName;
+        if (badgeEl) badgeEl.textContent = `WAVE ${wave} BOSS`;
+        if (textEl) textEl.textContent = `${Math.max(0, Math.round(currentHp))} / ${Math.round(maxHp)} HP`;
+        if (fillEl) {
+            const pct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
+            fillEl.style.width = `${pct}%`;
+            fillEl.style.background = 'linear-gradient(90deg, #ff1744, #ff5252, #ffb142)';
+        }
+        if (bossContainer) {
+            bossContainer.style.display = 'flex';
+            bossContainer.classList.remove('boss-defeated');
+        }
+    }
+
+    updateBossHP(currentHp, maxHp) {
+        const bossContainer = document.getElementById('hud-boss-container');
+        const textEl = document.getElementById('hud-boss-hp-text');
+        const fillEl = document.getElementById('hud-boss-bar-fill');
+
+        if (bossContainer && bossContainer.style.display !== 'none') {
+            const pct = Math.max(0, Math.min(100, (currentHp / maxHp) * 100));
+            if (textEl) textEl.textContent = `${Math.max(0, Math.round(currentHp))} / ${Math.round(maxHp)} HP`;
+            if (fillEl) fillEl.style.width = `${pct}%`;
+
+            if (currentHp <= 0) {
+                this.hideBossHP(true);
+            }
+        }
+    }
+
+    hideBossHP(isVictory = false) {
+        const bossContainer = document.getElementById('hud-boss-container');
+        const textEl = document.getElementById('hud-boss-hp-text');
+        const fillEl = document.getElementById('hud-boss-bar-fill');
+
+        if (bossContainer) {
+            if (isVictory) {
+                if (textEl) textEl.textContent = 'BOSS DEFEATED!';
+                if (fillEl) {
+                    fillEl.style.width = '0%';
+                    fillEl.style.background = '#2ed573';
+                }
+                bossContainer.classList.add('boss-defeated');
+                setTimeout(() => {
+                    bossContainer.style.display = 'none';
+                    bossContainer.classList.remove('boss-defeated');
+                }, 2400);
+            } else {
+                bossContainer.style.display = 'none';
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Water } from 'three/examples/jsm/objects/Water.js';
-import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from './src/difficulty.js';
+import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty, getWaveEnemyScaling } from './src/difficulty.js';
 import { SpreadSystem } from './src/spread.js';
 import { GrenadePhysics } from './src/grenades.js';
 import { EnemyManager } from './src/enemies.js';
@@ -2691,27 +2691,56 @@ window.vehicleManagerGlobal = vehicleManager;
 window.damagePlayerLocal = (amount, source) => {
     damagePlayer(amount, source);
 };
-window.damageEnemyLocal = (enemyId, damage) => {
-    const enemy = enemyManager.enemies.find(e => e.userData.id === enemyId);
-    if (enemy) {
-        enemy.userData.health -= damage;
-        soundEngine.playEnemyHit();
-        createHitEffect(enemy.position);
 
-        if (enemy.userData.health <= 0) {
+function handleEnemyDamage(enemy, damage) {
+    if (!enemy) return;
+    enemy.userData.health -= damage;
+    enemy.userData.alertTimer = 15.0;
+    if (typeof enemyManager !== 'undefined' && enemyManager && enemyManager.alertEnemiesNear) {
+        enemyManager.alertEnemiesNear(enemy.position, 35);
+    }
+
+    if (enemy.userData.isBoss) {
+        uiManager.updateBossHP(enemy.userData.health, enemy.userData.maxHealth);
+    }
+
+    if (enemy.userData.health <= 0) {
+        if (enemy.userData.isBoss) {
+            kills += 5;
+            uiManager.hideBossHP(true);
+            soundEngine.playBossDefeated();
+            if (multiplayerManager?.chatPanel) {
+                multiplayerManager.addSystemMessage(`🏆 VICTORY: ${enemy.userData.bossName} DEFEATED! (+5 KILLS)`);
+            }
+            // Drop 3x High-Tier Medkits
+            for (let m = 0; m < 3; m++) {
+                const ox = (m - 1) * 1.6;
+                const oz = (m === 1 ? 1.0 : -0.6);
+                enemyManager.createMedkitMesh(enemy.position.x + ox, enemy.position.y, enemy.position.z + oz);
+            }
+        } else {
             const diff = getDifficulty();
             if (Math.random() < (diff.medkitDropChance || 0.4)) {
                 enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
             }
-
-            scene.remove(enemy);
-            const idx = enemyManager.enemies.indexOf(enemy);
-            if (idx !== -1) {
-                enemyManager.enemies.splice(idx, 1);
-            }
             kills++;
-            uiManager.updateHUD(getHUDState());
         }
+
+        scene.remove(enemy);
+        const idx = enemyManager.enemies.indexOf(enemy);
+        if (idx !== -1) {
+            enemyManager.enemies.splice(idx, 1);
+        }
+        uiManager.updateHUD(getHUDState());
+    }
+}
+
+window.damageEnemyLocal = (enemyId, damage) => {
+    const enemy = enemyManager.enemies.find(e => e.userData.id === enemyId);
+    if (enemy) {
+        soundEngine.playEnemyHit();
+        createHitEffect(enemy.position);
+        handleEnemyDamage(enemy, damage);
     }
 };
 window.damageVehicleLocal = (vehicleId, damage) => {
@@ -3951,24 +3980,7 @@ function shoot() {
                 damage: dmg
             });
         } else {
-            enemy.userData.health -= dmg;
-            enemy.userData.alertTimer = 12.0;
-            if (typeof enemyManager !== 'undefined' && enemyManager && enemyManager.alertEnemiesNear) {
-                enemyManager.alertEnemiesNear(enemy.position, 35);
-            }
-            if (enemy.userData.health <= 0) {
-                const diff = getDifficulty();
-                if (Math.random() < (diff.medkitDropChance || 0.4)) {
-                    enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
-                }
-                scene.remove(enemy);
-                const idx = enemyManager.enemies.indexOf(enemy);
-                if (idx !== -1) {
-                    enemyManager.enemies.splice(idx, 1);
-                }
-                kills++;
-                uiManager.updateHUD(getHUDState());
-            }
+            handleEnemyDamage(enemy, dmg);
         }
     }
 
@@ -4093,22 +4105,12 @@ function explodeGrenadeAt(grenadeData) {
 
     for (let i = enemyManager.enemies.length - 1; i >= 0; i--) {
         const enemy = enemyManager.enemies[i];
+        if (!enemy) continue;
         const dist = enemy.position.distanceTo(pos);
         const dmg = grenadePhysics.calculateDamage(dist);
         if (dmg > 0) {
-            enemy.userData.health -= dmg;
             createHitEffect(enemy.position);
-
-            if (enemy.userData.health <= 0) {
-                const diff = getDifficulty();
-                if (Math.random() < (diff.medkitDropChance || 0.4)) {
-                    enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
-                }
-
-                scene.remove(enemy);
-                enemyManager.enemies.splice(i, 1);
-                kills++;
-            }
+            handleEnemyDamage(enemy, dmg);
         }
     }
 
@@ -4537,18 +4539,41 @@ function damagePlayer(amount, source = 'generic') {
 // 22. Wave & Spawning Management
 function spawnWave(difficulty) {
     const diff = difficulty || getDifficulty();
-    const wantedEnemies = Math.min(diff.initialEnemies + (wave - 1) * 2, diff.maxEnemies);
+    const scaling = getWaveEnemyScaling(wave, diff);
+    const wantedEnemies = scaling.enemyCount;
 
+    // 1. Machine Gunner Boss Spawn (Every 5 rounds: Wave 5, 10, 15, 20...)
+    if (scaling.isBossWave) {
+        const existingBoss = enemyManager.enemies.find(e => e.userData.isBoss);
+        if (!existingBoss) {
+            const boss = enemyManager.spawnBossGunner(
+                camera.position,
+                diff,
+                getSimpleGround,
+                wave,
+                scaling
+            );
+            uiManager.showBossHP(boss.userData.bossName, boss.userData.health, boss.userData.maxHealth, wave);
+            soundEngine.playBossAlarm();
+            if (multiplayerManager?.chatPanel) {
+                multiplayerManager.addSystemMessage(`⚠️ ALERT: ${boss.userData.bossName} SPAWNED ON WAVE ${wave}!`);
+            }
+        }
+    }
+
+    // 2. Regular Enemies with Progressive Wave & Difficulty Scaling
     while (enemyManager.enemies.length < wantedEnemies) {
         const isKnife = Math.random() < diff.knifeEnemyRatio;
         enemyManager.spawnEnemy(
             camera.position,
             isKnife ? 'knife' : 'gunner',
             diff,
-            getSimpleGround
+            getSimpleGround,
+            scaling
         );
     }
 
+    // 3. Pursuit Vehicles
     if (wave >= (diff.carSpawnWave || 1)) {
         if (vehicleManager.vehicles.length < Math.min(Math.floor(wave / 2) + 1, 2)) {
             vehicleManager.spawnVehicle(camera.position, diff, getSimpleGround);

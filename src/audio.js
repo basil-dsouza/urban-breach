@@ -948,6 +948,107 @@ class SoundEngine {
     }
 
     /**
+     * Boss Encounter Klaxon / Siren Warning
+     */
+    playBossAlarm() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, t);
+        osc.frequency.linearRampToValueAtTime(680, t + 0.35);
+        osc.frequency.linearRampToValueAtTime(320, t + 0.70);
+        osc.frequency.linearRampToValueAtTime(720, t + 1.10);
+
+        gain.gain.setValueAtTime(0.38 * this.masterVolume, t);
+        gain.gain.linearRampToValueAtTime(0.42 * this.masterVolume, t + 0.7);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 1.45);
+    }
+
+    /**
+     * Heavy Juggernaut Machine Gun Rapid Suppressing Fire
+     */
+    playBossMachineGun() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        // Heavy low-end thump
+        const subOsc = this.ctx.createOscillator();
+        const subGain = this.ctx.createGain();
+        subOsc.type = 'triangle';
+        subOsc.frequency.setValueAtTime(95, t);
+        subOsc.frequency.exponentialRampToValueAtTime(35, t + 0.12);
+        subGain.gain.setValueAtTime(0.55 * this.masterVolume, t);
+        subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+        subOsc.connect(subGain);
+        subGain.connect(this.ctx.destination);
+        subOsc.start(t);
+        subOsc.stop(t + 0.15);
+
+        // Explosive machine gun burst crack
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createNoiseBuffer(0.18);
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1400, t);
+        filter.Q.setValueAtTime(2.2, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.50 * this.masterVolume, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        noise.start(t);
+        noise.stop(t + 0.18);
+    }
+
+    /**
+     * Boss Defeated Victory Stinger
+     */
+    playBossDefeated() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C Major epic fanfare
+        notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const startTime = t + idx * 0.08;
+
+            osc.type = idx === notes.length - 1 ? 'triangle' : 'sine';
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            const dur = idx === notes.length - 1 ? 0.85 : 0.25;
+            gain.gain.setValueAtTime(0.35 * this.masterVolume, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + dur + 0.05);
+        });
+    }
+
+    /**
      * Weapon reload sounds: Mag Out click
      */    
     playReloadMagOut() {

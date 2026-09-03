@@ -445,6 +445,87 @@ export class EnemyManager {
         return knife;
     }
 
+    createMinigunMesh() {
+        const minigun = new THREE.Group();
+        const darkSteelMat = new THREE.MeshStandardMaterial({ color: 0x181a1c, metalness: 0.85, roughness: 0.35 });
+        const gunMetalMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, metalness: 0.90, roughness: 0.25 });
+        const hazardMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, metalness: 0.3, roughness: 0.6 });
+
+        // 1. Main Heavy Receiver Housing
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.46), darkSteelMat);
+        receiver.castShadow = true;
+        minigun.add(receiver);
+
+        // 2. Motor Housing / Battery Drive
+        const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.22, 12), gunMetalMat);
+        motor.rotation.x = Math.PI / 2;
+        motor.position.set(0, 0.08, -0.15);
+        minigun.add(motor);
+
+        // 3. Ammo Drum / Box Container Attached
+        const ammoDrum = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.22, 14), darkSteelMat);
+        ammoDrum.position.set(-0.16, -0.12, 0.02);
+        minigun.add(ammoDrum);
+
+        const drumBand = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.04, 14), hazardMat);
+        drumBand.position.set(-0.16, -0.12, 0.02);
+        minigun.add(drumBand);
+
+        // 4. Rotating 4-Barrel Gatling Assembly
+        const barrelGroup = new THREE.Group();
+        barrelGroup.position.set(0, 0, 0.23);
+        minigun.add(barrelGroup);
+        minigun.userData.barrelGroup = barrelGroup;
+
+        // Central rotor shaft
+        const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.65, 8), darkSteelMat);
+        rotor.rotation.x = Math.PI / 2;
+        rotor.position.set(0, 0, 0.32);
+        barrelGroup.add(rotor);
+
+        // 4 Circular Barrels around perimeter
+        const barrelRadius = 0.065;
+        for (let i = 0; i < 4; i++) {
+            const angle = (i / 4) * Math.PI * 2;
+            const bx = Math.cos(angle) * barrelRadius;
+            const by = Math.sin(angle) * barrelRadius;
+
+            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.72, 8), gunMetalMat);
+            barrel.rotation.x = Math.PI / 2;
+            barrel.position.set(bx, by, 0.36);
+            barrel.castShadow = true;
+            barrelGroup.add(barrel);
+        }
+
+        // Barrel stabilization clamp rings
+        for (const zOffset of [0.18, 0.42, 0.68]) {
+            const clamp = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.035, 12), darkSteelMat);
+            clamp.rotation.x = Math.PI / 2;
+            clamp.position.set(0, 0, zOffset);
+            barrelGroup.add(clamp);
+        }
+
+        // Heavy Muzzle Brake Flash Point
+        const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.06, 12), darkSteelMat);
+        muzzle.rotation.x = Math.PI / 2;
+        muzzle.position.set(0, 0, 0.74);
+        barrelGroup.add(muzzle);
+
+        // Muzzle flash point
+        const flashMat = new THREE.MeshBasicMaterial({ color: 0xffeaa7, transparent: true, opacity: 0 });
+        const flash = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), flashMat);
+        flash.position.set(0, 0, 0.85);
+        barrelGroup.add(flash);
+        minigun.userData.muzzleFlash = flash;
+
+        // Top tactical carry handle
+        const topHandle = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.28), darkSteelMat);
+        topHandle.position.set(0, 0.20, -0.05);
+        minigun.add(topHandle);
+
+        return minigun;
+    }
+
     createMedkitMesh(x, y, z) {
         const medkit = new THREE.Group();
         medkit.position.set(x, y + 0.35, z);
@@ -473,9 +554,265 @@ export class EnemyManager {
     }
 
     /**
+     * Creates an imposing 1.4x scale Heavy Juggernaut Machine Gunner Boss with titanium armor & minigun
+     */
+    createBossGunnerMesh(difficulty = {}, bossStats = {}) {
+        const boss = new THREE.Group();
+        boss.scale.set(1.38, 1.38, 1.38); // Imposing boss stature
+        boss.userData.archetype = 'boss_gunner';
+        boss.userData.isBoss = true;
+        boss.userData.bossName = 'JUGGERNAUT MACHINE GUNNER';
+
+        const titanArmorMat = new THREE.MeshStandardMaterial({ color: 0x1a1d20, metalness: 0.85, roughness: 0.32 });
+        const underSuitMat = new THREE.MeshStandardMaterial({ color: 0x24282c, roughness: 0.85 });
+        const hazardMat = new THREE.MeshStandardMaterial({ color: 0xf39c12, metalness: 0.4, roughness: 0.5 });
+        const coreGlowMat = new THREE.MeshStandardMaterial({ color: 0xff1744, emissive: 0xff1744, emissiveIntensity: 1.2 });
+        const visorGlowMat = new THREE.MeshStandardMaterial({ color: 0xff3b30, emissive: 0xff3b30, emissiveIntensity: 1.5 });
+        const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x111315, metalness: 0.9, roughness: 0.25 });
+
+        // 1. Pelvis Root
+        const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.28, 0.42), titanArmorMat);
+        pelvis.position.y = 1.05;
+        pelvis.castShadow = true;
+        boss.add(pelvis);
+        boss.userData.pelvis = pelvis;
+
+        // 2. Torso Group
+        const torsoGroup = new THREE.Group();
+        torsoGroup.position.set(0, 0.14, 0);
+        pelvis.add(torsoGroup);
+        boss.userData.torsoGroup = torsoGroup;
+
+        const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.38, 0.58, 6, 10), underSuitMat);
+        torso.position.y = 0.38;
+        torso.castShadow = true;
+        torsoGroup.add(torso);
+
+        // Heavy Reinforced Titanium Chestplate
+        const chestPlate = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.68, 0.56), titanArmorMat);
+        chestPlate.position.set(0, 0.40, 0.02);
+        chestPlate.castShadow = true;
+        torsoGroup.add(chestPlate);
+
+        // Glowing Cybernetic Core Reactor on chest
+        const reactor = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 16), coreGlowMat);
+        reactor.rotation.x = Math.PI / 2;
+        reactor.position.set(0, 0.46, 0.31);
+        torsoGroup.add(reactor);
+
+        // Heavy Ammo Backpack Drum on back
+        const ammoBackpack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.65, 0.34), darkMetalMat);
+        ammoBackpack.position.set(0, 0.42, -0.38);
+        ammoBackpack.castShadow = true;
+        torsoGroup.add(ammoBackpack);
+
+        // Flexible Ammo Feeder Belt connecting backpack to weapon
+        for (let i = 0; i < 5; i++) {
+            const t = i / 4;
+            const link = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.07, 0.09), hazardMat);
+            const lx = -0.22 - t * 0.08;
+            const ly = 0.30 - t * 0.15;
+            const lz = -0.25 + t * 0.50;
+            link.position.set(lx, ly, lz);
+            torsoGroup.add(link);
+        }
+
+        // 3. Neck & Juggernaut Heavy Ballistic Helmet
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.16, 0.18, 8), darkMetalMat);
+        neck.position.y = 0.78;
+        torsoGroup.add(neck);
+
+        const headGroup = new THREE.Group();
+        headGroup.position.set(0, 1.02, 0);
+        torsoGroup.add(headGroup);
+        boss.userData.head = headGroup;
+
+        // Armored Helmet Shell
+        const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 14), titanArmorMat);
+        helmet.scale.set(0.96, 1.08, 1.02);
+        helmet.castShadow = true;
+        headGroup.add(helmet);
+
+        // Reinforced Jaw Guard
+        const jawGuard = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, 0.42), darkMetalMat);
+        jawGuard.position.set(0, -0.10, 0.12);
+        headGroup.add(jawGuard);
+
+        // Glowing Red Ocular Visor
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.08, 0.06), visorGlowMat);
+        visor.position.set(0, 0.06, 0.33);
+        headGroup.add(visor);
+
+        // 4. Arms & Heavy Shoulder Pauldrons
+        const armLGroup = new THREE.Group();
+        armLGroup.position.set(-0.48, 0.65, 0);
+        torsoGroup.add(armLGroup);
+        boss.userData.armL = armLGroup;
+
+        // Left Heavy Shoulder Pauldron
+        const pauldronL = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.24, 0.32), titanArmorMat);
+        pauldronL.position.set(-0.06, 0.08, 0);
+        pauldronL.castShadow = true;
+        armLGroup.add(pauldronL);
+
+        const bicepL = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.38, 4, 6), underSuitMat);
+        bicepL.position.set(0, -0.22, 0);
+        armLGroup.add(bicepL);
+
+        const foreArmL = new THREE.Group();
+        foreArmL.position.set(0, -0.38, 0);
+        armLGroup.add(foreArmL);
+        boss.userData.foreArmL = foreArmL;
+
+        const armGuardL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.22), darkMetalMat);
+        armGuardL.position.set(0, -0.16, 0);
+        foreArmL.add(armGuardL);
+
+        const handL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), darkMetalMat);
+        handL.position.set(0, -0.38, 0);
+        foreArmL.add(handL);
+
+        const armRGroup = new THREE.Group();
+        armRGroup.position.set(0.48, 0.65, 0);
+        torsoGroup.add(armRGroup);
+        boss.userData.armR = armRGroup;
+
+        // Right Heavy Shoulder Pauldron
+        const pauldronR = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.24, 0.32), titanArmorMat);
+        pauldronR.position.set(0.06, 0.08, 0);
+        pauldronR.castShadow = true;
+        armRGroup.add(pauldronR);
+
+        const bicepR = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.38, 4, 6), underSuitMat);
+        bicepR.position.set(0, -0.22, 0);
+        armRGroup.add(bicepR);
+
+        const foreArmR = new THREE.Group();
+        foreArmR.position.set(0, -0.38, 0);
+        armRGroup.add(foreArmR);
+        boss.userData.foreArmR = foreArmR;
+
+        const armGuardR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.32, 0.22), darkMetalMat);
+        armGuardR.position.set(0, -0.16, 0);
+        foreArmR.add(armGuardR);
+
+        // 5. Heavy Armored Legs & Boots
+        const legLThigh = new THREE.Group();
+        legLThigh.position.set(-0.24, 0.0, 0);
+        pelvis.add(legLThigh);
+        boss.userData.legLThigh = legLThigh;
+
+        const thighMeshL = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.44, 4, 6), underSuitMat);
+        thighMeshL.position.set(0, -0.24, 0);
+        thighMeshL.castShadow = true;
+        legLThigh.add(thighMeshL);
+
+        const legLShin = new THREE.Group();
+        legLShin.position.set(0, -0.46, 0);
+        legLThigh.add(legLShin);
+        boss.userData.legLShin = legLShin;
+
+        const shinGuardL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.38, 0.24), titanArmorMat);
+        shinGuardL.position.set(0, -0.20, 0.02);
+        shinGuardL.castShadow = true;
+        legLShin.add(shinGuardL);
+
+        const bootL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, 0.48), darkMetalMat);
+        bootL.position.set(0, -0.44, 0.10);
+        bootL.castShadow = true;
+        legLShin.add(bootL);
+
+        const legRThigh = new THREE.Group();
+        legRThigh.position.set(0.24, 0.0, 0);
+        pelvis.add(legRThigh);
+        boss.userData.legRThigh = legRThigh;
+
+        const thighMeshR = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.44, 4, 6), underSuitMat);
+        thighMeshR.position.set(0, -0.24, 0);
+        thighMeshR.castShadow = true;
+        legRThigh.add(thighMeshR);
+
+        const legRShin = new THREE.Group();
+        legRShin.position.set(0, -0.46, 0);
+        legRThigh.add(legRShin);
+        boss.userData.legRShin = legRShin;
+
+        const shinGuardR = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.38, 0.24), titanArmorMat);
+        shinGuardR.position.set(0, -0.20, 0.02);
+        shinGuardR.castShadow = true;
+        legRShin.add(shinGuardR);
+
+        const bootR = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.16, 0.48), darkMetalMat);
+        bootR.position.set(0, -0.44, 0.10);
+        bootR.castShadow = true;
+        legRShin.add(bootR);
+
+        // 6. Heavy Rotary Gatling Minigun
+        const minigun = this.createMinigunMesh();
+        minigun.position.set(0.06, -0.28, 0.52);
+        minigun.rotation.set(0, 0, 0);
+        armRGroup.add(minigun);
+        boss.userData.minigun = minigun;
+        boss.userData.rifle = minigun; // Compatible with bullet muzzle calculations
+
+        // Right Arm holds weapon, Left Arm grips top stabilization handle
+        armRGroup.rotation.set(-0.20, -0.05, -0.05);
+        armLGroup.rotation.set(-0.40, 0.45, 0.15);
+        foreArmL.position.set(0, -0.32, 0.20);
+        foreArmL.rotation.set(-0.45, 0.25, 0);
+        handL.position.set(0.08, -0.42, 0.48);
+
+        // Boss Combat Stats & Suppressing Fire State
+        const hp = bossStats.bossHealth || 350;
+        boss.userData.health = hp;
+        boss.userData.maxHealth = hp;
+        boss.userData.speed = bossStats.bossSpeed || 2.2;
+        boss.userData.damage = bossStats.bossDamage || 8;
+        boss.userData.accuracy = 0.70;
+        boss.userData.shootInterval = 1.35;
+        boss.userData.shootTimer = 1.2;
+        boss.userData.burstCount = 0;
+        boss.userData.burstTimer = 0;
+        boss.userData.attackCooldown = 0;
+        boss.userData.attackAnim = 0;
+        boss.userData.alertTimer = 9999; // Boss is always actively alerted & tracking
+        boss.userData.time = Math.random() * 10;
+
+        boss.traverse(child => {
+            if (child.isMesh) {
+                child.userData.enemy = boss;
+            }
+        });
+
+        return boss;
+    }
+
+    spawnBossGunner(playerPos, difficulty = {}, getGroundHeight, wave = 5, bossStats = null) {
+        const boss = this.createBossGunnerMesh(difficulty, bossStats || {});
+        const spawnDistance = THREE.MathUtils.randFloat(35, 50);
+        const spawnAngle = Math.random() * Math.PI * 2;
+
+        const sx = playerPos.x + Math.sin(spawnAngle) * spawnDistance;
+        const sz = playerPos.z + Math.cos(spawnAngle) * spawnDistance;
+
+        let sy = 0;
+        if (typeof getGroundHeight === 'function') {
+            sy = getGroundHeight(sx, sz);
+        }
+
+        boss.position.set(sx, sy, sz);
+        this.scene.add(boss);
+        this.enemies.push(boss);
+        return boss;
+    }
+
+    /**
      * Creates an articulated enemy model with realistic facial features and two-handed weapon grip
      */
-    createEnemyMesh(archetype = 'gunner', difficulty = {}) {
+    createEnemyMesh(archetype = 'gunner', difficulty = {}, scaledStats = null) {
+        if (archetype === 'boss_gunner') {
+            return this.createBossGunnerMesh(difficulty, scaledStats || {});
+        }
         const enemy = new THREE.Group();
         enemy.userData.archetype = archetype;
 
@@ -770,13 +1107,20 @@ export class EnemyManager {
         }
 
         // Stats & Animation State
-        const diff = difficulty || { enemyHealth: 3, enemySpeed: 3.5 };
-        enemy.userData.health = diff.enemyHealth || 3;
-        enemy.userData.maxHealth = diff.enemyHealth || 3;
-        enemy.userData.speed = (diff.enemySpeed || 3.5) * (isGunner ? 1.0 : 1.35);
-        enemy.userData.damage = isGunner ? (diff.enemyGunDamage || 5) : (diff.enemyMeleeDamage || 12);
+        const diff = difficulty || { enemyHealth: 3, enemySpeedMin: 2.0, enemyGunDamage: 5, enemyMeleeDamage: 10 };
+        const baseHealth = scaledStats ? (scaledStats.enemyHealth || diff.enemyHealth || 3) : (diff.enemyHealth || 3);
+        const baseSpeed = scaledStats ? (scaledStats.enemySpeedMin || diff.enemySpeedMin || 2.0) : (diff.enemySpeedMin || diff.enemySpeed || 2.0);
+        const baseDamage = isGunner
+            ? (scaledStats ? (scaledStats.enemyGunDamage || diff.enemyGunDamage || 5) : (diff.enemyGunDamage || 5))
+            : (scaledStats ? (scaledStats.enemyMeleeDamage || diff.enemyMeleeDamage || 10) : (diff.enemyMeleeDamage || 10));
+        const shootInterval = scaledStats ? (scaledStats.enemyShootIntervalMin || diff.enemyShootIntervalMin || 1.8) : (diff.enemyShootIntervalMin || diff.enemyShootInterval || 1.8);
+
+        enemy.userData.health = baseHealth;
+        enemy.userData.maxHealth = baseHealth;
+        enemy.userData.speed = baseSpeed * (isGunner ? 1.0 : 1.35);
+        enemy.userData.damage = baseDamage;
         enemy.userData.accuracy = diff.enemyAccuracy || 0.6;
-        enemy.userData.shootInterval = diff.enemyShootInterval || 1.8;
+        enemy.userData.shootInterval = shootInterval;
         enemy.userData.shootTimer = THREE.MathUtils.randFloat(1.0, 2.5);
         enemy.userData.attackCooldown = 0;
         enemy.userData.attackAnim = 0;
@@ -792,8 +1136,8 @@ export class EnemyManager {
         return enemy;
     }
 
-    spawnEnemy(playerPos, archetype = 'gunner', difficulty, getGroundHeight) {
-        const enemy = this.createEnemyMesh(archetype, difficulty);
+    spawnEnemy(playerPos, archetype = 'gunner', difficulty, getGroundHeight, scaledStats = null) {
+        const enemy = this.createEnemyMesh(archetype, difficulty, scaledStats);
         const spawnDistance = THREE.MathUtils.randFloat(28, 55);
         const spawnAngle = Math.random() * Math.PI * 2;
 
@@ -1099,7 +1443,7 @@ export class EnemyManager {
                 enemy.userData.head.rotation.x = THREE.MathUtils.clamp(-pitchToPlayer, -0.6, 0.6);
             }
 
-            // Gunner Ranged Aim & Two-Handed Hold (Only when not climbing)
+            // Gunner / Boss Gunner Ranged Aim & Weapon Hold (Only when not climbing)
             if (isGunner && !isClimbing) {
                 if (canSeePlayer || isAlerted) {
                     // Right arm aims weapon dead-on at player's chest (pitchToPlayer)
@@ -1109,44 +1453,92 @@ export class EnemyManager {
                     enemy.userData.armL.rotation.y = 0.45;
 
                     enemy.userData.shootTimer -= delta;
-                    if (distToPlayer < 55 && enemy.userData.shootTimer <= 0 && (canSeePlayer || isAlerted)) {
-                        const accuracy = enemy.userData.accuracy || 0.6;
-                        const spreadAmount = (1 - accuracy) * 0.18;
+                    if (distToPlayer < (enemy.userData.isBoss ? 75 : 55) && enemy.userData.shootTimer <= 0 && (canSeePlayer || isAlerted)) {
+                        if (enemy.userData.isBoss) {
+                            // Boss Machine Gun Suppressing Fire Burst (8 rapid shots per burst cycle)
+                            enemy.userData.burstTimer = (enemy.userData.burstTimer || 0) - delta;
+                            if (enemy.userData.burstTimer <= 0) {
+                                const accuracy = enemy.userData.accuracy || 0.70;
+                                const spreadAmount = (1 - accuracy) * 0.22;
 
-                        const muzzleWorldPos = new THREE.Vector3();
-                        if (enemy.userData.rifle?.userData?.muzzleFlash) {
-                            enemy.userData.rifle.userData.muzzleFlash.getWorldPosition(muzzleWorldPos);
-                            enemy.userData.rifle.userData.muzzleFlash.material.opacity = 1;
-                            setTimeout(() => {
-                                if (enemy.userData.rifle?.userData?.muzzleFlash?.material) {
-                                    enemy.userData.rifle.userData.muzzleFlash.material.opacity = 0;
+                                const muzzleWorldPos = new THREE.Vector3();
+                                if (enemy.userData.rifle?.userData?.muzzleFlash) {
+                                    enemy.userData.rifle.userData.muzzleFlash.getWorldPosition(muzzleWorldPos);
+                                    enemy.userData.rifle.userData.muzzleFlash.material.opacity = 1;
+                                    setTimeout(() => {
+                                        if (enemy.userData.rifle?.userData?.muzzleFlash?.material) {
+                                            enemy.userData.rifle.userData.muzzleFlash.material.opacity = 0;
+                                        }
+                                    }, 40);
+                                } else {
+                                    muzzleWorldPos.copy(enemy.position);
+                                    muzzleWorldPos.y += 1.6;
                                 }
-                            }, 50);
+
+                                const targetDir = playerPos.clone().sub(muzzleWorldPos).normalize();
+                                targetDir.x += (Math.random() - 0.5) * spreadAmount;
+                                targetDir.y += (Math.random() - 0.5) * spreadAmount * 0.5;
+                                targetDir.z += (Math.random() - 0.5) * spreadAmount;
+                                targetDir.normalize();
+
+                                const bullet = this.bulletManager.spawnBullet(muzzleWorldPos, targetDir, 75);
+                                bullet.userData.damage = enemy.userData.damage || 8;
+
+                                // Spin minigun barrel assembly
+                                if (enemy.userData.minigun?.userData?.barrelGroup) {
+                                    enemy.userData.minigun.userData.barrelGroup.rotation.z += 0.85;
+                                }
+
+                                soundEngine.playBossMachineGun();
+
+                                enemy.userData.burstCount = (enemy.userData.burstCount || 0) + 1;
+                                enemy.userData.burstTimer = 0.08; // High-rate burst interval
+
+                                if (enemy.userData.burstCount >= 8) {
+                                    enemy.userData.burstCount = 0;
+                                    enemy.userData.shootTimer = enemy.userData.shootInterval + (Math.random() - 0.5) * 0.3;
+                                }
+                            }
                         } else {
-                            muzzleWorldPos.copy(enemy.position);
-                            muzzleWorldPos.y += 1.4;
+                            // Standard Rifle Single Shot
+                            const accuracy = enemy.userData.accuracy || 0.6;
+                            const spreadAmount = (1 - accuracy) * 0.18;
+
+                            const muzzleWorldPos = new THREE.Vector3();
+                            if (enemy.userData.rifle?.userData?.muzzleFlash) {
+                                enemy.userData.rifle.userData.muzzleFlash.getWorldPosition(muzzleWorldPos);
+                                enemy.userData.rifle.userData.muzzleFlash.material.opacity = 1;
+                                setTimeout(() => {
+                                    if (enemy.userData.rifle?.userData?.muzzleFlash?.material) {
+                                        enemy.userData.rifle.userData.muzzleFlash.material.opacity = 0;
+                                    }
+                                }, 50);
+                            } else {
+                                muzzleWorldPos.copy(enemy.position);
+                                muzzleWorldPos.y += 1.4;
+                            }
+
+                            const targetDir = playerPos.clone().sub(muzzleWorldPos).normalize();
+                            targetDir.x += (Math.random() - 0.5) * spreadAmount;
+                            targetDir.y += (Math.random() - 0.5) * spreadAmount * 0.5;
+                            targetDir.z += (Math.random() - 0.5) * spreadAmount;
+                            targetDir.normalize();
+
+                            const bullet = this.bulletManager.spawnBullet(muzzleWorldPos, targetDir);
+                            bullet.userData.damage = enemy.userData.damage || 5;
+
+                            if (enemy.userData.rifle) {
+                                enemy.userData.rifle.position.z -= 0.07;
+                                setTimeout(() => {
+                                    if (enemy.userData?.rifle) enemy.userData.rifle.position.z += 0.07;
+                                }, 70);
+                            }
+
+                            const pan = Math.sin(Math.atan2(dx, dz));
+                            soundEngine.playEnemyShot(pan);
+
+                            enemy.userData.shootTimer = enemy.userData.shootInterval + (Math.random() - 0.5) * 0.4;
                         }
-
-                        const targetDir = playerPos.clone().sub(muzzleWorldPos).normalize();
-                        targetDir.x += (Math.random() - 0.5) * spreadAmount;
-                        targetDir.y += (Math.random() - 0.5) * spreadAmount * 0.5;
-                        targetDir.z += (Math.random() - 0.5) * spreadAmount;
-                        targetDir.normalize();
-
-                        const bullet = this.bulletManager.spawnBullet(muzzleWorldPos, targetDir);
-                        bullet.userData.damage = enemy.userData.damage || 5;
-
-                        if (enemy.userData.rifle) {
-                            enemy.userData.rifle.position.z -= 0.07;
-                            setTimeout(() => {
-                                if (enemy.userData?.rifle) enemy.userData.rifle.position.z += 0.07;
-                            }, 70);
-                        }
-
-                        const pan = Math.sin(Math.atan2(dx, dz));
-                        soundEngine.playEnemyShot(pan);
-
-                        enemy.userData.shootTimer = enemy.userData.shootInterval + (Math.random() - 0.5) * 0.4;
                     }
                 } else {
                     enemy.userData.armR.rotation.x = THREE.MathUtils.lerp(enemy.userData.armR.rotation.x, -0.15, delta * 6);
