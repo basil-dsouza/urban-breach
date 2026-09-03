@@ -1785,33 +1785,33 @@ function generateMassiveCity() {
     // 4. SMALL TOWN 1: LAKESIDE HAVEN (North Shore Luxury Villa Town)
     // ==========================================
     makeResidentialRoad(0, 185, 8.5, 460, Math.PI / 2);
-    makeResidentialRoad(-170, 212, 7.5, 54, 0);
-    makeResidentialRoad(-65, 212, 7.5, 54, 0);
-    makeResidentialRoad(65, 212, 7.5, 54, 0);
-    makeResidentialRoad(170, 212, 7.5, 54, 0);
+    makeResidentialRoad(-170, 205, 7.5, 40, 0);
+    makeResidentialRoad(-65, 205, 7.5, 40, 0);
+    makeResidentialRoad(65, 205, 7.5, 40, 0);
+    makeResidentialRoad(170, 205, 7.5, 40, 0);
 
     const northVillas = [
         { x: -196, z: 205, rotY: Math.PI / 2, dw: [-170, 205, -188, 205] },
-        { x: -144, z: 218, rotY: -Math.PI / 2, dw: [-170, 218, -152, 218] },
-        { x: -160, z: 242, rotY: Math.PI, dw: [-160, 225, -160, 234] },
+        { x: -144, z: 212, rotY: -Math.PI / 2, dw: [-170, 212, -152, 212] },
+        { x: -160, z: 215, rotY: Math.PI, dw: [-160, 205, -160, 210] },
         { x: -198, z: 160, rotY: 0.15, dw: [-198, 185, -198, 168] },
         { x: -140, z: 162, rotY: -0.15, dw: [-140, 185, -140, 170] },
 
         { x: -92, z: 205, rotY: Math.PI / 2, dw: [-65, 205, -84, 205] },
-        { x: -38, z: 220, rotY: -Math.PI / 2, dw: [-65, 220, -46, 220] },
-        { x: -65, z: 236, rotY: Math.PI, dw: [-65, 222, -65, 228] },
+        { x: -38, z: 212, rotY: -Math.PI / 2, dw: [-65, 212, -46, 212] },
+        { x: -65, z: 215, rotY: Math.PI, dw: [-65, 205, -65, 210] },
         { x: -92, z: 160, rotY: 0.2, dw: [-92, 185, -92, 168] },
         { x: -38, z: 162, rotY: -0.2, dw: [-38, 185, -38, 170] },
 
-        { x: 38, z: 220, rotY: Math.PI / 2, dw: [65, 220, 46, 220] },
+        { x: 38, z: 212, rotY: Math.PI / 2, dw: [65, 212, 46, 212] },
         { x: 92, z: 205, rotY: -Math.PI / 2, dw: [65, 205, 84, 205] },
-        { x: 65, z: 248, rotY: Math.PI, dw: [65, 235, 65, 241] },
+        { x: 65, z: 215, rotY: Math.PI, dw: [65, 205, 65, 210] },
         { x: 38, z: 162, rotY: 0.2, dw: [38, 185, 38, 170] },
         { x: 92, z: 160, rotY: -0.2, dw: [92, 185, 92, 168] },
 
-        { x: 144, z: 218, rotY: Math.PI / 2, dw: [170, 218, 152, 218] },
+        { x: 144, z: 212, rotY: Math.PI / 2, dw: [170, 212, 152, 212] },
         { x: 196, z: 205, rotY: -Math.PI / 2, dw: [170, 205, 188, 205] },
-        { x: 170, z: 246, rotY: Math.PI, dw: [170, 235, 170, 239] },
+        { x: 170, z: 215, rotY: Math.PI, dw: [170, 205, 170, 210] },
         { x: 140, z: 162, rotY: 0.15, dw: [140, 185, 140, 170] },
         { x: 198, z: 160, rotY: -0.15, dw: [198, 185, 198, 168] }
     ];
@@ -1823,16 +1823,16 @@ function generateMassiveCity() {
     // ==========================================
     // 5. SMALL TOWN 2: PINECREST VILLAGE (North-West Alpine Mountain Hamlet)
     // ==========================================
-    makeResidentialRoad(-285, 220, 7.5, 140, 0);
+    makeResidentialRoad(-285, 175, 7.5, 120, 0);
 
     const pinecrestCabins = [
-        { x: -255, z: 180, rotY: 0.3, dw: [-285, 180, -263, 180] },
-        { x: -315, z: 180, rotY: -0.3, dw: [-285, 180, -307, 180] },
-        { x: -255, z: 220, rotY: Math.PI / 2, dw: [-285, 220, -263, 220] },
-        { x: -315, z: 220, rotY: -Math.PI / 2, dw: [-285, 220, -307, 220] },
-        { x: -255, z: 260, rotY: Math.PI - 0.2, dw: [-285, 260, -263, 260] },
-        { x: -315, z: 260, rotY: Math.PI + 0.2, dw: [-285, 260, -307, 260] },
-        { x: -285, z: 305, rotY: Math.PI, dw: [-285, 290, -285, 298] }
+        { x: -255, z: 140, rotY: 0.3, dw: [-285, 140, -263, 140] },
+        { x: -315, z: 140, rotY: -0.3, dw: [-285, 140, -307, 140] },
+        { x: -255, z: 175, rotY: Math.PI / 2, dw: [-285, 175, -263, 175] },
+        { x: -315, z: 175, rotY: -Math.PI / 2, dw: [-285, 175, -307, 175] },
+        { x: -255, z: 210, rotY: Math.PI - 0.2, dw: [-285, 210, -263, 210] },
+        { x: -315, z: 210, rotY: Math.PI + 0.2, dw: [-285, 210, -307, 210] },
+        { x: -285, z: 215, rotY: Math.PI, dw: [-285, 205, -285, 210] }
     ];
     for (const c of pinecrestCabins) {
         createBuilding({ x: c.x, z: c.z, width: 14, depth: 13, height: 6.2, style: 'cabin', rotY: c.rotY });
@@ -1894,15 +1894,15 @@ function generateMassiveCity() {
     // ==========================================
     // 8. SMALL TOWN 5: DELTA CROSS (East River Fishing Hamlet)
     // ==========================================
-    makeResidentialRoad(310, 230, 7.5, 120, 0);
+    makeResidentialRoad(340, 275, 7.5, 140, 0);
 
     const deltaCrossCottages = [
-        { x: 275, z: 190, rotY: 0.2, dw: [310, 190, 283, 190] },
-        { x: 345, z: 190, rotY: -0.2, dw: [310, 190, 337, 190] },
-        { x: 275, z: 230, rotY: Math.PI / 2, dw: [310, 230, 283, 230] },
-        { x: 345, z: 230, rotY: -Math.PI / 2, dw: [310, 230, 337, 230] },
-        { x: 275, z: 270, rotY: Math.PI, dw: [310, 270, 283, 270] },
-        { x: 345, z: 270, rotY: Math.PI, dw: [310, 270, 337, 270] }
+        { x: 315, z: 240, rotY: 0.2, dw: [340, 240, 323, 240] },
+        { x: 365, z: 240, rotY: -0.2, dw: [340, 240, 357, 240] },
+        { x: 315, z: 275, rotY: Math.PI / 2, dw: [340, 275, 323, 275] },
+        { x: 365, z: 275, rotY: -Math.PI / 2, dw: [340, 275, 357, 275] },
+        { x: 315, z: 310, rotY: Math.PI, dw: [340, 310, 323, 310] },
+        { x: 365, z: 310, rotY: Math.PI, dw: [340, 310, 357, 310] }
     ];
     for (const c of deltaCrossCottages) {
         createBuilding({ x: c.x, z: c.z, width: 13, depth: 12, height: 5.8, style: 'cottage', rotY: c.rotY });
@@ -1916,20 +1916,28 @@ generateMassiveCity();
 // ==========================================
 const riverWaypoints = [
     { x: -180, z: 230 }, // Dam spillway outlet
-    { x: -140, z: 245 },
-    { x: -90, z: 260 },  // Passes through Emerald Lake
-    { x: -30, z: 275 },
-    { x: 40, z: 260 },
-    { x: 120, z: 230 },
-    { x: 200, z: 195 },
-    { x: 260, z: 180 }   // Empties into Eastern Delta
+    { x: -145, z: 246 },
+    { x: -110, z: 255 },
+    { x: -90, z: 260 },  // Passes smoothly through Emerald Lake
+    { x: -55, z: 270 },
+    { x: -15, z: 276 },
+    { x: 30, z: 268 },
+    { x: 85, z: 250 },
+    { x: 140, z: 225 },
+    { x: 195, z: 200 },
+    { x: 260, z: 180 }   // Empties into Eastern Delta lagoon
 ];
+
+// Continuous Catmull-Rom Smooth River Spline
+const riverSplinePoints = riverWaypoints.map(p => new THREE.Vector3(p.x, 0, p.z));
+const riverSpline = new THREE.CatmullRomCurve3(riverSplinePoints, false, 'catmullrom', 0.5);
+const riverSplineSamples = riverSpline.getPoints(128);
 
 function getRiverDistance(x, z) {
     let minDist = 9999;
-    for (let i = 0; i < riverWaypoints.length - 1; i++) {
-        const p1 = riverWaypoints[i];
-        const p2 = riverWaypoints[i + 1];
+    for (let i = 0; i < riverSplineSamples.length - 1; i++) {
+        const p1 = riverSplineSamples[i];
+        const p2 = riverSplineSamples[i + 1];
         const dx = p2.x - p1.x;
         const dz = p2.z - p1.z;
         const l2 = dx * dx + dz * dz;
@@ -2163,17 +2171,177 @@ ground.receiveShadow = true;
 scene.add(ground);
 staticRaycastTargets.push(ground);
 
-// Realistic Translucent Water Surfaces for Lakes
+// ==========================================
+// 6c. High-Density Dynamic 3D Wave Water System & Curvy River Ribbon
+// ==========================================
+const waterMaterials = [];
+
+function createDynamicWaterMaterial(options = {}) {
+    const isCircular = options.isCircular ? 1.0 : 0.0;
+    const radius = options.radius || 40.0;
+    const center = options.center || new THREE.Vector2(0, 0);
+    const opacity = options.opacity !== undefined ? options.opacity : 0.84;
+    const waveHeight = options.waveHeight !== undefined ? options.waveHeight : 0.38;
+
+    const uniforms = {
+        uTime: { value: 0.0 },
+        uSunDir: { value: new THREE.Vector3(0.55, 0.75, 0.35).normalize() },
+        uDeepColor: { value: new THREE.Color(0x002447) },
+        uShallowColor: { value: new THREE.Color(0x00b4d8) },
+        uFoamColor: { value: new THREE.Color(0xe0fbfc) },
+        uSkyColor: { value: new THREE.Color(0x38bdf8) },
+        uWaveHeight: { value: waveHeight },
+        uOpacity: { value: opacity },
+        uIsCircular: { value: isCircular },
+        uRadius: { value: radius },
+        uCenter: { value: center }
+    };
+
+    const vertexShader = `
+        uniform float uTime;
+        uniform float uWaveHeight;
+        
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying float vWaveDisp;
+        varying vec2 vUv;
+        
+        vec3 gerstnerWave(vec3 p, vec2 dir, float steepness, float wavelength, float speed, float time, inout vec3 tangent, inout vec3 binormal) {
+            float k = 6.2831853 / wavelength;
+            float c = sqrt(9.8 / k) * speed;
+            vec2 d = normalize(dir);
+            float f = k * (dot(d, p.xz) - c * time);
+            float a = (steepness / k) * uWaveHeight;
+            
+            tangent += vec3(
+                -d.x * d.x * (steepness * sin(f)),
+                d.x * (steepness * cos(f)),
+                -d.x * d.y * (steepness * sin(f))
+            );
+            binormal += vec3(
+                -d.x * d.y * (steepness * sin(f)),
+                d.y * (steepness * cos(f)),
+                -d.y * d.y * (steepness * sin(f))
+            );
+            
+            return vec3(
+                d.x * (a * cos(f)),
+                a * sin(f),
+                d.y * (a * cos(f))
+            );
+        }
+        
+        void main() {
+            vUv = uv;
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            vec3 p = worldPos.xyz;
+            
+            vec3 tangent = vec3(1.0, 0.0, 0.0);
+            vec3 binormal = vec3(0.0, 0.0, 1.0);
+            vec3 disp = vec3(0.0);
+            
+            // 4 Multi-directional Gerstner wave harmonics
+            disp += gerstnerWave(p, vec2(1.0, 0.25), 0.18, 12.0, 1.2, uTime, tangent, binormal);
+            disp += gerstnerWave(p, vec2(-0.35, 0.92), 0.14, 7.5, 1.4, uTime, tangent, binormal);
+            disp += gerstnerWave(p, vec2(0.65, -0.75), 0.10, 4.8, 1.7, uTime, tangent, binormal);
+            disp += gerstnerWave(p, vec2(-0.8, -0.3), 0.06, 2.8, 2.1, uTime, tangent, binormal);
+            
+            // Micro ripples
+            float microRipple = sin(p.x * 2.2 + uTime * 3.0) * cos(p.z * 2.2 + uTime * 2.6) * 0.035 * uWaveHeight;
+            disp.y += microRipple;
+            
+            vWaveDisp = disp.y;
+            vec3 normal = normalize(cross(binormal, tangent));
+            vNormal = normal;
+            
+            worldPos.xyz += disp;
+            vWorldPosition = worldPos.xyz;
+            
+            gl_Position = projectionMatrix * viewMatrix * worldPos;
+        }
+    `;
+
+    const fragmentShader = `
+        uniform vec3 uSunDir;
+        uniform vec3 uDeepColor;
+        uniform vec3 uShallowColor;
+        uniform vec3 uFoamColor;
+        uniform vec3 uSkyColor;
+        uniform float uOpacity;
+        uniform float uIsCircular;
+        uniform float uRadius;
+        uniform vec2 uCenter;
+        uniform vec3 cameraPosition;
+        
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying float vWaveDisp;
+        varying vec2 vUv;
+        
+        void main() {
+            if (uIsCircular > 0.5) {
+                float distFromCenter = length(vWorldPosition.xz - uCenter);
+                if (distFromCenter > uRadius + 0.8) {
+                    discard;
+                }
+            }
+            
+            vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+            vec3 normal = normalize(vNormal);
+            if (!gl_FrontFacing) normal = -normal;
+            
+            // Fresnel View-dependent Reflection
+            float fresnel = pow(1.0 - max(0.0, dot(viewDir, normal)), 3.5);
+            fresnel = clamp(fresnel, 0.0, 1.0);
+            
+            // Blinn-Phong Specular Sunlight Highlight
+            vec3 halfVec = normalize(uSunDir + viewDir);
+            float spec = pow(max(0.0, dot(normal, halfVec)), 72.0);
+            
+            // Depth & Wave Height Color Blend
+            float heightFactor = clamp((vWaveDisp + 0.16) / 0.36, 0.0, 1.0);
+            vec3 waterColor = mix(uDeepColor, uShallowColor, heightFactor * 0.65 + fresnel * 0.35);
+            
+            // Diffuse Sunlight & Specular Glint
+            float diffuse = max(0.0, dot(normal, uSunDir)) * 0.35 + 0.65;
+            vec3 finalColor = waterColor * diffuse + vec3(1.0, 0.98, 0.92) * (spec * 1.1);
+            
+            // Foam Crests on High Wave Peaks
+            float foamFactor = smoothstep(0.12, 0.28, vWaveDisp);
+            finalColor = mix(finalColor, uFoamColor, foamFactor * 0.8);
+            
+            // Sky Reflection Tint
+            finalColor = mix(finalColor, uSkyColor, fresnel * 0.4);
+            
+            gl_FragColor = vec4(finalColor, uOpacity);
+        }
+    `;
+
+    const mat = new THREE.ShaderMaterial({
+        uniforms,
+        vertexShader,
+        fragmentShader,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+
+    waterMaterials.push(mat);
+    return mat;
+}
+
+// Realistic High-Density Dynamic Wave Water Surfaces for Lakes
 for (const lake of waterBodies) {
-    const waterGeo = new THREE.CircleGeometry(lake.radius + 1.5, 36);
+    // High-density 128x128 segment plane geometry
+    const waterGeo = new THREE.PlaneGeometry(lake.radius * 2.2, lake.radius * 2.2, 128, 128);
     waterGeo.rotateX(-Math.PI / 2);
 
-    const waterMat = new THREE.MeshStandardMaterial({
-        color: 0x0984e3,
-        roughness: 0.08,
-        metalness: 0.7,
-        transparent: true,
-        opacity: 0.82
+    const waterMat = createDynamicWaterMaterial({
+        isCircular: true,
+        radius: lake.radius,
+        center: new THREE.Vector2(lake.x, lake.z),
+        opacity: 0.84,
+        waveHeight: lake.name === 'alpine_reservoir' ? 0.32 : 0.36
     });
 
     const waterMesh = new THREE.Mesh(waterGeo, waterMat);
@@ -2183,12 +2351,12 @@ for (const lake of waterBodies) {
     waterMeshes.push({ mesh: waterMesh, baseLevel: lake.waterLevel, x: lake.x });
 
     // Shoreline Foam Rim
-    const foamGeo = new THREE.RingGeometry(lake.radius - 2.5, lake.radius + 1.5, 36);
+    const foamGeo = new THREE.RingGeometry(lake.radius - 2.5, lake.radius + 1.2, 64);
     foamGeo.rotateX(-Math.PI / 2);
     const foamMat = new THREE.MeshBasicMaterial({
         color: 0xdff9fb,
         transparent: true,
-        opacity: 0.40,
+        opacity: 0.45,
         side: THREE.DoubleSide
     });
     const foamMesh = new THREE.Mesh(foamGeo, foamMat);
@@ -2196,30 +2364,70 @@ for (const lake of waterBodies) {
     scene.add(foamMesh);
 }
 
-// Realistic Winding River Water Mesh
-for (let i = 0; i < riverWaypoints.length - 1; i++) {
-    const p1 = riverWaypoints[i];
-    const p2 = riverWaypoints[i + 1];
-    const dx = p2.x - p1.x;
-    const dz = p2.z - p1.z;
-    const segLen = Math.hypot(dx, dz);
-    const segAngle = Math.atan2(dx, dz);
+// Realistic Curvy 3D River Ribbon Geometry
+function createCurvyRiverMesh() {
+    const numSteps = 128;
+    const riverPoints = riverSpline.getPoints(numSteps);
+    const indices = [];
+    const positions = [];
+    const normals = [];
+    const uvs = [];
 
-    const rWaterGeo = new THREE.PlaneGeometry(16, segLen + 2.0);
-    rWaterGeo.rotateX(-Math.PI / 2);
-    const rWaterMat = new THREE.MeshStandardMaterial({
-        color: 0x0984e3,
-        roughness: 0.08,
-        metalness: 0.7,
-        transparent: true,
-        opacity: 0.82
+    for (let i = 0; i <= numSteps; i++) {
+        const t = i / numSteps;
+        const pt = riverPoints[i];
+        const tangent = riverSpline.getTangent(t).normalize();
+        
+        // 2D perpendicular normal in XZ plane
+        const normX = -tangent.z;
+        const normZ = tangent.x;
+        
+        // River width widens naturally from 14m at Alpine spillway to 20m at Eastern Delta
+        const width = 14.0 + t * 6.0;
+        const halfW = width / 2.0;
+
+        const leftX = pt.x - normX * halfW;
+        const leftZ = pt.z - normZ * halfW;
+        const rightX = pt.x + normX * halfW;
+        const rightZ = pt.z + normZ * halfW;
+
+        positions.push(leftX, 0.0, leftZ);
+        positions.push(rightX, 0.0, rightZ);
+
+        normals.push(0, 1, 0);
+        normals.push(0, 1, 0);
+
+        uvs.push(0, t * 16.0);
+        uvs.push(1, t * 16.0);
+
+        if (i < numSteps) {
+            const v0 = i * 2;
+            const v1 = i * 2 + 1;
+            const v2 = (i + 1) * 2;
+            const v3 = (i + 1) * 2 + 1;
+
+            indices.push(v0, v1, v2);
+            indices.push(v1, v3, v2);
+        }
+    }
+
+    const riverGeo = new THREE.BufferGeometry();
+    riverGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    riverGeo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    riverGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    riverGeo.setIndex(indices);
+
+    const riverMat = createDynamicWaterMaterial({
+        isCircular: false,
+        opacity: 0.85,
+        waveHeight: 0.30
     });
-    const rWaterMesh = new THREE.Mesh(rWaterGeo, rWaterMat);
-    rWaterMesh.position.set((p1.x + p2.x) / 2, 0.0, (p1.z + p2.z) / 2);
-    rWaterMesh.rotation.y = segAngle;
-    scene.add(rWaterMesh);
-    waterMeshes.push({ mesh: rWaterMesh, baseLevel: 0.0, x: (p1.x + p2.x) / 2 });
+
+    const riverMesh = new THREE.Mesh(riverGeo, riverMat);
+    scene.add(riverMesh);
+    waterMeshes.push({ mesh: riverMesh, baseLevel: 0.0, x: 40 });
 }
+createCurvyRiverMesh();
 
 // 7. Dense Low-Poly Forest Ecosystems & Wilderness Biomes
 function isValidTreeLocation(x, z) {
@@ -4855,10 +5063,15 @@ function animate() {
 
     }
 
-    // Lake water subtle wave oscillation
+    // High-Performance Dynamic 3D Wave Water Simulation
     const animTime = clock.getElapsedTime();
+    for (const mat of waterMaterials) {
+        if (mat.uniforms && mat.uniforms.uTime) {
+            mat.uniforms.uTime.value = animTime;
+        }
+    }
     for (const w of waterMeshes) {
-        w.mesh.position.y = w.baseLevel + Math.sin(animTime * 1.8 + w.x * 0.05) * 0.03;
+        w.mesh.position.y = w.baseLevel + Math.sin(animTime * 1.5 + (w.x || 0) * 0.04) * 0.02;
     }
 
     uiManager.updateDamageFlash(delta);

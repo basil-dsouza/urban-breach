@@ -142,12 +142,15 @@ export class TacticalRadar {
         // 4. Winding Valley River Channel
         const defaultWaypoints = riverWaypoints.length > 0 ? riverWaypoints : [
             { x: -180, z: 230 },
-            { x: -140, z: 245 },
+            { x: -145, z: 246 },
+            { x: -110, z: 255 },
             { x: -90, z: 260 },
-            { x: -30, z: 275 },
-            { x: 40, z: 260 },
-            { x: 120, z: 230 },
-            { x: 200, z: 195 },
+            { x: -55, z: 270 },
+            { x: -15, z: 276 },
+            { x: 30, z: 268 },
+            { x: 85, z: 250 },
+            { x: 140, z: 225 },
+            { x: 195, z: 200 },
             { x: 260, z: 180 }
         ];
 

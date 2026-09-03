@@ -9,28 +9,31 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
 
     const riverWaypoints = [
         { x: -180, z: 230 },
-        { x: -140, z: 245 },
+        { x: -145, z: 246 },
+        { x: -110, z: 255 },
         { x: -90, z: 260 },
-        { x: -30, z: 275 },
-        { x: 40, z: 260 },
-        { x: 120, z: 230 },
-        { x: 200, z: 195 },
+        { x: -55, z: 270 },
+        { x: -15, z: 276 },
+        { x: 30, z: 268 },
+        { x: 85, z: 250 },
+        { x: 140, z: 225 },
+        { x: 195, z: 200 },
         { x: 260, z: 180 }
     ];
 
     const buildings = [
         // Lakeside Haven Town (Shoreline villas)
-        { x: -65, z: 236, w: 16, d: 15, h: 7.8, style: 'villa', rotY: Math.PI },
-        { x: -160, z: 242, w: 16, d: 15, h: 7.8, style: 'villa', rotY: Math.PI },
+        { x: -65, z: 215, w: 16, d: 15, h: 7.8, style: 'villa', rotY: Math.PI },
+        { x: -160, z: 215, w: 16, d: 15, h: 7.8, style: 'villa', rotY: Math.PI },
         // East Port & Industrial City
         { x: 235, z: -85, w: 26, d: 18, h: 9.5, style: 'warehouse', rotY: 0 },
         { x: 235, z: -135, w: 22, d: 22, h: 34, style: 'skyscraper', rotY: 0 },
         // South Metro City
         { x: -45, z: -295, w: 22, d: 22, h: 42, style: 'skyscraper', rotY: 0 },
         // Pinecrest Mountain Village
-        { x: -255, z: 220, w: 14, d: 13, h: 6.2, style: 'cabin', rotY: Math.PI / 2 },
+        { x: -255, z: 210, w: 14, d: 13, h: 6.2, style: 'cabin', rotY: Math.PI / 2 },
         // Delta Cross Fishing Hamlet
-        { x: 275, z: 230, w: 13, d: 12, h: 5.8, style: 'cottage', rotY: Math.PI / 2 }
+        { x: 315, z: 275, w: 13, d: 12, h: 5.8, style: 'cottage', rotY: Math.PI / 2 }
     ];
 
     function getRiverDistance(x, z) {
@@ -166,18 +169,18 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
     });
 
     it('should detect river water and channel depression along the winding valley river', () => {
-        expect(getWaterLevel(-140, 245)).toBe(0.0);
-        expect(getTerrainHeight(-140, 245)).toBeLessThan(-2.0);
+        expect(getWaterLevel(-145, 246)).toBe(0.0);
+        expect(getTerrainHeight(-145, 246)).toBeLessThan(-2.0);
     });
 
     it('should keep lakeside villa houses completely dry and level on dry ground', () => {
         // Emerald Lake Shoreline Villa
-        expect(getWaterLevel(-65, 236)).toBe(-999.0);
-        expect(getTerrainHeight(-65, 236)).toBe(0.0);
+        expect(getWaterLevel(-65, 215)).toBe(-999.0);
+        expect(getTerrainHeight(-65, 215)).toBe(0.0);
 
         // Alpine Reservoir Shoreline Villa
-        expect(getWaterLevel(-160, 242)).toBe(-999.0);
-        expect(getTerrainHeight(-160, 242)).toBe(0.0);
+        expect(getWaterLevel(-160, 215)).toBe(-999.0);
+        expect(getTerrainHeight(-160, 215)).toBe(0.0);
     });
 
     it('should verify level dry foundations for East Port City, South Metro, and Regional Towns', () => {
@@ -192,12 +195,12 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
         expect(getTerrainHeight(-45, -295)).toBe(0.0);
 
         // Pinecrest Alpine Mountain Village Cabin
-        expect(getWaterLevel(-255, 220)).toBe(-999.0);
-        expect(getTerrainHeight(-255, 220)).toBe(0.0);
+        expect(getWaterLevel(-255, 210)).toBe(-999.0);
+        expect(getTerrainHeight(-255, 210)).toBe(0.0);
 
         // Delta Cross River Hamlet Cottage
-        expect(getWaterLevel(275, 230)).toBe(-999.0);
-        expect(getTerrainHeight(275, 230)).toBe(0.0);
+        expect(getWaterLevel(315, 275)).toBe(-999.0);
+        expect(getTerrainHeight(315, 275)).toBe(0.0);
     });
 
     it('should allow player to walk on modern villa sundeck without phantom collisions', () => {
