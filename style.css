@@ -1866,202 +1866,121 @@ body {
 }
 
 /* =========================================================
-   GOOGLE SEARCH BAR & HOMEPAGE FOOTER AESTHETIC
+   CREATOR CREDIT BADGE & TITLE FOOTER (Good-Looking UI)
    ========================================================= */
 
 .title-screen-layout {
     position: relative;
-    padding-bottom: 60px;
+    padding-bottom: 50px;
 }
 
-.google-search-capsule {
+.title-header-group {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    background: #202124;
-    border: 1.5px solid #5f6368;
-    border-radius: 28px;
-    padding: 11px 20px;
-    width: 100%;
-    max-width: 550px;
-    margin-top: 6px;
-    margin-bottom: 14px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
-    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
-    cursor: pointer;
+    margin-bottom: 18px;
 }
 
-.google-search-capsule:hover {
-    background: #303134;
-    border-color: #8ab4f8;
-    box-shadow: 0 4px 20px rgba(66, 133, 244, 0.3), 0 2px 8px rgba(0, 0, 0, 0.6);
-    transform: translateY(-2px);
-}
-
-.google-icon-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 14px;
-    flex-shrink: 0;
-}
-
-.google-query-area {
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-    font-family: -apple-system, BlinkMacSystemFont, 'Roboto', 'Google Sans', 'Segoe UI', sans-serif;
-    font-size: 18px;
-    letter-spacing: 0.2px;
-}
-
-.google-query-label {
-    color: #9aa0a6;
-    margin-right: 8px;
-    font-weight: 400;
-    text-transform: lowercase;
-}
-
-.google-author-rainbow {
-    font-weight: 700;
-    letter-spacing: 0.6px;
+.creator-badge {
     display: inline-flex;
-}
-
-.g-blue { color: #4285F4; }
-.g-red { color: #EA4335; }
-.g-yellow { color: #FBBC05; }
-.g-green { color: #34A853; }
-.g-space { display: inline-block; width: 6px; }
-
-.google-cursor {
-    display: inline-block;
-    width: 2px;
-    height: 22px;
-    background-color: #8ab4f8;
-    margin-left: 5px;
-    animation: google-blink 1s step-end infinite;
-}
-
-@keyframes google-blink {
-    from, to { opacity: 1; }
-    50% { opacity: 0; }
-}
-
-.google-actions-group {
-    display: flex;
     align-items: center;
-    gap: 12px;
-    margin-left: 12px;
-}
-
-.google-action-icon {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-    border-radius: 50%;
-    transition: background-color 0.2s ease, transform 0.15s ease;
-}
-
-.google-action-icon:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: scale(1.15);
-}
-
-.google-buttons-row {
-    display: flex;
-    gap: 12px;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, rgba(13, 74, 112, 0.22) 100%);
+    border: 1.5px solid rgba(0, 229, 255, 0.4);
+    border-radius: 9999px;
+    padding: 6px 18px;
+    margin-top: -14px;
     margin-bottom: 8px;
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(0, 229, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    cursor: default;
+    animation: creator-glow-pulse 3s ease-in-out infinite;
 }
 
-.google-chip-btn {
-    background-color: #303134;
-    border: 1px solid #303134;
-    color: #e8eaed;
-    font-family: -apple-system, BlinkMacSystemFont, 'Roboto', 'Google Sans', 'Segoe UI', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 9px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+@keyframes creator-glow-pulse {
+    0%, 100% {
+        border-color: rgba(0, 229, 255, 0.4);
+        box-shadow: 0 0 16px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(0, 229, 255, 0.1);
+    }
+    50% {
+        border-color: rgba(0, 229, 255, 0.75);
+        box-shadow: 0 0 24px rgba(0, 229, 255, 0.45), inset 0 0 14px rgba(0, 229, 255, 0.2);
+    }
 }
 
-.google-chip-btn:hover {
-    border-color: #5f6368;
-    background-color: #3c4043;
+.creator-badge:hover {
+    transform: translateY(-2px) scale(1.03);
+    border-color: #00e5ff;
+    box-shadow: 0 0 28px rgba(0, 229, 255, 0.55);
+}
+
+.creator-icon {
+    font-size: 13px;
+    color: #ffd166;
+    filter: drop-shadow(0 0 6px #ffd166);
+}
+
+.creator-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+.creator-name {
+    font-size: 13.5px;
+    font-weight: 900;
+    letter-spacing: 2px;
     color: #ffffff;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
-    transform: translateY(-1px);
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
+    background: linear-gradient(90deg, #ffffff 0%, #00e5ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
 }
 
-/* Authentic Google Homepage Footer */
-.google-home-footer {
+.creator-sparkle {
+    font-size: 10px;
+    color: #00e5ff;
+    opacity: 0.8;
+}
+
+/* Elegant Title Footer */
+.title-footer {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 44px;
-    background: #171717;
-    border-top: 1px solid #303134;
+    height: 38px;
+    background: rgba(6, 10, 15, 0.85);
+    border-top: 1px solid rgba(0, 229, 255, 0.15);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 28px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Roboto', 'Google Sans', 'Segoe UI', sans-serif;
-    font-size: 13px;
-    color: #9aa0a6;
-    z-index: 101;
-}
-
-.google-footer-left {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.google-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.g-bg-blue { background-color: #4285F4; }
-.g-bg-red { background-color: #EA4335; }
-.g-bg-yellow { background-color: #FBBC05; }
-.g-bg-green { background-color: #34A853; }
-
-.google-footer-center {
-    font-size: 13.5px;
-}
-
-.google-author-highlight {
-    color: #8ab4f8;
+    justify-content: center;
+    gap: 12px;
+    font-size: 11.5px;
     font-weight: 600;
+    letter-spacing: 1.5px;
+    color: #64748b;
+    backdrop-filter: blur(8px);
+    z-index: 101;
+    text-transform: uppercase;
 }
 
-.google-footer-right {
-    display: flex;
-    align-items: center;
-    gap: 18px;
+.footer-separator {
+    color: rgba(0, 229, 255, 0.3);
 }
 
-.google-footer-right span {
-    cursor: pointer;
-    transition: color 0.15s ease;
-}
-
-.google-footer-right span:hover {
-    color: #e8eaed;
-    text-decoration: underline;
+.footer-author {
+    color: #00e5ff;
+    font-weight: 800;
+    letter-spacing: 2px;
 }
 
 @media (max-height: 750px) {
-    .google-home-footer {
+    .title-footer {
         position: relative;
         margin-top: 24px;
         width: 100%;

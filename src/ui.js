@@ -113,52 +113,20 @@ export class UIManager {
         this.titleScreen.id = 'title-screen';
         this.titleScreen.className = 'screen-overlay title-screen-layout';
         this.titleScreen.innerHTML = `
-            <div class="game-logo">URBAN BREACH</div>
-            <div class="game-subtitle">TACTICAL SPECIAL OPS SURVIVAL</div>
-
-            <!-- Google Search Bar Capsule: Made by Raphael Dsouza -->
-            <div class="google-search-capsule" id="google-search-widget">
-                <div class="google-icon-wrapper" title="Google Search">
-                    <svg viewBox="0 0 24 24" width="22" height="22">
-                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.25 21.36 7.34 24 12 24z"/>
-                        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-                    </svg>
-                </div>
-                <div class="google-query-area">
-                    <span class="google-query-label">made by</span>
-                    <span class="google-author-rainbow">
-                        <span class="g-blue">R</span><span class="g-red">a</span><span class="g-yellow">p</span><span class="g-blue">h</span><span class="g-green">a</span><span class="g-red">e</span><span class="g-blue">l</span>
-                        <span class="g-space">&nbsp;</span>
-                        <span class="g-blue">D</span><span class="g-red">s</span><span class="g-yellow">o</span><span class="g-blue">u</span><span class="g-green">z</span><span class="g-red">a</span>
-                    </span>
-                    <span class="google-cursor"></span>
-                </div>
-                <div class="google-actions-group">
-                    <button class="google-action-icon" title="Search by voice" type="button">
-                        <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path fill="#4285f4" d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                            <path fill="#34a853" d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                            <path fill="#fbbc05" d="M10 21h4v2h-4z"/>
-                            <path fill="#ea4335" d="M12 14c.26 0 .5-.04.74-.1L10.3 11.46c-.19.46-.3.98-.3 1.54 0 1.66 1.34 3 3 3z"/>
-                        </svg>
-                    </button>
-                    <button class="google-action-icon" title="Search by image" type="button">
-                        <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path fill="#4285F4" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-                            <path fill="#EA4335" d="M19.5 6.5h-2.1l-1.3-1.8c-.4-.5-1-.7-1.6-.7H9.5c-.6 0-1.2.2-1.6.7L6.6 6.5H4.5C3.1 6.5 2 7.6 2 9v9c0 1.4 1.1 2.5 2.5 2.5h15c1.4 0 2.5-1.1 2.5-2.5V9c0-1.4-1.1-2.5-2.5-2.5zm-7.5 10c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z"/>
-                        </svg>
-                    </button>
+            <div class="title-header-group">
+                <div class="game-logo">URBAN BREACH</div>
+                <div class="game-subtitle">TACTICAL SPECIAL OPS SURVIVAL</div>
+                
+                <!-- Premium Creator Credit Badge in Good-Looking Prime Position -->
+                <div class="creator-badge">
+                    <span class="creator-icon">⚡</span>
+                    <span class="creator-label">MADE BY</span>
+                    <span class="creator-name">RAPHAEL DSOUZA</span>
+                    <span class="creator-sparkle">✦</span>
                 </div>
             </div>
 
-            <div class="google-buttons-row">
-                <button class="google-chip-btn" id="btn-google-search" type="button">Google Search</button>
-                <button class="google-chip-btn" id="btn-google-lucky" type="button">I'm Feeling Lucky</button>
-            </div>
-
-            <button id="btn-to-difficulty" class="btn-primary" style="margin-top: 16px;">
+            <button id="btn-to-difficulty" class="btn-primary">
                 START GAME
             </button>
 
@@ -173,22 +141,12 @@ export class UIManager {
                 <div class="ctrl-row alert-row"><span>RADAR</span> Tracks hostiles, buildings, vehicles, and climbable ladders</div>
             </div>
 
-            <div class="google-home-footer">
-                <div class="google-footer-left">
-                    <span class="google-dot g-bg-blue"></span>
-                    <span class="google-dot g-bg-red"></span>
-                    <span class="google-dot g-bg-yellow"></span>
-                    <span class="google-dot g-bg-green"></span>
-                    <span>Google Developer Showcase</span>
-                </div>
-                <div class="google-footer-center">
-                    Made by <strong class="google-author-highlight">Raphael Dsouza</strong>
-                </div>
-                <div class="google-footer-right">
-                    <span>Privacy</span>
-                    <span>Terms</span>
-                    <span>Settings</span>
-                </div>
+            <div class="title-footer">
+                <span>URBAN BREACH</span>
+                <span class="footer-separator">•</span>
+                <span>MADE BY <strong class="footer-author">RAPHAEL DSOUZA</strong></span>
+                <span class="footer-separator">•</span>
+                <span>TACTICAL 3D SURVIVAL</span>
             </div>
         `;
         this.uiRoot.appendChild(this.titleScreen);
@@ -819,24 +777,6 @@ export class UIManager {
             };
         }
 
-        // Google Search & Lucky Buttons
-        const btnGoogleSearch = document.getElementById('btn-google-search');
-        if (btnGoogleSearch && btnToDiff) {
-            btnGoogleSearch.onclick = () => btnToDiff.onclick();
-        }
-
-        const btnGoogleLucky = document.getElementById('btn-google-lucky');
-        if (btnGoogleLucky && btnToDiff) {
-            btnGoogleLucky.onclick = () => btnToDiff.onclick();
-        }
-
-        const googleWidget = document.getElementById('google-search-widget');
-        if (googleWidget && btnToDiff) {
-            googleWidget.onclick = () => {
-                googleWidget.style.borderColor = '#8ab4f8';
-                setTimeout(() => btnToDiff.onclick(), 200);
-            };
-        }
 
         // Singleplayer selection
         const cardSingleplayer = document.getElementById('card-singleplayer');
