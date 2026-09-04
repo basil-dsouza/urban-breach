@@ -1863,4 +1863,207 @@ body {
     color: #ff4757;
     font-weight: 800;
     background: rgba(255, 71, 87, 0.2);
+}
+
+/* =========================================================
+   GOOGLE SEARCH BAR & HOMEPAGE FOOTER AESTHETIC
+   ========================================================= */
+
+.title-screen-layout {
+    position: relative;
+    padding-bottom: 60px;
+}
+
+.google-search-capsule {
+    display: flex;
+    align-items: center;
+    background: #202124;
+    border: 1.5px solid #5f6368;
+    border-radius: 28px;
+    padding: 11px 20px;
+    width: 100%;
+    max-width: 550px;
+    margin-top: 6px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+    cursor: pointer;
+}
+
+.google-search-capsule:hover {
+    background: #303134;
+    border-color: #8ab4f8;
+    box-shadow: 0 4px 20px rgba(66, 133, 244, 0.3), 0 2px 8px rgba(0, 0, 0, 0.6);
+    transform: translateY(-2px);
+}
+
+.google-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 14px;
+    flex-shrink: 0;
+}
+
+.google-query-area {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Roboto', 'Google Sans', 'Segoe UI', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.2px;
+}
+
+.google-query-label {
+    color: #9aa0a6;
+    margin-right: 8px;
+    font-weight: 400;
+    text-transform: lowercase;
+}
+
+.google-author-rainbow {
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    display: inline-flex;
+}
+
+.g-blue { color: #4285F4; }
+.g-red { color: #EA4335; }
+.g-yellow { color: #FBBC05; }
+.g-green { color: #34A853; }
+.g-space { display: inline-block; width: 6px; }
+
+.google-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 22px;
+    background-color: #8ab4f8;
+    margin-left: 5px;
+    animation: google-blink 1s step-end infinite;
+}
+
+@keyframes google-blink {
+    from, to { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.google-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 12px;
+}
+
+.google-action-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.google-action-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.15);
+}
+
+.google-buttons-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.google-chip-btn {
+    background-color: #303134;
+    border: 1px solid #303134;
+    color: #e8eaed;
+    font-family: -apple-system, BlinkMacSystemFont, 'Roboto', 'Google Sans', 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 9px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.google-chip-btn:hover {
+    border-color: #5f6368;
+    background-color: #3c4043;
+    color: #ffffff;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Authentic Google Homepage Footer */
+.google-home-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 44px;
+    background: #171717;
+    border-top: 1px solid #303134;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Roboto', 'Google Sans', 'Segoe UI', sans-serif;
+    font-size: 13px;
+    color: #9aa0a6;
+    z-index: 101;
+}
+
+.google-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.google-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.g-bg-blue { background-color: #4285F4; }
+.g-bg-red { background-color: #EA4335; }
+.g-bg-yellow { background-color: #FBBC05; }
+.g-bg-green { background-color: #34A853; }
+
+.google-footer-center {
+    font-size: 13.5px;
+}
+
+.google-author-highlight {
+    color: #8ab4f8;
+    font-weight: 600;
+}
+
+.google-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.google-footer-right span {
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.google-footer-right span:hover {
+    color: #e8eaed;
+    text-decoration: underline;
+}
+
+@media (max-height: 750px) {
+    .google-home-footer {
+        position: relative;
+        margin-top: 24px;
+        width: 100%;
+    }
 }
