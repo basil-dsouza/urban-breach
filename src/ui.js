@@ -111,7 +111,7 @@ export class UIManager {
         // 1. Title Screen
         this.titleScreen = document.createElement('div');
         this.titleScreen.id = 'title-screen';
-        this.titleScreen.className = 'screen-overlay title-screen-layout';
+        this.titleScreen.className = 'screen-overlay';
         this.titleScreen.innerHTML = `
             <div class="title-header-group">
                 <div class="game-logo">URBAN BREACH</div>

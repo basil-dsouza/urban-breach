@@ -1869,16 +1869,11 @@ body {
    CREATOR CREDIT BADGE & TITLE FOOTER (Good-Looking UI)
    ========================================================= */
 
-.title-screen-layout {
-    position: relative;
-    padding-bottom: 50px;
-}
-
 .title-header-group {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
 }
 
 .creator-badge {
@@ -1949,13 +1944,7 @@ body {
 
 /* Elegant Title Footer */
 .title-footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 38px;
-    background: rgba(6, 10, 15, 0.85);
-    border-top: 1px solid rgba(0, 229, 255, 0.15);
+    margin-top: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1964,8 +1953,6 @@ body {
     font-weight: 600;
     letter-spacing: 1.5px;
     color: #64748b;
-    backdrop-filter: blur(8px);
-    z-index: 101;
     text-transform: uppercase;
 }
 
@@ -1977,12 +1964,4 @@ body {
     color: #00e5ff;
     font-weight: 800;
     letter-spacing: 2px;
-}
-
-@media (max-height: 750px) {
-    .title-footer {
-        position: relative;
-        margin-top: 24px;
-        width: 100%;
-    }
 }

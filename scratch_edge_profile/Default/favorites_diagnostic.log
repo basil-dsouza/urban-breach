@@ -1,0 +1,47 @@
+2026-09-04 16:20:36.454: [INFO] CurrentProfilePath: C:\Projects\Pong\3d-shooter\scratch_edge_profile\Default
+2026-09-04 16:20:36.454: [INFO] Profiles total count: 1
+2026-09-04 16:20:36.454: [INFO] Profile: name=Profile 1 path=C:\Projects\Pong\3d-shooter\scratch_edge_profile\Default lastActive=null
+2026-09-04 16:20:36.454: [INFO] LastUsedProfileDir: C:\Projects\Pong\3d-shooter\scratch_edge_profile\Default
+2026-09-04 16:20:36.454: [INFO] VisibilityChanged: 0
+2026-09-04 16:20:36.466: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.467: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.469: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.470: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.472: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.472: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.473: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.474: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.474: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.475: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:36.490: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:36.491: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:36.491: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:36.491: [INFO] OnDoneLoading sync enabled: 0
+2026-09-04 16:20:36.491: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-09-04 16:20:36.491: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-09-04 16:20:36.491: [INFO] BookmarksSnapshot Startup total=3 bar=3 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-09-04 16:20:36.523: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:37.116: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-09-04 16:20:37.121: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.123: [INFO] Primary account changed.
+2026-09-04 16:20:37.123: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-09-04 16:20:37.132: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.156: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.308: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.310: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.311: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.313: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.314: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.316: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-09-04 16:20:37.317: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 4
+2026-09-04 16:20:38.609: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:38.609: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:38.609: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:38.609: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:38.610: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:38.610: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:38.610: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:38.610: [INFO] BookmarkNodeAdded, ABU: 0
+2026-09-04 16:20:38.617: [INFO] BookmarkBarPrefChanged showBar=0 showBarNTP=0
+2026-09-04 16:20:38.650: [INFO] VisibilityChanged: 1
+2026-09-04 16:20:41.104: [INFO] Sync initialization duration: 3584ms

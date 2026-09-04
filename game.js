@@ -2269,8 +2269,21 @@ for (const lake of waterBodies) {
         water.material.uniforms['mirrorSampler'].value = skyReflectionTexture;
     }
     water.onBeforeRender = function(renderer, scene, camera) {
-        if (this.material && this.material.uniforms && this.material.uniforms['eye']) {
-            this.material.uniforms['eye'].value.copy(camera.position);
+        if (this.material && this.material.uniforms) {
+            if (this.material.uniforms['eye']) {
+                this.material.uniforms['eye'].value.copy(camera.position);
+            }
+            if (this.material.uniforms['textureMatrix']) {
+                const tm = this.material.uniforms['textureMatrix'].value;
+                tm.set(
+                    0.5, 0.0, 0.0, 0.5,
+                    0.0, 0.5, 0.0, 0.5,
+                    0.0, 0.0, 0.5, 0.5,
+                    0.0, 0.0, 0.0, 1.0
+                );
+                tm.multiply(camera.projectionMatrix);
+                tm.multiply(camera.matrixWorldInverse);
+            }
         }
     };
 
@@ -2361,8 +2374,21 @@ function createCurvyRiverMesh() {
         riverWater.material.uniforms['mirrorSampler'].value = skyReflectionTexture;
     }
     riverWater.onBeforeRender = function(renderer, scene, camera) {
-        if (this.material && this.material.uniforms && this.material.uniforms['eye']) {
-            this.material.uniforms['eye'].value.copy(camera.position);
+        if (this.material && this.material.uniforms) {
+            if (this.material.uniforms['eye']) {
+                this.material.uniforms['eye'].value.copy(camera.position);
+            }
+            if (this.material.uniforms['textureMatrix']) {
+                const tm = this.material.uniforms['textureMatrix'].value;
+                tm.set(
+                    0.5, 0.0, 0.0, 0.5,
+                    0.0, 0.5, 0.0, 0.5,
+                    0.0, 0.0, 0.5, 0.5,
+                    0.0, 0.0, 0.0, 1.0
+                );
+                tm.multiply(camera.projectionMatrix);
+                tm.multiply(camera.matrixWorldInverse);
+            }
         }
     };
 
