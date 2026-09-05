@@ -132,8 +132,12 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
         const distFromCenter = Math.max(Math.abs(x), Math.abs(z));
         if (distFromCenter < 125) return 0.0;
 
-        const dNW1 = Math.hypot(x - (-260), z - 260);
-        return 14.5 * Math.exp(- (dNW1 * dNW1) / (70 * 70));
+        const hillDist = Math.hypot(x - (-210), z - 210);
+        if (hillDist < 120) {
+            const t = hillDist / 120;
+            return 16.0 * (0.5 + 0.5 * Math.cos(t * Math.PI));
+        }
+        return 0.0;
     }
 
     function checkObstacleCollision(px, pz, feetY, obs, radius = 0.55) {
@@ -225,6 +229,58 @@ describe('Terrain Elevation, Dam, River & Water Depth Systems', () => {
         const insideZ = 0;
         const collidesCenter = checkObstacleCollision(insideX, insideZ, 0.35, villaObs, 0.55);
         expect(collidesCenter).toBe(true);
+    });
+
+    it('should model one smooth uniform hill with peak at (-210, 210) and 0 elsewhere in the lowlands', () => {
+        // Peak of the uniform hill
+        const peakHeight = getTerrainHeight(-210, 210);
+        expect(peakHeight).toBeCloseTo(16.0, 1);
+
+        // Half-way down the uniform hill (60m North from center with radius 120)
+        const midHillHeight = getTerrainHeight(-210, 210 + 60);
+        expect(midHillHeight).toBeCloseTo(8.0, 1);
+
+        // Outside the uniform hill (130m away) -> perfectly flat (0.0)
+        expect(getTerrainHeight(-210 + 130, 210)).toBe(0.0);
+        expect(getTerrainHeight(200, -200)).toBe(0.0);
+    });
+
+    it('should correctly register physical collisions for rooftop scenery (penthouse, chillers, donut truss, warehouse vents)', () => {
+        // City Hospital: Elevator penthouse on roof (height 11.5m, top 14.9m)
+        const hospitalPenthouseObs = {
+            x: 56 - 7.5,
+            z: -26 - 7.5,
+            w: 5.2,
+            d: 4.8,
+            rotY: 0,
+            bottom: 11.5,
+            top: 14.9
+        };
+
+        // Player walking on the hospital roof (feet at 11.85m) walking into the penthouse
+        const hitsPenthouse = checkObstacleCollision(56 - 7.5, -26 - 7.5, 11.85, hospitalPenthouseObs, 0.55);
+        expect(hitsPenthouse).toBe(true);
+
+        // Player walking on the hospital roof clear of the penthouse
+        const missesPenthouse = checkObstacleCollision(56 + 5.0, -26, 11.85, hospitalPenthouseObs, 0.55);
+        expect(missesPenthouse).toBe(false);
+
+        // Giant Donut Diner: Steel girder truss on roof (height 4.8m, top 13.3m)
+        const donutTrussObs = {
+            x: 24,
+            z: 56,
+            w: 2.8,
+            d: 2.8,
+            rotY: 0,
+            bottom: 4.8,
+            top: 13.3
+        };
+        const hitsTruss = checkObstacleCollision(24, 56, 5.15, donutTrussObs, 0.55);
+        expect(hitsTruss).toBe(true);
+
+        // Player on the ground below the diner (feet at 0.0m) does NOT collide with rooftop truss
+        const groundUnderTruss = checkObstacleCollision(24, 56, 0.0, donutTrussObs, 0.55);
+        expect(groundUnderTruss).toBe(false);
     });
 });
 

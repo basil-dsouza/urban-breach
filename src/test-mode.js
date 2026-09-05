@@ -5,6 +5,8 @@
  * Triggered via invisible bottom-right corner hotspot or F2 shortcut.
  */
 
+import { achievementManager } from './achievements.js';
+
 export const TEST_MODE_PASSWORD = 'rapha_tester123';
 
 export const testModeState = {
@@ -128,6 +130,7 @@ export class TestModeManager {
                 if (verifyTestModePassword(entered)) {
                     testModeState.isUnlocked = true;
                     try { sessionStorage.setItem('ub_test_mode_unlocked', '1'); } catch (err) {}
+                    achievementManager.unlock('SECRET_AUTH');
                     authFeedback.textContent = 'ACCESS GRANTED // INITIALIZING TEST CONSOLE...';
                     authFeedback.className = 'test-auth-feedback success';
                     setTimeout(() => {
@@ -200,6 +203,8 @@ export class TestModeManager {
                             <button class="test-btn-pill boss" data-wave="10">Wave 10 ☠ BOSS</button>
                             <button class="test-btn-pill boss" data-wave="15">Wave 15 ☠ BOSS</button>
                             <button class="test-btn-pill boss" data-wave="20">Wave 20 ☠ BOSS</button>
+                            <button class="test-btn-pill" data-wave="95" style="border-color: rgba(230, 126, 34, 0.6); color: #e67e22;">Wave 95 🔥</button>
+                            <button class="test-btn-pill" data-wave="100" style="border-color: rgba(241, 196, 15, 0.8); color: #f1c40f; font-weight: 700;">Wave 100 👑 WIN</button>
                         </div>
                     </div>
 
@@ -645,6 +650,7 @@ export class TestModeManager {
         if (testModeState.isOpen) {
             this.hidePanel();
         } else {
+            achievementManager.unlock('SECRET_FOUND');
             if (testModeState.isUnlocked) {
                 this.showPanel();
             } else {

@@ -1,6 +1,7 @@
 import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from './difficulty.js';
 import { TacticalRadar } from './radar.js';
 import { startManualHost, startManualClient, applyManualAnswer } from './manual-webrtc.js';
+import { achievementManager } from './achievements.js';
 
 export const WEAPON_CONFIGS = {
     AK47: {
@@ -126,9 +127,14 @@ export class UIManager {
                 </div>
             </div>
 
-            <button id="btn-to-difficulty" class="btn-primary">
-                START GAME
-            </button>
+            <div style="display: flex; gap: 14px; justify-content: center; align-items: center; margin-bottom: 20px;">
+                <button id="btn-to-difficulty" class="btn-primary" style="margin-bottom: 0;">
+                    START GAME
+                </button>
+                <button id="btn-open-achievements" class="btn-secondary" style="font-size: 14px; padding: 14px 22px; border-color: rgba(0, 229, 255, 0.45); color: #00e5ff; background: rgba(0, 229, 255, 0.08); font-weight: 700; letter-spacing: 0.8px;">
+                    🏆 ACHIEVEMENTS
+                </button>
+            </div>
 
             <div class="controls-guide">
                 <div class="ctrl-row"><span>WASD</span> Move / Ladder Climb</div>
@@ -666,6 +672,40 @@ export class UIManager {
         `;
         this.uiRoot.appendChild(this.gameOverScreen);
 
+        // 7b. Wave 100 Victory Screen
+        this.victoryScreen = document.createElement('div');
+        this.victoryScreen.id = 'victory-screen';
+        this.victoryScreen.className = 'screen-overlay';
+        this.victoryScreen.style.display = 'none';
+        this.victoryScreen.innerHTML = `
+            <div class="game-logo" style="color: #f1c40f; text-shadow: 0 0 35px rgba(241, 196, 15, 0.7); font-size: 38px;">
+                👑 TOTAL VICTORY ACHIEVED!
+            </div>
+            <div class="game-subtitle" style="color: #00e5ff; letter-spacing: 2px; font-size: 16px; margin-bottom: 16px;">
+                URBAN BREACH LIBERATED — ALL 100 WAVES CLEARED!
+            </div>
+
+            <div style="max-width: 540px; margin: 0 auto 24px auto; color: #e2e8f0; font-size: 15px; line-height: 1.6; text-align: center; background: rgba(0, 229, 255, 0.06); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 10px; padding: 14px 20px;">
+                Against impossible tactical odds, you defended Metro Central, repelled all armored incursions, and conquered all 100 waves. You are the Supreme Combat Champion!
+            </div>
+
+            <div class="game-over-stats" style="border-color: rgba(241, 196, 15, 0.45); box-shadow: 0 0 30px rgba(241, 196, 15, 0.25); margin-bottom: 24px;">
+                <div class="go-stat">DIFFICULTY: <span id="vic-diff" style="color:#00e5ff">NORMAL</span></div>
+                <div class="go-stat">WAVES CONQUERED: <span id="vic-waves" style="color:#ffd700; font-weight: 800;">100 / 100</span></div>
+                <div class="go-stat">TOTAL HOSTILES PURGED: <span id="vic-kills" style="color:#ff4757; font-weight: 800;">0</span></div>
+            </div>
+
+            <div style="display: flex; gap: 16px; justify-content: center; align-items: center;">
+                <button id="btn-vic-restart" class="btn-primary" style="background: linear-gradient(135deg, #f1c40f, #e67e22); color: #000; font-weight: 800; padding: 14px 28px;">
+                    DEPLOY AGAIN
+                </button>
+                <button id="btn-vic-achievements" class="btn-secondary" style="border-color: rgba(0, 229, 255, 0.5); color: #00e5ff; font-weight: 700; padding: 14px 24px;">
+                    🏆 VIEW ACHIEVEMENTS
+                </button>
+            </div>
+        `;
+        this.uiRoot.appendChild(this.victoryScreen);
+
         // 8. Connection Environment Modal
         this.envModal = document.createElement('div');
         this.envModal.id = 'mp-env-modal';
@@ -774,6 +814,15 @@ export class UIManager {
             btnToDiff.onclick = () => {
                 this.titleScreen.style.display = 'none';
                 this.lobbySelectScreen.style.display = 'flex';
+            };
+        }
+
+        const btnOpenAchieve = document.getElementById('btn-open-achievements');
+        if (btnOpenAchieve) {
+            btnOpenAchieve.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                achievementManager.openModal();
             };
         }
 
@@ -961,6 +1010,27 @@ export class UIManager {
                 } else {
                     location.reload();
                 }
+            };
+        }
+
+        const btnVicRestart = document.getElementById('btn-vic-restart');
+        if (btnVicRestart) {
+            btnVicRestart.onclick = () => {
+                this.victoryScreen.style.display = 'none';
+                if (typeof this.onRestart === 'function') {
+                    this.onRestart();
+                } else {
+                    location.reload();
+                }
+            };
+        }
+
+        const btnVicAchieve = document.getElementById('btn-vic-achievements');
+        if (btnVicAchieve) {
+            btnVicAchieve.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                achievementManager.openModal();
             };
         }
 
@@ -1596,6 +1666,30 @@ export class UIManager {
         if (goKills) goKills.textContent = kills;
 
         this.gameOverScreen.style.display = 'flex';
+    }
+
+    showVictoryScreen({ kills, wave = 100, difficulty }) {
+        this.hud.style.display = 'none';
+        this.crosshair.style.display = 'none';
+        this.scope.style.display = 'none';
+
+        if (typeof document !== 'undefined' && document.pointerLockElement) {
+            document.exitPointerLock();
+        }
+
+        const vicDiff = document.getElementById('vic-diff');
+        if (vicDiff && difficulty) {
+            vicDiff.textContent = difficulty.name;
+            vicDiff.style.color = difficulty.color;
+        }
+
+        const vicWaves = document.getElementById('vic-waves');
+        if (vicWaves) vicWaves.textContent = `${wave} / 100`;
+
+        const vicKills = document.getElementById('vic-kills');
+        if (vicKills) vicKills.textContent = kills;
+
+        this.victoryScreen.style.display = 'flex';
     }
 
     setDifficultyKey(key) {

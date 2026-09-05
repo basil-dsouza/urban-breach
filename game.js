@@ -9,6 +9,7 @@ import { UIManager, WEAPON_CONFIGS } from './src/ui.js';
 import { soundEngine } from './src/audio.js';
 import { MultiplayerManager } from './src/multiplayer.js';
 import { TestModeManager, testModeState } from './src/test-mode.js';
+import { achievementManager } from './src/achievements.js';
 
 /* =========================================================
    SURVIVAL FPS — EXPANDED 3D CITY ENGINE
@@ -1028,6 +1029,7 @@ function createGiantDonutDiner({ x, z, rotY = 0 }) {
     hvac.position.set(-3.5, height + 0.6, -2.5);
     group.add(hvac);
 
+    // Main building obstacle
     obstacles.push({
         x,
         z,
@@ -1036,6 +1038,29 @@ function createGiantDonutDiner({ x, z, rotY = 0 }) {
         rotY,
         bottom: 0,
         top: height
+    });
+
+    // Rooftop Scenery Hitboxes: Steel girder truss / giant donut support & HVAC condenser unit
+    obstacles.push({
+        x,
+        z,
+        w: 2.8,
+        d: 2.8,
+        rotY,
+        bottom: height,
+        top: height + 8.5
+    });
+
+    const hvacWorldX = x + (-3.5 * Math.cos(rotY) + -2.5 * Math.sin(rotY));
+    const hvacWorldZ = z - (-3.5 * Math.sin(rotY) - -2.5 * Math.cos(rotY));
+    obstacles.push({
+        x: hvacWorldX,
+        z: hvacWorldZ,
+        w: 1.8,
+        d: 1.8,
+        rotY,
+        bottom: height,
+        top: height + 1.2
     });
 
     buildings.push({
@@ -1152,7 +1177,7 @@ function createCityHospital({ x, z, rotY = 0 }) {
         group.add(chiller);
     }
 
-    const cosR = Math.abs(Math.cos(rotY));
+    // Main building obstacle
     obstacles.push({
         x,
         z,
@@ -1162,6 +1187,33 @@ function createCityHospital({ x, z, rotY = 0 }) {
         bottom: 0,
         top: height
     });
+
+    // Rooftop Scenery Hitboxes: Elevator Penthouse & Mechanical Chillers
+    const pentWorldX = x + (-7.5 * Math.cos(rotY) + -7.5 * Math.sin(rotY));
+    const pentWorldZ = z - (-7.5 * Math.sin(rotY) - -7.5 * Math.cos(rotY));
+    obstacles.push({
+        x: pentWorldX,
+        z: pentWorldZ,
+        w: 5.2,
+        d: 4.8,
+        rotY,
+        bottom: height,
+        top: height + 3.4
+    });
+
+    for (let hx = -10; hx <= -4; hx += 3.0) {
+        const chillWorldX = x + (hx * Math.cos(rotY) + -1.0 * Math.sin(rotY));
+        const chillWorldZ = z - (hx * Math.sin(rotY) - -1.0 * Math.cos(rotY));
+        obstacles.push({
+            x: chillWorldX,
+            z: chillWorldZ,
+            w: 2.2,
+            d: 2.0,
+            rotY,
+            bottom: height,
+            top: height + 1.6
+        });
+    }
 
     buildings.push({
         x,
@@ -1273,6 +1325,7 @@ function createPoliceHeadquarters({ x, z, rotY = 0 }) {
     redBeacon.position.set(0, towerH + 6.0, 0);
     group.add(redBeacon);
 
+    // Main building obstacle (Left & Right Wings)
     obstacles.push({
         x,
         z,
@@ -1281,6 +1334,29 @@ function createPoliceHeadquarters({ x, z, rotY = 0 }) {
         rotY,
         bottom: 0,
         top: 8.5
+    });
+
+    // Rooftop Scenery Hitboxes: Central Police Tower & Antenna Spire
+    const towerWorldX = x + (0 * Math.cos(rotY) + 0.2 * Math.sin(rotY));
+    const towerWorldZ = z - (0 * Math.sin(rotY) - 0.2 * Math.cos(rotY));
+    obstacles.push({
+        x: towerWorldX,
+        z: towerWorldZ,
+        w: 7.0,
+        d: depth + 0.8,
+        rotY,
+        bottom: 8.5,
+        top: 12.0
+    });
+
+    obstacles.push({
+        x,
+        z,
+        w: 1.0,
+        d: 1.0,
+        rotY,
+        bottom: 12.0,
+        top: 18.0
     });
 
     buildings.push({
@@ -1449,6 +1525,7 @@ function createIndustrialWarehouse({ x, z, width, depth, height, w, d, h, rotY =
         group.add(ventCap);
     }
 
+    // Main building obstacle
     obstacles.push({
         x,
         z,
@@ -1458,6 +1535,21 @@ function createIndustrialWarehouse({ x, z, width, depth, height, w, d, h, rotY =
         bottom: 0,
         top: finalH
     });
+
+    // Rooftop Scenery Hitboxes: 2 Industrial Cyclone Ventilation Units
+    for (const vx of [-finalW * 0.25, finalW * 0.25]) {
+        const ventWorldX = x + (vx * Math.cos(rotY) + 0 * Math.sin(rotY));
+        const ventWorldZ = z - (vx * Math.sin(rotY) - 0 * Math.cos(rotY));
+        obstacles.push({
+            x: ventWorldX,
+            z: ventWorldZ,
+            w: 2.6,
+            d: 2.6,
+            rotY,
+            bottom: finalH,
+            top: finalH + 2.6
+        });
+    }
 
     buildings.push({
         x,
@@ -1514,43 +1606,44 @@ function createCorporateSkyscraper({ x, z, width, depth, height, w, d, h, rotY =
         group.add(glassBand);
     }
 
-    // 3. Rooftop Mechanical Penthouse & Crown
+    // 3. Rooftop Mechanical Penthouse & Crown (North half of roof)
     const crownH = 3.2;
-    const crown = new THREE.Mesh(new THREE.BoxGeometry(finalW * 0.65, crownH, finalD * 0.65), chromeTrimMat);
-    crown.position.set(0, finalH + crownH / 2, 0);
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(finalW * 0.8, crownH, finalD * 0.45), chromeTrimMat);
+    crown.position.set(0, finalH + crownH / 2, -finalD * 0.25);
     group.add(crown);
 
-    // 4. Rooftop Tactical Helipad
+    // 4. Rooftop Tactical Helipad (Open South deck directly off the roof ladder)
     const pad = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.2, 0.2, 32), helipadPadMat);
-    pad.position.set(0, finalH + 0.1, 0);
+    pad.position.set(0, finalH + 0.1, finalD * 0.22);
     group.add(pad);
 
     const padRing = new THREE.Mesh(new THREE.RingGeometry(4.4, 4.8, 32), new THREE.MeshBasicMaterial({ color: 0xf1c40f, side: THREE.DoubleSide }));
     padRing.rotation.x = -Math.PI / 2;
-    padRing.position.set(0, finalH + 0.22, 0);
+    padRing.position.set(0, finalH + 0.22, finalD * 0.22);
     group.add(padRing);
 
     // 'H' Helipad Marking
     const hBarL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 3.2), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    hBarL.position.set(-1.1, finalH + 0.23, 0);
+    hBarL.position.set(-1.1, finalH + 0.23, finalD * 0.22);
     group.add(hBarL);
     const hBarR = hBarL.clone();
     hBarR.position.x = 1.1;
     group.add(hBarR);
     const hBarC = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 0.5), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    hBarC.position.set(0, finalH + 0.23, 0);
+    hBarC.position.set(0, finalH + 0.23, finalD * 0.22);
     group.add(hBarC);
 
-    // 5. Communications Antenna Spire
+    // 5. Communications Antenna Spire on Penthouse Crown
     const antennaH = 9.0;
     const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.2, antennaH, 8), chromeTrimMat);
-    antenna.position.set(0, finalH + crownH + antennaH / 2, 0);
+    antenna.position.set(0, finalH + crownH + antennaH / 2, -finalD * 0.25);
     group.add(antenna);
 
     const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff4757 }));
-    beacon.position.set(0, finalH + crownH + antennaH, 0);
+    beacon.position.set(0, finalH + crownH + antennaH, -finalD * 0.25);
     group.add(beacon);
 
+    // Main tower body obstacle
     obstacles.push({
         x,
         z,
@@ -1559,6 +1652,29 @@ function createCorporateSkyscraper({ x, z, width, depth, height, w, d, h, rotY =
         rotY,
         bottom: 0,
         top: finalH
+    });
+
+    // Rooftop Scenery Hitboxes: Mechanical Penthouse Crown & Spire
+    const crownWorldX = x + (0 * Math.cos(rotY) + (-finalD * 0.25) * Math.sin(rotY));
+    const crownWorldZ = z - (0 * Math.sin(rotY) - (-finalD * 0.25) * Math.cos(rotY));
+    obstacles.push({
+        x: crownWorldX,
+        z: crownWorldZ,
+        w: finalW * 0.8,
+        d: finalD * 0.45,
+        rotY,
+        bottom: finalH,
+        top: finalH + crownH
+    });
+
+    obstacles.push({
+        x: crownWorldX,
+        z: crownWorldZ,
+        w: 1.0,
+        d: 1.0,
+        rotY,
+        bottom: finalH + crownH,
+        top: finalH + crownH + antennaH
     });
 
     buildings.push({
@@ -1730,9 +1846,9 @@ function generateMassiveCity() {
     // ==========================================
     // 1. BIG CITY 1: METRO CENTRAL (Downtown Capital & Financial Core)
     // ==========================================
-    createCityHospital({ x: 56, z: -56, rotY: 0 });
-    createPoliceHeadquarters({ x: -56, z: -56, rotY: 0 });
-    createGiantDonutDiner({ x: 56, z: 56, rotY: 0 });
+    createCityHospital({ x: 56, z: -26, rotY: 0 }); // North emergency bay faces Central Boulevard Z = 0
+    createPoliceHeadquarters({ x: -26, z: -56, rotY: Math.PI / 2 }); // East precinct facade faces Central Avenue X = 0
+    createGiantDonutDiner({ x: 24, z: 56, rotY: -Math.PI / 2 }); // West dining patio faces Central Avenue X = 0
     createCorporateSkyscraper({ x: -56, z: 56, width: 22, depth: 22, height: 38, rotY: 0 });
     createHydroelectricDam({ x: -180, z: 230, rotY: -0.42 });
 
@@ -1745,7 +1861,8 @@ function generateMassiveCity() {
     for (const b of downtownBlocks) {
         for (const x of b.xs) {
             for (const z of b.zs) {
-                if ((x === 56 && z === -56) || (x === -56 && z === -56) || (x === 56 && z === 56) || (x === -56 && z === 56)) {
+                // Skip roadside slots occupied by civic landmarks and corporate skyscraper
+                if ((x === 28 && z === 56) || (x === -28 && z === -56) || (x === 56 && z === -28) || (x === -56 && z === 56)) {
                     continue;
                 }
                 const w = 14 + Math.random() * 6;
@@ -1759,7 +1876,7 @@ function generateMassiveCity() {
     // ==========================================
     // 2. BIG CITY 2: EAST PORT & INDUSTRIAL CITY (Manufacturing & Shipping Hub)
     // ==========================================
-    makeResidentialRoad(280, -145, 280, 65, 9.5);
+    makeResidentialRoad(280, -185, 280, 65, 9.5);
     makeResidentialRoad(195, -40, 275, -40, 9.5);
     makeResidentialRoad(285, -40, 365, -40, 9.5);
 
@@ -1776,13 +1893,13 @@ function generateMassiveCity() {
     for (const b of eastPortBuildings) {
         createBuilding(b);
     }
-    createGiantDonutDiner({ x: 280, z: -165, rotY: Math.PI });
+    createGiantDonutDiner({ x: 280, z: -175, rotY: 0 }); // Sits on the avenue corridor with clear street frontage
 
     // ==========================================
     // 3. BIG CITY 3: SOUTH METRO (Modern Tech Metropolis & Commercial Hub)
     // ==========================================
-    makeResidentialRoad(-70, -340, 190, -340, 9.5);
-    makeResidentialRoad(0, -400, 0, -345, 8.5);
+    makeResidentialRoad(-105, -340, 225, -340, 9.5);
+    makeResidentialRoad(0, -425, 0, -345, 8.5);
     makeResidentialRoad(0, -335, 0, -280, 8.5);
     makeResidentialRoad(120, -400, 120, -345, 8.5);
     makeResidentialRoad(120, -335, 120, -280, 8.5);
@@ -1800,7 +1917,7 @@ function generateMassiveCity() {
     }
     createPoliceHeadquarters({ x: -85, z: -340, rotY: Math.PI / 2 });
     createCityHospital({ x: 205, z: -340, rotY: -Math.PI / 2 });
-    createGiantDonutDiner({ x: 60, z: -420, rotY: 0 });
+    createGiantDonutDiner({ x: 18, z: -385, rotY: -Math.PI / 2 });
 
     // ==========================================
     // 4. SMALL TOWN 1: LAKESIDE HAVEN (North Shore Luxury Villa Town)
@@ -2102,43 +2219,12 @@ function getTerrainHeight(x, z) {
 
     if (elevationFactor <= 0.001) return 0.0;
 
-    // 4. Procedural Hills, Alpine Reservoir Plateau & Mountain Peaks
+    // 4. One Uniform Clean Mountain Hill (North-West Highlands)
     let h = 0.0;
-
-    // North-West Alpine Mountain Peaks & High Reservoir Plateau
-    const dNWRes = Math.hypot(x - (-270), z - 270);
-    if (dNWRes < 90) {
-        const plateauT = Math.max(0, 1 - (dNWRes / 90));
-        h += 7.0 * plateauT;
-    }
-
-    const dNW1 = Math.hypot(x - (-260), z - 260);
-    h += 14.5 * Math.exp(- (dNW1 * dNW1) / (70 * 70));
-
-    const dNW2 = Math.hypot(x - (-165), z - 275);
-    h += 12.0 * Math.exp(- (dNW2 * dNW2) / (55 * 55));
-
-    const dNW3 = Math.hypot(x - (-285), z - 160);
-    h += 11.0 * Math.exp(- (dNW3 * dNW3) / (50 * 50));
-
-    // South-East Deciduous Woodland Rolling Hills
-    const dSE1 = Math.hypot(x - 260, z - (-260));
-    h += 11.5 * Math.exp(- (dSE1 * dSE1) / (65 * 65));
-
-    const dSE2 = Math.hypot(x - 165, z - (-275));
-    h += 9.5 * Math.exp(- (dSE2 * dSE2) / (55 * 55));
-
-    const dSE3 = Math.hypot(x - 275, z - (-165));
-    h += 10.0 * Math.exp(- (dSE3 * dSE3) / (50 * 50));
-
-    // Harmonic Undulations for natural forest depth
-    const wave = (Math.sin(x * 0.025) * Math.cos(z * 0.025) * 2.5) + (Math.sin(x * 0.06 + 1.2) * Math.cos(z * 0.06 + 0.8) * 1.2);
-    h += Math.max(0, wave);
-
-    // Outer Mountain Horizon Ring
-    const distOuter = Math.hypot(x, z);
-    if (distOuter > 320) {
-        h += Math.min(18.0, (distOuter - 320) * 0.18);
+    const hillDist = Math.hypot(x - (-210), z - 210);
+    if (hillDist < 120) {
+        const t = hillDist / 120;
+        h = 16.0 * (0.5 + 0.5 * Math.cos(t * Math.PI));
     }
 
     return h * elevationFactor;
@@ -2774,6 +2860,7 @@ function handleEnemyDamage(enemy, damage) {
     if (enemy.userData.health <= 0) {
         if (enemy.userData.isBoss) {
             kills += 5;
+            achievementManager.unlock('FIRST_BLOOD');
             uiManager.hideBossHP(true);
             soundEngine.playBossDefeated();
             if (multiplayerManager?.chatPanel) {
@@ -2791,6 +2878,7 @@ function handleEnemyDamage(enemy, damage) {
                 enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
             }
             kills++;
+            achievementManager.unlock('FIRST_BLOOD');
         }
 
         scene.remove(enemy);
@@ -2815,6 +2903,7 @@ window.damageVehicleLocal = (vehicleId, damage) => {
     if (car) {
         vehicleManager.damageVehicle(car, damage, () => {
             kills += 3;
+            achievementManager.unlock('VEHICLE_BUSTER');
             uiManager.updateHUD(getHUDState());
         });
         createHitEffect(car.position, 0xffaa00);
@@ -3427,6 +3516,7 @@ const uiManager = new UIManager({
     }
 });
 window.uiManager = uiManager;
+achievementManager.setSoundEngine(soundEngine);
 
 // 12.5. Secret Test Mode Controller Initializer
 const testModeManager = new TestModeManager({
@@ -3444,9 +3534,13 @@ const testModeManager = new TestModeManager({
         wave = Math.max(1, targetWave);
         waveTimer = 0;
         enemySpawnTimer = 0;
-        const diff = getDifficulty();
-        spawnWave(diff);
-        uiManager.updateHUD(getHUDState());
+        gameWon = false;
+        checkWaveMilestones();
+        if (!gameWon) {
+            const diff = getDifficulty();
+            spawnWave(diff);
+            uiManager.updateHUD(getHUDState());
+        }
         if (multiplayerManager?.addSystemMessage) {
             multiplayerManager.addSystemMessage(`⚡ TEST MODE: JUMPED TO WAVE ${wave}`);
         }
@@ -3896,6 +3990,9 @@ function updateBushStealth(delta) {
 
     if (inBush !== isPlayerHidden) {
         isPlayerHidden = inBush;
+        if (inBush) {
+            achievementManager.unlock('BUSH_GHOST');
+        }
         uiManager.updateHUD(getHUDState());
     }
 }
@@ -4253,6 +4350,7 @@ function shoot() {
         } else {
             vehicleManager.damageVehicle(car, dmg, () => {
                 kills += 3;
+                achievementManager.unlock('VEHICLE_BUSTER');
                 uiManager.updateHUD(getHUDState());
             });
         }
@@ -4378,6 +4476,7 @@ function explodeGrenadeAt(grenadeData) {
         if (dmg > 0) {
             vehicleManager.damageVehicle(car, dmg, () => {
                 kills += 3;
+                achievementManager.unlock('VEHICLE_BUSTER');
             });
         }
     }
@@ -4511,6 +4610,7 @@ function updatePlayer(delta) {
 
             // Stepping forward onto rooftop terrace safely
             if (isNearRoof) {
+                achievementManager.unlock('ROOFTOP_RECON');
                 const stepIntoRoofX = -normX;
                 const stepIntoRoofZ = -normZ;
 
@@ -4729,6 +4829,7 @@ function updatePlayer(delta) {
             bulletWounds = { head: 0, torso: 0, leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0 };
             isBleeding = false;
             soundEngine.playMedkitPickup();
+            achievementManager.unlock('COMBAT_MEDIC');
             scene.remove(med);
             enemyManager.medkits.splice(i, 1);
             uiManager.updateHUD(getHUDState());
@@ -4842,7 +4943,27 @@ function spawnWave(difficulty) {
     }
 }
 
+let gameWon = false;
+
+function checkWaveMilestones() {
+    if (wave >= 5) achievementManager.unlock('ROOKIE_SURVIVOR');
+    if (wave >= 25) achievementManager.unlock('VETERAN_SURVIVOR');
+    if (wave >= 50) achievementManager.unlock('ELITE_DEFENDER');
+    if (wave >= 95) achievementManager.unlock('PENULTIMATE_STAND');
+    if (wave >= 100) {
+        achievementManager.unlock('CENTURY_VICTORY');
+        if (!gameWon) {
+            gameWon = true;
+            uiManager.showVictoryScreen({ kills, wave: 100, difficulty: getDifficulty() });
+            if (soundEngine && typeof soundEngine.playLevelUp === 'function') {
+                soundEngine.playLevelUp();
+            }
+        }
+    }
+}
+
 function updateWaves(delta) {
+    if (gameWon) return;
     if (testModeState.freezeWaveTimer) {
         return;
     }
@@ -4851,9 +4972,14 @@ function updateWaves(delta) {
     if (waveTimer > 25) {
         wave++;
         waveTimer = 0;
-        spawnWave(diff);
-        uiManager.updateHUD(getHUDState());
+        checkWaveMilestones();
+        if (!gameWon) {
+            spawnWave(diff);
+            uiManager.updateHUD(getHUDState());
+        }
     }
+
+    if (gameWon) return;
 
     enemySpawnTimer -= delta;
     if (enemySpawnTimer <= 0) {
