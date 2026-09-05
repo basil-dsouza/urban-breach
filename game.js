@@ -8,6 +8,7 @@ import { VehicleManager } from './src/vehicles.js';
 import { UIManager, WEAPON_CONFIGS } from './src/ui.js';
 import { soundEngine } from './src/audio.js';
 import { MultiplayerManager } from './src/multiplayer.js';
+import { TestModeManager, testModeState } from './src/test-mode.js';
 
 /* =========================================================
    SURVIVAL FPS — EXPANDED 3D CITY ENGINE
@@ -3427,6 +3428,191 @@ const uiManager = new UIManager({
 });
 window.uiManager = uiManager;
 
+// 12.5. Secret Test Mode Controller Initializer
+const testModeManager = new TestModeManager({
+    getGameState: () => ({
+        wave: typeof wave !== 'undefined' ? wave : 1,
+        difficultyName: typeof getDifficulty === 'function' ? getDifficulty().name : 'SURVIVOR',
+        aliveEnemies: typeof enemyManager !== 'undefined' && enemyManager ? enemyManager.enemies.length : 0,
+        aliveBosses: typeof enemyManager !== 'undefined' && enemyManager ? enemyManager.enemies.filter(e => e.userData && e.userData.isBoss).length : 0,
+        aliveCars: typeof vehicleManager !== 'undefined' && vehicleManager ? vehicleManager.vehicles.length : 0,
+        health: typeof health !== 'undefined' ? health : 100,
+        maxHealth: typeof maxHealth !== 'undefined' ? maxHealth : 100,
+        playerPos: camera.position
+    }),
+    setWave: (targetWave) => {
+        wave = Math.max(1, targetWave);
+        waveTimer = 0;
+        enemySpawnTimer = 0;
+        const diff = getDifficulty();
+        spawnWave(diff);
+        uiManager.updateHUD(getHUDState());
+        if (multiplayerManager?.addSystemMessage) {
+            multiplayerManager.addSystemMessage(`⚡ TEST MODE: JUMPED TO WAVE ${wave}`);
+        }
+    },
+    spawnWaveNow: () => {
+        spawnWave(getDifficulty());
+        uiManager.updateHUD(getHUDState());
+    },
+    clearAllEnemies: () => {
+        if (typeof enemyManager !== 'undefined' && enemyManager) {
+            for (const e of enemyManager.enemies) {
+                scene.remove(e);
+            }
+            enemyManager.enemies = [];
+            uiManager.hideBossHP();
+        }
+        if (typeof vehicleManager !== 'undefined' && vehicleManager) {
+            for (const v of vehicleManager.vehicles) {
+                scene.remove(v);
+            }
+            vehicleManager.vehicles = [];
+        }
+        uiManager.updateHUD(getHUDState());
+    },
+    setWaveTimerFrozen: (isFrozen) => {
+        testModeState.freezeWaveTimer = isFrozen;
+    },
+    spawnEnemy: (archetype, count = 1, location = 'front') => {
+        const diff = getDifficulty();
+        const scaling = getWaveEnemyScaling(wave, diff);
+        for (let i = 0; i < count; i++) {
+            let spawnPos = camera.position.clone();
+            if (location === 'front') {
+                const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+                spawnPos.add(forward.multiplyScalar(10 + Math.random() * 4));
+            } else if (location === 'around') {
+                const angle = Math.random() * Math.PI * 2;
+                spawnPos.x += Math.sin(angle) * (20 + Math.random() * 8);
+                spawnPos.z += Math.cos(angle) * (20 + Math.random() * 8);
+            }
+
+            const enemy = enemyManager.spawnEnemy(
+                location === 'random' ? camera.position : spawnPos,
+                archetype === 'knife' ? 'knife' : 'gunner',
+                diff,
+                getSimpleGround,
+                scaling
+            );
+            if (location !== 'random') {
+                enemy.position.x = spawnPos.x;
+                enemy.position.z = spawnPos.z;
+                enemy.position.y = getSimpleGround(spawnPos.x, spawnPos.z);
+            }
+            if (testModeState.enemyHealthMult !== 1.0) {
+                enemy.userData.health = Math.max(1, Math.round(enemy.userData.health * testModeState.enemyHealthMult));
+                enemy.userData.maxHealth = enemy.userData.health;
+            }
+        }
+    },
+    spawnBoss: (tier = 1, location = 'front') => {
+        const diff = getDifficulty();
+        const scaling = getWaveEnemyScaling(wave, diff);
+        const customScaling = { ...scaling, bossLevel: tier, bossMultiplier: Math.pow(1.5, tier - 1) };
+        const boss = enemyManager.spawnBossGunner(
+            camera.position,
+            diff,
+            getSimpleGround,
+            wave,
+            customScaling
+        );
+        if (location === 'front') {
+            const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+            boss.position.copy(camera.position).add(forward.multiplyScalar(15));
+            boss.position.y = getSimpleGround(boss.position.x, boss.position.z);
+        }
+        if (testModeState.enemyHealthMult !== 1.0) {
+            boss.userData.health = Math.max(1, Math.round(boss.userData.health * testModeState.enemyHealthMult));
+            boss.userData.maxHealth = boss.userData.health;
+        }
+        uiManager.showBossHP(boss.userData.bossName, boss.userData.health, boss.userData.maxHealth, wave);
+        soundEngine.playBossAlarm();
+    },
+    spawnVehicle: (count = 1) => {
+        const diff = getDifficulty();
+        for (let i = 0; i < count; i++) {
+            vehicleManager.spawnVehicle(camera.position, diff, getSimpleGround);
+        }
+    },
+    applyModifiers: (mods) => {
+        if (typeof enemyManager !== 'undefined' && enemyManager) {
+            for (const enemy of enemyManager.enemies) {
+                if (mods.enemyHealthMult && mods.enemyHealthMult !== 1.0) {
+                    enemy.userData.health = Math.max(1, Math.round(enemy.userData.health * mods.enemyHealthMult));
+                }
+            }
+        }
+    },
+    alertAllEnemies: () => {
+        if (typeof enemyManager !== 'undefined' && enemyManager) {
+            for (const enemy of enemyManager.enemies) {
+                enemy.userData.alertTimer = 9999;
+            }
+        }
+    },
+    setGodMode: (val) => {
+        testModeState.godMode = val;
+        if (val) {
+            health = maxHealth;
+            uiManager.updateHUD(getHUDState());
+        }
+    },
+    setInfiniteAmmo: (val) => {
+        testModeState.infiniteAmmo = val;
+        if (val) {
+            ammo = maxAmmo;
+            uiManager.updateHUD(getHUDState());
+        }
+    },
+    setSuperSpeed: (val) => {
+        testModeState.superSpeed = val;
+    },
+    setSuperJump: (val) => {
+        testModeState.superJump = val;
+    },
+    healPlayer: () => {
+        health = maxHealth;
+        isBleeding = false;
+        bodyBones.head = false;
+        bodyBones.torso = false;
+        bodyBones.leftArm = false;
+        bodyBones.rightArm = false;
+        bodyBones.leftLeg = false;
+        bodyBones.rightLeg = false;
+        bulletWounds = { head: 0, torso: 0, leftArm: 0, rightArm: 0, leftLeg: 0, rightLeg: 0 };
+        uiManager.updateHUD(getHUDState());
+        soundEngine.playMedkitUse();
+    },
+    refillGrenades: () => {
+        grenadeCount = 5;
+        uiManager.updateHUD(getHUDState());
+    },
+    switchWeapon: (weaponKey) => {
+        if (WEAPON_CONFIGS[weaponKey]) {
+            currentWeaponKey = weaponKey;
+            currentWeapon = WEAPON_CONFIGS[weaponKey];
+            ammo = currentWeapon.ammo;
+            maxAmmo = currentWeapon.maxAmmo;
+            aimFOV = currentWeapon.aimFOV || 48;
+            spreadSystem.setWeaponConfig(currentWeapon.spread);
+            applyWeaponModel(weaponKey);
+            uiManager.updateHUD(getHUDState());
+        }
+    },
+    teleport: (destination) => {
+        if (destination === 'origin') {
+            camera.position.set(0, 4, 20);
+        } else if (destination === 'roof') {
+            camera.position.set(0, 32, 0);
+        } else if (destination === 'bridge') {
+            camera.position.set(0, 4, -40);
+        }
+        velocityY = 0;
+    }
+});
+window.testModeManager = testModeManager;
+
 // Configure multiplayer callbacks on uiManager and multiplayerManager
 uiManager.onHostLobby = (nickname, gameMode) => {
     multiplayerManager.initHost(nickname, gameMode, (code) => {
@@ -3826,7 +4012,7 @@ window.addEventListener('keyup', e => {
 });
 
 window.addEventListener('mousemove', e => {
-    if (document.pointerLockElement === document.body && gameStarted && !window.chatInputActive) {
+    if (document.pointerLockElement === document.body && gameStarted && !window.chatInputActive && !window.testModeOpen) {
         const sens = aiming ? 0.0010 : 0.0022;
         yaw -= e.movementX * sens;
         pitch -= e.movementY * sens;
@@ -3838,7 +4024,9 @@ document.addEventListener('mousedown', e => {
     soundEngine.init();
     soundEngine.resume();
 
-    if (window.chatInputActive) return;
+    if (window.chatInputActive || window.testModeOpen || (e.target && e.target.closest && e.target.closest('#test-mode-panel, #test-mode-auth-modal, #btn-secret-test-mode'))) {
+        return;
+    }
 
     if (e.button === 0) {
         mouseHeld = true;
@@ -3948,7 +4136,11 @@ function shoot() {
         return;
     }
 
-    ammo--;
+    if (testModeState.infiniteAmmo) {
+        ammo = maxAmmo;
+    } else {
+        ammo--;
+    }
     stealthBreakTimer = 4.0; // Shooting breaks stealth
     isPlayerHidden = false;
     uiManager.updateHUD(getHUDState());
@@ -4241,6 +4433,9 @@ function updatePlayer(delta) {
     if (hasLegFracture) {
         speed *= 0.65;
     }
+    if (testModeState.superSpeed) {
+        speed *= 2.5;
+    }
 
     const targetEyeHeight = crouch ? CROUCH_EYE_HEIGHT : STANDING_EYE_HEIGHT;
     eyeHeight = THREE.MathUtils.lerp(eyeHeight, targetEyeHeight, delta * 14.0);
@@ -4462,7 +4657,7 @@ function updatePlayer(delta) {
             const targetY = groundLevel + eyeHeight;
 
             if (keys["Space"] && grounded) {
-                velocityY = jumpPower;
+                velocityY = testModeState.superJump ? jumpPower * 2.8 : jumpPower;
                 grounded = false;
             }
 
@@ -4552,7 +4747,7 @@ function updatePlayer(delta) {
 
 // 21. Player Damage Handler
 function damagePlayer(amount, source = 'generic') {
-    if (!gameStarted) return;
+    if (!gameStarted || testModeState.godMode) return;
 
     health -= amount;
     uiManager.triggerDamageFlash(source === 'ram' ? 0.95 : 0.65);
@@ -4648,6 +4843,9 @@ function spawnWave(difficulty) {
 }
 
 function updateWaves(delta) {
+    if (testModeState.freezeWaveTimer) {
+        return;
+    }
     const diff = getDifficulty();
     waveTimer += delta;
     if (waveTimer > 25) {
@@ -5002,7 +5200,22 @@ function animate() {
             }
 
             // Update enemies with stealth state, solid obstacle line-of-sight & ladder climbing
-            enemyManager.update(delta, playersList, getSimpleGround, null, false, obstacles, ladders);
+            if (!testModeState.freezeEnemies) {
+                const effectiveDelta = delta * (testModeState.enemySpeedMult !== undefined ? testModeState.enemySpeedMult : 1.0);
+                enemyManager.update(
+                    effectiveDelta,
+                    playersList,
+                    getSimpleGround,
+                    (dmg, src) => {
+                        if (testModeState.passiveAI) return;
+                        const mult = testModeState.enemyDamageMult !== undefined ? testModeState.enemyDamageMult : 1.0;
+                        damagePlayer(dmg * mult, src);
+                    },
+                    false,
+                    obstacles,
+                    ladders
+                );
+            }
 
             vehicleManager.update(delta, camera.position, obstacles, (dmg, src) => {
                 damagePlayer(dmg, src);
