@@ -11,6 +11,10 @@ import { MultiplayerManager } from './src/multiplayer.js';
 import { TestModeManager, testModeState } from './src/test-mode.js';
 import { achievementManager } from './src/achievements.js';
 
+if (typeof window !== 'undefined') {
+    window.soundEngine = soundEngine;
+}
+
 /* =========================================================
    SURVIVAL FPS — EXPANDED 3D CITY ENGINE
    ========================================================= */
@@ -2860,7 +2864,7 @@ function handleEnemyDamage(enemy, damage) {
     if (enemy.userData.health <= 0) {
         if (enemy.userData.isBoss) {
             kills += 5;
-            achievementManager.unlock('FIRST_BLOOD');
+            achievementManager.recordKill(kills);
             uiManager.hideBossHP(true);
             soundEngine.playBossDefeated();
             if (multiplayerManager?.chatPanel) {
@@ -2878,7 +2882,7 @@ function handleEnemyDamage(enemy, damage) {
                 enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
             }
             kills++;
-            achievementManager.unlock('FIRST_BLOOD');
+            achievementManager.recordKill(kills);
         }
 
         scene.remove(enemy);
@@ -3002,6 +3006,10 @@ let reloadTimer = 0;
 let reloadDuration = 2.1;
 let reloadPhase = 0;
 let pumpTimer = 0;
+let minigunHeat = 0.0;
+let minigunSpinSpeed = 0.0;
+let minigunRotorAngle = 0.0;
+let minigunBarrelMeshes = [];
 
 // Grenade Replenishing System (5s replenish timer, caps at 5)
 let grenadeCount = 3;
@@ -3069,6 +3077,7 @@ function getHUDState() {
         maxGrenades,
         grenadeTimer: grenadeReplenishTimer,
         weapon: currentWeapon,
+        minigunHeat,
         oxygen,
         isSubmerged,
         inWater,
@@ -3354,7 +3363,7 @@ function applyWeaponModel(weaponKey = 'AK47') {
 
         muzzleFlashLight.position.set(0, 0.054, -0.85);
 
-    } else {
+    } else if (weaponKey !== 'MINIGUN') {
         // =========================================================
         // AK-47 SOVIET TACTICAL ASSAULT RIFLE
         // =========================================================
@@ -3437,12 +3446,133 @@ function applyWeaponModel(weaponKey = 'AK47') {
         gunGroup.add(pistolGrip);
 
         muzzleFlashLight.position.set(0, 0.026, -1.02);
+    } else {
+        // =========================================================
+        // M134 VULCAN 6-BARREL ROTARY MINIGUN (MATCHING REFERENCE IMAGE)
+        // =========================================================
+        const matReceiverDark = new THREE.MeshStandardMaterial({ color: 0x181a1d, metalness: 0.90, roughness: 0.35 });
+        const matBarrelSteel = new THREE.MeshStandardMaterial({ color: 0x101214, metalness: 0.95, roughness: 0.20 });
+        const matAmmoDrum = new THREE.MeshStandardMaterial({ color: 0x475549, metalness: 0.40, roughness: 0.65 });
+        const matDrumCap = new THREE.MeshStandardMaterial({ color: 0x242826, metalness: 0.85, roughness: 0.40 });
+        const matClampRing = new THREE.MeshStandardMaterial({ color: 0x141618, metalness: 0.95, roughness: 0.15 });
+        const matDriveMotor = new THREE.MeshStandardMaterial({ color: 0x2a2e34, metalness: 0.80, roughness: 0.45 });
+
+        // 1. Heavy Rectangular Receiver Body
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.42), matReceiverDark);
+        receiver.position.set(0, 0.02, 0.04);
+        gunGroup.add(receiver);
+
+        // Electric Drive Motor on top of receiver
+        const driveMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.24, 16), matDriveMotor);
+        driveMotor.rotation.x = Math.PI / 2;
+        driveMotor.position.set(0, 0.11, 0.02);
+        gunGroup.add(driveMotor);
+
+        // Top Carrying Handle (Heavy arch bracket)
+        const handleLeftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.08, 0.022), matReceiverDark);
+        handleLeftLeg.position.set(0, 0.16, -0.06);
+        gunGroup.add(handleLeftLeg);
+
+        const handleRightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.08, 0.022), matReceiverDark);
+        handleRightLeg.position.set(0, 0.16, 0.06);
+        gunGroup.add(handleRightLeg);
+
+        const handleBar = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.15, 12), matPolymer);
+        handleBar.rotation.x = Math.PI / 2;
+        handleBar.position.set(0, 0.20, 0);
+        gunGroup.add(handleBar);
+
+        // Rear Spade Grip / Pistol Trigger Block
+        const spadeMount = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.06, 0.09), matReceiverDark);
+        spadeMount.position.set(0, 0.02, 0.28);
+        gunGroup.add(spadeMount);
+
+        const spadeGrip = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.020, 0.16, 12), matPolymer);
+        spadeGrip.position.set(0, -0.05, 0.32);
+        spadeGrip.rotation.x = -0.3;
+        gunGroup.add(spadeGrip);
+
+        // Olive-drab Cylindrical Ammunition Feed Canister / Drum (mounted lower left/rear)
+        const ammoDrum = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.16, 24), matAmmoDrum);
+        ammoDrum.rotation.z = Math.PI / 2;
+        ammoDrum.position.set(-0.11, -0.10, 0.05);
+        gunGroup.add(ammoDrum);
+
+        const drumCap1 = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.088, 0.02, 24), matDrumCap);
+        drumCap1.rotation.z = Math.PI / 2;
+        drumCap1.position.set(-0.19, -0.10, 0.05);
+        gunGroup.add(drumCap1);
+
+        const drumCap2 = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.088, 0.02, 24), matDrumCap);
+        drumCap2.rotation.z = Math.PI / 2;
+        drumCap2.position.set(-0.03, -0.10, 0.05);
+        gunGroup.add(drumCap2);
+
+        // Ammo Chute / Flex Feed Bracket to Receiver
+        const ammoChute = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.07, 0.10), matReceiverDark);
+        ammoChute.position.set(-0.07, -0.02, 0.05);
+        gunGroup.add(ammoChute);
+
+        // Rotor Central Axle Hub
+        const rotorRotor = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.12, 16), matSteelDark);
+        rotorRotor.rotation.x = Math.PI / 2;
+        rotorRotor.position.set(0, 0.02, -0.22);
+        gunGroup.add(rotorRotor);
+
+        // =========================================================
+        // ROTATING 6-BARREL GATLING ASSEMBLY (Spins when firing!)
+        // =========================================================
+        const minigunRotorGroup = new THREE.Group();
+        minigunRotorGroup.name = 'minigunRotor';
+        minigunRotorGroup.position.set(0, 0.02, -0.22);
+
+        const numBarrels = 6;
+        const barrelRadius = 0.048;
+        const barrelLength = 0.78;
+        minigunBarrelMeshes = [];
+
+        for (let b = 0; b < numBarrels; b++) {
+            const angle = (b / numBarrels) * Math.PI * 2;
+            const bx = Math.cos(angle) * barrelRadius;
+            const by = Math.sin(angle) * barrelRadius;
+
+            // Individual Barrel Tube
+            const bMesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.012, 0.012, barrelLength, 12),
+                matBarrelSteel.clone()
+            );
+            bMesh.rotation.x = Math.PI / 2;
+            bMesh.position.set(bx, by, -barrelLength / 2);
+            minigunRotorGroup.add(bMesh);
+            minigunBarrelMeshes.push(bMesh);
+        }
+
+        // Barrel Retaining Rings / Support Collars (3 rings along the length)
+        for (const rz of [-0.20, -0.45, -0.70]) {
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(barrelRadius, 0.013, 8, 24), matClampRing);
+            ring.position.set(0, 0, rz);
+            minigunRotorGroup.add(ring);
+        }
+
+        // Front Slotted Muzzle Shroud / Flash Suppressor Cage
+        const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.062, 0.12, 16, 1, true), matClampRing);
+        cage.rotation.x = Math.PI / 2;
+        cage.position.set(0, 0, -barrelLength - 0.04);
+        minigunRotorGroup.add(cage);
+
+        gunGroup.add(minigunRotorGroup);
+
+        muzzleFlashLight.position.set(0, 0.02, -1.08);
     }
 
     // Operator Gloved Hands
     const handRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
     handRight.name = 'handRight';
-    handRight.position.set(0, -0.12, 0.11);
+    if (weaponKey === 'MINIGUN') {
+        handRight.position.set(0, -0.05, 0.32);
+    } else {
+        handRight.position.set(0, -0.12, 0.11);
+    }
     gunGroup.add(handRight);
 
     const handLeft = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
@@ -3451,11 +3581,38 @@ function applyWeaponModel(weaponKey = 'AK47') {
         handLeft.position.set(-0.05, 0.0, -0.33);
     } else if (weaponKey === 'SHOTGUN') {
         handLeft.position.set(0.0, 0.01, -0.32); // Holds the forearm pump directly!
+    } else if (weaponKey === 'MINIGUN') {
+        handLeft.position.set(0, 0.20, 0); // Holds top carry handle bar!
     } else {
         handLeft.position.set(-0.05, 0.0, -0.33);
     }
     gunGroup.add(handLeft);
 }
+
+function switchPlayerWeapon(weaponKey) {
+    if (!WEAPON_CONFIGS[weaponKey]) return;
+    if (weaponKey === 'MINIGUN') {
+        const isUnlocked = typeof localStorage !== 'undefined' && localStorage.getItem('urban_breach_minigun_unlocked') === 'true';
+        if (!isUnlocked && !testModeState.godMode) {
+            if (typeof uiManager !== 'undefined' && uiManager && typeof uiManager.addChatMessage === 'function') {
+                uiManager.addChatMessage('HQ', '⚠️ M134 Minigun is LOCKED! Survive Wave 50 to unlock.');
+            }
+            return;
+        }
+    }
+    currentWeaponKey = weaponKey;
+    currentWeapon = WEAPON_CONFIGS[weaponKey];
+    ammo = currentWeapon.ammo;
+    maxAmmo = currentWeapon.maxAmmo;
+    aimFOV = currentWeapon.aimFOV || 48;
+    isReloading = false;
+    reloadTimer = 0;
+    minigunHeat = 0.0;
+    spreadSystem.setWeaponConfig(currentWeapon.spread);
+    applyWeaponModel(weaponKey);
+    uiManager.updateHUD(getHUDState());
+}
+window.switchPlayerWeapon = switchPlayerWeapon;
 
 applyWeaponModel('AK47');
 
@@ -3683,16 +3840,7 @@ const testModeManager = new TestModeManager({
         uiManager.updateHUD(getHUDState());
     },
     switchWeapon: (weaponKey) => {
-        if (WEAPON_CONFIGS[weaponKey]) {
-            currentWeaponKey = weaponKey;
-            currentWeapon = WEAPON_CONFIGS[weaponKey];
-            ammo = currentWeapon.ammo;
-            maxAmmo = currentWeapon.maxAmmo;
-            aimFOV = currentWeapon.aimFOV || 48;
-            spreadSystem.setWeaponConfig(currentWeapon.spread);
-            applyWeaponModel(weaponKey);
-            uiManager.updateHUD(getHUDState());
-        }
+        switchPlayerWeapon(weaponKey);
     },
     teleport: (destination) => {
         if (destination === 'origin') {
@@ -4084,6 +4232,23 @@ window.addEventListener('keydown', e => {
 
     keys[e.code] = true;
 
+    if (e.code === 'KeyM') {
+        const isEnabled = soundEngine.toggleMusic(gameStarted);
+        if (uiManager && typeof uiManager.updateMusicButtonsUI === 'function') {
+            uiManager.updateMusicButtonsUI(!isEnabled);
+        }
+        if (uiManager && typeof uiManager.addChatMessage === 'function') {
+            uiManager.addChatMessage('System', isEnabled ? '🎵 Background Music: ENABLED' : '🔇 Background Music: MUTED');
+        }
+    }
+
+    if (gameStarted && !window.chatInputActive) {
+        if (e.code === 'Digit1') switchPlayerWeapon('AK47');
+        else if (e.code === 'Digit2') switchPlayerWeapon('SNIPER');
+        else if (e.code === 'Digit3') switchPlayerWeapon('SHOTGUN');
+        else if (e.code === 'Digit4') switchPlayerWeapon('MINIGUN');
+    }
+
     if (e.code === 'KeyR' && gameStarted) {
         startReload();
     }
@@ -4248,6 +4413,11 @@ function shoot() {
     fireCooldown = currentWeapon.fireRate;
     spreadSystem.onFire(aiming, isCrouching);
 
+    if (currentWeapon.id === 'MINIGUN') {
+        minigunHeat = Math.min(1.0, minigunHeat + 0.018);
+        minigunSpinSpeed = 48.0;
+    }
+
     const isShotgun = currentWeapon.id === 'SHOTGUN';
     const pellets = isShotgun ? 8 : 1;
 
@@ -4260,6 +4430,12 @@ function shoot() {
         setTimeout(() => {
             soundEngine.playShotgunPump();
         }, 220);
+    } else if (currentWeapon.id === 'MINIGUN') {
+        if (typeof soundEngine.playMinigunFire === 'function') {
+            soundEngine.playMinigunFire();
+        } else {
+            soundEngine.playRifleShot(aiming);
+        }
     } else {
         soundEngine.playRifleShot(aiming);
     }
@@ -4276,7 +4452,8 @@ function shoot() {
     const playerHits = new Map();  // peerId -> accumulated damage
 
     for (let p = 0; p < pellets; p++) {
-        const spreadDirObj = spreadSystem.calculateSpreadDirection(forward, right, up);
+        const customSpread = currentWeapon.id === 'MINIGUN' ? (spreadSystem.currentSpread + (minigunHeat * 22.0)) : null;
+        const spreadDirObj = spreadSystem.calculateSpreadDirection(forward, right, up, customSpread);
         const bulletDir = new THREE.Vector3(spreadDirObj.x, spreadDirObj.y, spreadDirObj.z);
 
         // Perform hitscan raycasting
@@ -4893,6 +5070,19 @@ function damagePlayer(amount, source = 'generic') {
         health = 0;
         gameStarted = false;
         if (document.pointerLockElement) document.exitPointerLock();
+
+        // Check death cause for achievements
+        let deathCause = 'generic';
+        const waterSurface = getWaterLevel(camera.position.x, camera.position.z);
+        const inWater = waterSurface > -900 && (camera.position.y - eyeHeight < waterSurface);
+        if (source === 'drowning' || inWater) {
+            deathCause = 'water';
+        } else if (source === 'fall' || bodyBones.leftLeg || bodyBones.rightLeg) {
+            deathCause = 'fall';
+        }
+
+        achievementManager.recordDeath(deathCause);
+
         uiManager.showGameOver({ kills, wave, difficulty: getDifficulty() });
         soundEngine.stopMusic();
     }
@@ -4946,15 +5136,15 @@ function spawnWave(difficulty) {
 let gameWon = false;
 
 function checkWaveMilestones() {
-    if (wave >= 5) achievementManager.unlock('ROOKIE_SURVIVOR');
-    if (wave >= 25) achievementManager.unlock('VETERAN_SURVIVOR');
-    if (wave >= 50) achievementManager.unlock('ELITE_DEFENDER');
-    if (wave >= 95) achievementManager.unlock('PENULTIMATE_STAND');
-    if (wave >= 100) {
-        achievementManager.unlock('CENTURY_VICTORY');
+    achievementManager.recordWave(wave);
+
+    if (wave >= 50) {
         if (!gameWon) {
             gameWon = true;
-            uiManager.showVictoryScreen({ kills, wave: 100, difficulty: getDifficulty() });
+            try {
+                localStorage.setItem('urban_breach_minigun_unlocked', 'true');
+            } catch (e) {}
+            uiManager.showVictoryScreen({ kills, wave: 50, difficulty: getDifficulty() });
             if (soundEngine && typeof soundEngine.playLevelUp === 'function') {
                 soundEngine.playLevelUp();
             }
@@ -5101,6 +5291,31 @@ function updateAimAndGun(delta, moving, sprint) {
             targetGunY = -0.198;
             targetGunZ = -0.38 + gunRecoil;
             targetRotX = 0.0;
+        } else if (currentWeapon.id === 'MINIGUN') {
+            targetGunX = 0.08;
+            targetGunY = -0.22;
+            targetGunZ = -0.46 + gunRecoil;
+            targetRotX = 0.01;
+        }
+    }
+
+    // Minigun Real-Time Heat Dissipation, Gatling Spin & Emissive Glow
+    if (currentWeapon.id === 'MINIGUN') {
+        minigunHeat = Math.max(0, minigunHeat - delta * 0.35);
+        minigunSpinSpeed = Math.max(0, minigunSpinSpeed - delta * 25.0);
+
+        const rotor = gunGroup.getObjectByName('minigunRotor');
+        if (rotor && minigunSpinSpeed > 0) {
+            minigunRotorAngle += minigunSpinSpeed * delta;
+            rotor.rotation.z = minigunRotorAngle;
+        }
+
+        if (minigunBarrelMeshes && minigunBarrelMeshes.length > 0) {
+            for (const bMesh of minigunBarrelMeshes) {
+                if (bMesh.material && bMesh.material.emissive) {
+                    bMesh.material.emissive.setRGB(minigunHeat * 0.9, minigunHeat * 0.25, 0);
+                }
+            }
         }
     }
 

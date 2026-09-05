@@ -203,8 +203,9 @@ export class TestModeManager {
                             <button class="test-btn-pill boss" data-wave="10">Wave 10 ☠ BOSS</button>
                             <button class="test-btn-pill boss" data-wave="15">Wave 15 ☠ BOSS</button>
                             <button class="test-btn-pill boss" data-wave="20">Wave 20 ☠ BOSS</button>
+                            <button class="test-btn-pill" data-wave="50" style="border-color: rgba(241, 196, 15, 0.8); color: #f1c40f; font-weight: 700;">Wave 50 👑 WIN</button>
                             <button class="test-btn-pill" data-wave="95" style="border-color: rgba(230, 126, 34, 0.6); color: #e67e22;">Wave 95 🔥</button>
-                            <button class="test-btn-pill" data-wave="100" style="border-color: rgba(241, 196, 15, 0.8); color: #f1c40f; font-weight: 700;">Wave 100 👑 WIN</button>
+                            <button class="test-btn-pill" data-wave="100" style="border-color: rgba(241, 196, 15, 0.8); color: #f1c40f; font-weight: 700;">Wave 100 👑</button>
                         </div>
                     </div>
 
@@ -339,6 +340,7 @@ export class TestModeManager {
                     <div class="test-button-grid">
                         <button id="btn-cheat-heal" class="test-btn-action green">💚 FULL HEAL & REPAIR BONES</button>
                         <button id="btn-cheat-grenades" class="test-btn-action amber">💣 REFILL GRENADES (5x MAX)</button>
+                        <button id="btn-cheat-unlock-minigun" class="test-btn-action cyan">🔓 UNLOCK M134 MINIGUN</button>
                     </div>
 
                     <div class="test-section-title" style="margin-top:10px;">WEAPON SWITCHER</div>
@@ -346,6 +348,7 @@ export class TestModeManager {
                         <button class="test-btn-pill weapon active" data-weapon="AK47">🔫 AK-47 RIFLE</button>
                         <button class="test-btn-pill weapon" data-weapon="SNIPER">🎯 BARRETT .50 SNIPER</button>
                         <button class="test-btn-pill weapon" data-weapon="SHOTGUN">💥 M590 SHOTGUN</button>
+                        <button class="test-btn-pill weapon" data-weapon="MINIGUN" style="border-color: rgba(16, 185, 129, 0.6); color: #10b981;">⚙️ M134 MINIGUN</button>
                     </div>
 
                     <div class="test-section-title" style="margin-top:10px;">TACTICAL TELEPORTATION</div>
@@ -604,6 +607,21 @@ export class TestModeManager {
         panel.querySelector('#btn-cheat-grenades').addEventListener('click', () => {
             if (this.api.refillGrenades) this.api.refillGrenades();
         });
+        const btnUnlockMinigun = panel.querySelector('#btn-cheat-unlock-minigun');
+        if (btnUnlockMinigun) {
+            btnUnlockMinigun.addEventListener('click', () => {
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('urban_breach_minigun_unlocked', 'true');
+                }
+                if (window.uiManagerGlobal && typeof window.uiManagerGlobal.unlockMinigunUI === 'function') {
+                    window.uiManagerGlobal.unlockMinigunUI();
+                }
+                if (this.api.switchWeapon) {
+                    this.api.switchWeapon('MINIGUN');
+                }
+                btnUnlockMinigun.textContent = '✅ M134 MINIGUN UNLOCKED & EQUIPPED';
+            });
+        }
 
         // Weapon Switch
         panel.querySelectorAll('.test-weapon-switch-row .test-btn-pill').forEach(btn => {

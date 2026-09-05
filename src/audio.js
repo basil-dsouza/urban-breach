@@ -13,6 +13,12 @@ class SoundEngine {
         // Background Music track state properties
         this.currentMusic = null;
         this.currentTrack = '';
+        this.isMusicMuted = false;
+        if (typeof localStorage !== 'undefined') {
+            try {
+                this.isMusicMuted = localStorage.getItem('urban_breach_music_muted') === 'true';
+            } catch (e) {}
+        }
 
         // Audio sample pools & Web Audio buffers for zero-latency gun sounds
         this.samplePools = {};
@@ -74,7 +80,8 @@ class SoundEngine {
             'shotgunFire': 'gun-sounds/shotgun-fire.mp3',
             'shotgunPump': 'gun-sounds/shotgun-reload.mp3',
             'sniperFire': 'gun-sounds/sniper-fire.mp3',
-            'sniperReload': 'gun-sounds/sniper-reload.mp3'
+            'sniperReload': 'gun-sounds/sniper-reload.mp3',
+            'minigunFire': 'gun-sounds/minigun-fire.mp3'
         };
 
         for (const [key, path] of Object.entries(files)) {
@@ -141,7 +148,8 @@ class SoundEngine {
             'shotgunFire': 'gun-sounds/shotgun-fire.mp3',
             'shotgunPump': 'gun-sounds/shotgun-reload.mp3',
             'sniperFire': 'gun-sounds/sniper-fire.mp3',
-            'sniperReload': 'gun-sounds/sniper-reload.mp3'
+            'sniperReload': 'gun-sounds/sniper-reload.mp3',
+            'minigunFire': 'gun-sounds/minigun-fire.mp3'
         };
 
         const src = pathMap[key];
@@ -260,6 +268,65 @@ class SoundEngine {
             source.stop(t + 0.04);
         } catch (e) {}
         this.activeRifleBurst = null;
+        this.stopMinigunBurst();
+    }
+
+    /**
+     * M134 Rotary Minigun rapid sustained fire sound
+     */
+    playMinigunFire() {
+        this.init();
+        this.resume();
+
+        const t = this.ctx ? this.ctx.currentTime : 0;
+
+        if (this.ctx && this.audioBuffers['minigunFire']) {
+            if (this.activeMinigunBurst && this.activeMinigunBurst.gainNode) {
+                this.activeMinigunBurst.lastShotTime = t;
+                this.activeMinigunBurst.cutoffTime = t + 0.12;
+                return;
+            }
+
+            const source = this.ctx.createBufferSource();
+            source.buffer = this.audioBuffers['minigunFire'];
+            source.loop = true;
+
+            const gainNode = this.ctx.createGain();
+            gainNode.gain.setValueAtTime(this.gunVolume * 1.1, t);
+
+            source.connect(gainNode);
+            gainNode.connect(this.ctx.destination);
+
+            source.start(t);
+
+            this.activeMinigunBurst = {
+                source,
+                gainNode,
+                lastShotTime: t,
+                cutoffTime: t + 0.12
+            };
+            return;
+        }
+
+        this.playGunSample('minigunFire', () => {
+            this.playRifleShotSynthesized();
+        });
+    }
+
+    /**
+     * Stop Minigun sustained rotary sound on trigger release
+     */
+    stopMinigunBurst() {
+        if (!this.activeMinigunBurst || !this.ctx) return;
+        const t = this.ctx.currentTime;
+        const { source, gainNode } = this.activeMinigunBurst;
+        try {
+            gainNode.gain.cancelScheduledValues(t);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+            gainNode.gain.linearRampToValueAtTime(0.001, t + 0.04);
+            source.stop(t + 0.05);
+        } catch (e) {}
+        this.activeMinigunBurst = null;
     }
 
     /**
@@ -1332,6 +1399,7 @@ class SoundEngine {
      */
     playMenuMusic() {
         if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        if (this.isMusicMuted) return;
         if (this.currentTrack === 'menu') return;
         this.stopMusic();
 
@@ -1360,6 +1428,7 @@ class SoundEngine {
      */
     playGameMusic() {
         if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        if (this.isMusicMuted) return;
         if (this.currentTrack && this.currentTrack.startsWith('game')) return;
         this.stopMusic();
 
@@ -1425,6 +1494,33 @@ class SoundEngine {
         }
         this.currentTrack = '';
         this.hideCreditsBanner();
+    }
+
+    /**
+     * Toggle background music on / off
+     * @returns {boolean} true if music is now enabled/playing, false if muted
+     */
+    toggleMusic(isPlayingGame = false) {
+        this.isMusicMuted = !this.isMusicMuted;
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.setItem('urban_breach_music_muted', this.isMusicMuted ? 'true' : 'false');
+            } catch (e) {}
+        }
+
+        if (this.isMusicMuted) {
+            this.stopMusic();
+            console.log("[MUSIC] Music muted by user.");
+        } else {
+            console.log("[MUSIC] Music unmuted by user.");
+            if (isPlayingGame || (typeof window !== 'undefined' && window.gameStarted)) {
+                this.playGameMusic();
+            } else {
+                this.playMenuMusic();
+            }
+        }
+
+        return !this.isMusicMuted;
     }
 
     /**

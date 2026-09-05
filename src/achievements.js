@@ -2,15 +2,19 @@
  * Urban Breach — Achievements System & Victory Engine
  * 
  * Features:
- * - 12 Named Tactical Achievements including surviving 95 waves and wave 100 victory.
- * - 2 Secret Achievements: finding the test console & logging into test mode.
- * - Secret achievements remain masked until unlocked.
+ * - Comprehensive Military Achievements:
+ *   - Enemy Kills: Every 5 kills from 5 all the way to 200 (40 tiers).
+ *   - Wave Survival: Every 5 waves up to Wave 50 (10 tiers).
+ *   - Casualties & Deaths: Milestones in multiples of 5 up to 50, including "Oh, So That's What It Does".
+ *   - Environmental & Hazard Deaths: "Watery Grave" (water/drowning) and "Broken Bones" (fall impact).
+ *   - 2 Secret Achievements: finding the test console & logging into test mode (masked until unlocked).
  * - Animated sliding HUD notification toasts with audio cues.
- * - Interactive Cyberpunk Achievements Viewer modal.
+ * - Interactive Cyberpunk Achievements Viewer modal with category filter tabs.
  * - LocalStorage persistence across sessions.
  */
 
-export const ACHIEVEMENTS_CATALOG = {
+// 1. Core Tactical & Special Ops Achievements
+const BASE_CATALOG = {
     FIRST_BLOOD: {
         id: 'FIRST_BLOOD',
         title: 'First Blood',
@@ -113,12 +117,105 @@ export const ACHIEVEMENTS_CATALOG = {
     }
 };
 
+// 2. Wave Survival Achievements in multiples of 5 up to 50
+const WAVE_TITLES = {
+    5: 'Frontline Initiate',
+    10: 'Decade Defender',
+    15: 'Fortified Vanguard',
+    20: 'Iron Bulwark',
+    25: 'Quarter Century Vanguard',
+    30: 'Relentless Bastion',
+    35: 'Storm Breaker',
+    40: 'Fortress Supreme',
+    45: 'The Threshold',
+    50: 'Half Century Victor'
+};
+
+const WAVE_CATALOG = {};
+for (let w = 5; w <= 50; w += 5) {
+    WAVE_CATALOG['SURVIVE_WAVE_' + w] = {
+        id: 'SURVIVE_WAVE_' + w,
+        title: WAVE_TITLES[w] || ('Wave ' + w + ' Veteran'),
+        desc: w === 50 ? 'Survive all 50 waves, conquer the urban breach, and unlock the M134 Minigun!' : ('Endure and survive ' + w + ' consecutive waves of hostile incursions.'),
+        icon: w === 50 ? '👑' : (w >= 30 ? '🎖️' : '🛡️'),
+        category: 'survival',
+        isSecret: false
+    };
+}
+
+// 3. Enemy Kill Achievements: Multiples of 5 from 5 up to 200 (40 distinct milestones)
+const KILL_CATALOG = {};
+for (let k = 5; k <= 200; k += 5) {
+    let icon = '🎯';
+    if (k >= 150) icon = '☠️';
+    else if (k >= 100) icon = '💀';
+    else if (k >= 50) icon = '💥';
+    else if (k >= 25) icon = '⚔️';
+
+    KILL_CATALOG['KILL_' + k] = {
+        id: 'KILL_' + k,
+        title: 'Hostiles Down: ' + k,
+        desc: 'Eliminate ' + k + ' enemy combatants in tactical combat.',
+        icon,
+        category: 'kills',
+        isSecret: false
+    };
+}
+
+// 4. Death & Casualty Achievements: Up to 50, plus special deaths (water, broken bones)
+const DEATH_CATALOG = {
+    DEATH_FIRST: {
+        id: 'DEATH_FIRST',
+        title: "Oh, So That's What It Does",
+        desc: "Suffer your first combat casualty or discover lethal hazards the hard way.",
+        icon: '💀',
+        category: 'deaths',
+        isSecret: false
+    },
+    DEATH_WATER: {
+        id: 'DEATH_WATER',
+        title: 'Watery Grave',
+        desc: 'Perish from drowning or succumb to wounds while submerged in deep water.',
+        icon: '🌊',
+        category: 'deaths',
+        isSecret: false
+    },
+    DEATH_FALL: {
+        id: 'DEATH_FALL',
+        title: 'Broken Bones',
+        desc: 'Succumb to fatal fall impact damage with multiple compound bone fractures.',
+        icon: '🦴',
+        category: 'deaths',
+        isSecret: false
+    }
+};
+
+for (let d = 5; d <= 50; d += 5) {
+    DEATH_CATALOG['DEATH_' + d] = {
+        id: 'DEATH_' + d,
+        title: 'Casualty Report: ' + d + ' Deaths',
+        desc: d === 50 ? 'Suffer 50 combat casualties. Immortal endurance achieved!' : ('Endure ' + d + ' cumulative casualties in the line of duty.'),
+        icon: d === 50 ? '⚰️' : '🪦',
+        category: 'deaths',
+        isSecret: false
+    };
+}
+
+export const ACHIEVEMENTS_CATALOG = {
+    ...BASE_CATALOG,
+    ...WAVE_CATALOG,
+    ...KILL_CATALOG,
+    ...DEATH_CATALOG
+};
+
 const STORAGE_KEY = 'urban_breach_achievements_v1';
+const STORAGE_DEATHS_KEY = 'urban_breach_total_deaths';
 
 export class AchievementManager {
     constructor(soundEngine = null) {
         this.soundEngine = soundEngine;
         this.unlocked = {};
+        this.totalDeaths = 0;
         this.toastQueue = [];
         this.isToastActive = false;
         
@@ -137,8 +234,13 @@ export class AchievementManager {
             if (raw) {
                 this.unlocked = JSON.parse(raw);
             }
+            const deathsRaw = localStorage.getItem(STORAGE_DEATHS_KEY);
+            if (deathsRaw) {
+                this.totalDeaths = parseInt(deathsRaw, 10) || 0;
+            }
         } catch (e) {
             this.unlocked = {};
+            this.totalDeaths = 0;
         }
     }
 
@@ -146,6 +248,7 @@ export class AchievementManager {
         if (typeof localStorage === 'undefined') return;
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(this.unlocked));
+            localStorage.setItem(STORAGE_DEATHS_KEY, this.totalDeaths.toString());
         } catch (e) {}
     }
 
@@ -153,100 +256,143 @@ export class AchievementManager {
         return !!this.unlocked[id];
     }
 
+    getTotalDeaths() {
+        return this.totalDeaths;
+    }
+
     unlock(id) {
         const achievement = ACHIEVEMENTS_CATALOG[id];
-        if (!achievement) return false;
-        if (this.unlocked[id]) return false;
+        if (!achievement) {
+            console.warn('[ACHIEVEMENTS] Unknown achievement ID: ' + id);
+            return false;
+        }
+
+        if (this.unlocked[id]) {
+            return false; // Already unlocked
+        }
 
         this.unlocked[id] = {
             unlockedAt: Date.now()
         };
         this.save();
 
+        console.log('[ACHIEVEMENTS] UNLOCKED: ' + achievement.title + ' (' + id + ')');
+        this.enqueueToast(achievement);
+
         if (this.soundEngine && typeof this.soundEngine.playLevelUp === 'function') {
-            try { this.soundEngine.playLevelUp(); } catch (e) {}
+            try {
+                this.soundEngine.playLevelUp();
+            } catch (e) {}
         }
 
-        this.queueToast(achievement);
-        this.updateModalIfOpen();
         return true;
     }
 
-    getProgress() {
-        const allKeys = Object.keys(ACHIEVEMENTS_CATALOG);
-        const unlockedCount = allKeys.filter(k => this.isUnlocked(k)).length;
-        const total = allKeys.length;
-        const percent = Math.round((unlockedCount / total) * 100);
-        return { unlockedCount, total, percent };
-    }
-
-    queueToast(achievement) {
-        this.toastQueue.push(achievement);
-        if (!this.isToastActive) {
-            this.processNextToast();
+    /**
+     * Check and award enemy kill milestone achievements (5 to 200 in multiples of 5)
+     */
+    recordKill(totalKills) {
+        if (totalKills >= 1) {
+            this.unlock('FIRST_BLOOD');
+        }
+        for (let k = 5; k <= 200; k += 5) {
+            if (totalKills >= k) {
+                this.unlock('KILL_' + k);
+            }
         }
     }
 
-    processNextToast() {
+    /**
+     * Check and award wave survival milestone achievements (5 to 50 in multiples of 5)
+     */
+    recordWave(waveNumber) {
+        if (waveNumber >= 5) this.unlock('ROOKIE_SURVIVOR');
+        if (waveNumber >= 25) this.unlock('VETERAN_SURVIVOR');
+        if (waveNumber >= 50) this.unlock('ELITE_DEFENDER');
+        if (waveNumber >= 95) this.unlock('PENULTIMATE_STAND');
+        if (waveNumber >= 100) this.unlock('CENTURY_VICTORY');
+
+        for (let w = 5; w <= 50; w += 5) {
+            if (waveNumber >= w) {
+                this.unlock('SURVIVE_WAVE_' + w);
+            }
+        }
+    }
+
+    /**
+     * Record a player death and check death milestones (multiples of 5 up to 50, water, fall)
+     */
+    recordDeath(cause = 'generic') {
+        this.totalDeaths++;
+        this.save();
+
+        // 1. "Oh, So That's What It Does" - awarded on first death
+        this.unlock('DEATH_FIRST');
+
+        // 2. Cumulative death count milestones (5, 10, 15, ..., 50)
+        for (let d = 5; d <= 50; d += 5) {
+            if (this.totalDeaths >= d) {
+                this.unlock('DEATH_' + d);
+            }
+        }
+
+        // 3. Environmental & trauma death causes
+        if (cause === 'water' || cause === 'drowning') {
+            this.unlock('DEATH_WATER');
+        } else if (cause === 'fall' || cause === 'broken_bones') {
+            this.unlock('DEATH_FALL');
+        }
+
+        return this.totalDeaths;
+    }
+
+    getProgress() {
+        const total = Object.keys(ACHIEVEMENTS_CATALOG).length;
+        const unlockedCount = Object.keys(this.unlocked).length;
+        const percent = total > 0 ? Math.round((unlockedCount / total) * 100) : 0;
+        return { total, unlockedCount, percent };
+    }
+
+    enqueueToast(achievement) {
+        this.toastQueue.push(achievement);
+        if (!this.isToastActive) {
+            this.processToastQueue();
+        }
+    }
+
+    processToastQueue() {
         if (this.toastQueue.length === 0) {
             this.isToastActive = false;
             return;
         }
 
         this.isToastActive = true;
-        const item = this.toastQueue.shift();
-
-        if (typeof document === 'undefined') return;
-        let container = document.getElementById('achievement-toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'achievement-toast-container';
-            document.body.appendChild(container);
-        }
-
-        const isSecret = item.isSecret;
-        const toast = document.createElement('div');
-        toast.className = `achievement-toast ${isSecret ? 'achievement-toast-secret' : ''}`;
-        toast.innerHTML = `
-            <div class="achievement-toast-icon">${item.icon}</div>
-            <div class="achievement-toast-body">
-                <div class="achievement-toast-badge">${isSecret ? '🔒 SECRET UNLOCKED' : '🏆 ACHIEVEMENT UNLOCKED'}</div>
-                <div class="achievement-toast-title">${item.title}</div>
-                <div class="achievement-toast-desc">${item.desc}</div>
-            </div>
-        `;
-
-        container.appendChild(toast);
-
-        // Animate entrance
-        requestAnimationFrame(() => {
-            toast.classList.add('achievement-toast-show');
-        });
-
-        // Hold and remove
-        setTimeout(() => {
-            toast.classList.remove('achievement-toast-show');
-            toast.classList.add('achievement-toast-hide');
+        const ach = this.toastQueue.shift();
+        this.renderToast(ach, () => {
             setTimeout(() => {
-                if (toast.parentNode) toast.parentNode.removeChild(toast);
-                this.processNextToast();
-            }, 500);
-        }, 4200);
+                this.processToastQueue();
+            }, 300);
+        });
     }
 
     initDOM() {
         if (typeof document === 'undefined') return;
 
-        // Stylesheet for Achievements Toasts & Viewer Modal
-        if (!document.getElementById('achievement-styles')) {
+        if (!document.getElementById('achievement-toast-container')) {
+            const container = document.createElement('div');
+            container.id = 'achievement-toast-container';
+            container.className = 'achievement-toast-container';
+            document.body.appendChild(container);
+        }
+
+        if (!document.getElementById('achievements-injected-styles')) {
             const style = document.createElement('style');
-            style.id = 'achievement-styles';
+            style.id = 'achievements-injected-styles';
             style.textContent = `
-                #achievement-toast-container {
+                .achievement-toast-container {
                     position: fixed;
                     top: 24px;
-                    left: 50%;
-                    transform: translateX(-50%);
+                    right: 24px;
                     z-index: 9999999;
                     display: flex;
                     flex-direction: column;
@@ -337,8 +483,8 @@ export class AchievementManager {
                     border: 1.5px solid rgba(0, 229, 255, 0.4);
                     border-radius: 16px;
                     width: 100%;
-                    max-width: 680px;
-                    max-height: 85vh;
+                    max-width: 760px;
+                    max-height: 88vh;
                     display: flex;
                     flex-direction: column;
                     box-shadow: 0 25px 60px rgba(0,0,0,0.85), 0 0 35px rgba(0, 229, 255, 0.2);
@@ -348,7 +494,7 @@ export class AchievementManager {
                     position: relative;
                 }
                 .achieve-modal-header {
-                    padding: 20px 24px;
+                    padding: 18px 24px;
                     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                     display: flex;
                     justify-content: space-between;
@@ -384,7 +530,7 @@ export class AchievementManager {
                     background: rgba(255, 255, 255, 0.1);
                 }
                 .achieve-progress-banner {
-                    padding: 14px 24px;
+                    padding: 12px 24px;
                     background: rgba(0, 229, 255, 0.06);
                     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
                     display: flex;
@@ -410,12 +556,51 @@ export class AchievementManager {
                     border-radius: 4px;
                     transition: width 0.4s ease;
                 }
+
+                /* Category Filter Tabs */
+                .achieve-tabs-bar {
+                    display: flex;
+                    gap: 8px;
+                    padding: 10px 24px;
+                    background: rgba(0, 0, 0, 0.35);
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+                    overflow-x: auto;
+                    scrollbar-width: none;
+                }
+                .achieve-tabs-bar::-webkit-scrollbar {
+                    display: none;
+                }
+                .achieve-tab-btn {
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 20px;
+                    color: #94a3b8;
+                    padding: 6px 14px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    letter-spacing: 0.5px;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    transition: all 0.2s;
+                }
+                .achieve-tab-btn:hover {
+                    color: #fff;
+                    border-color: rgba(0, 229, 255, 0.4);
+                    background: rgba(0, 229, 255, 0.1);
+                }
+                .achieve-tab-btn.active {
+                    color: #000;
+                    background: #00e5ff;
+                    border-color: #00e5ff;
+                    box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+                }
+
                 .achieve-list {
-                    padding: 20px 24px;
+                    padding: 16px 24px;
                     overflow-y: auto;
                     display: flex;
                     flex-direction: column;
-                    gap: 12px;
+                    gap: 10px;
                     scrollbar-width: thin;
                     scrollbar-color: rgba(0, 229, 255, 0.3) transparent;
                 }
@@ -426,7 +611,7 @@ export class AchievementManager {
                     background: rgba(18, 27, 43, 0.7);
                     border: 1px solid rgba(255, 255, 255, 0.06);
                     border-radius: 12px;
-                    padding: 14px 16px;
+                    padding: 12px 16px;
                     transition: all 0.2s;
                 }
                 .achieve-item.unlocked {
@@ -463,34 +648,29 @@ export class AchievementManager {
                 .achieve-item-title {
                     font-size: 15px;
                     font-weight: 700;
+                    color: #fff;
                     margin-bottom: 3px;
-                    color: #94a3b8;
-                }
-                .achieve-item.unlocked .achieve-item-title {
-                    color: #ffffff;
                 }
                 .achieve-item-desc {
                     font-size: 12px;
-                    color: #64748b;
+                    color: #94a3b8;
                     line-height: 1.35;
                 }
-                .achieve-item.unlocked .achieve-item-desc {
-                    color: #cbd5e1;
-                }
                 .achieve-item-badge {
-                    padding: 4px 10px;
-                    border-radius: 6px;
                     font-size: 11px;
-                    font-weight: 700;
-                    letter-spacing: 0.5px;
-                    flex-shrink: 0;
+                    font-weight: 800;
+                    letter-spacing: 1px;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    white-space: nowrap;
                 }
                 .achieve-badge-locked {
                     background: rgba(255, 255, 255, 0.06);
                     color: #64748b;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
                 }
                 .achieve-badge-unlocked {
-                    background: rgba(0, 229, 255, 0.2);
+                    background: rgba(0, 229, 255, 0.15);
                     color: #00e5ff;
                     border: 1px solid rgba(0, 229, 255, 0.4);
                 }
@@ -504,6 +684,48 @@ export class AchievementManager {
         }
     }
 
+    renderToast(achievement, onComplete) {
+        if (typeof document === 'undefined') {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        const container = document.getElementById('achievement-toast-container');
+        if (!container) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'achievement-toast ' + (achievement.isSecret ? 'achievement-toast-secret' : '');
+        
+        toast.innerHTML = `
+            <div class="achievement-toast-icon">${achievement.icon}</div>
+            <div class="achievement-toast-body">
+                <div class="achievement-toast-badge">${achievement.isSecret ? '✦ SECRET ACHIEVEMENT UNLOCKED' : '🏆 ACHIEVEMENT UNLOCKED'}</div>
+                <div class="achievement-toast-title">${achievement.title}</div>
+                <div class="achievement-toast-desc">${achievement.desc}</div>
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        // Force reflow then animate in
+        void toast.offsetWidth;
+        toast.classList.add('achievement-toast-show');
+
+        setTimeout(() => {
+            toast.classList.remove('achievement-toast-show');
+            toast.classList.add('achievement-toast-hide');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+                if (onComplete) onComplete();
+            }, 450);
+        }, 3600);
+    }
+
     openModal() {
         if (typeof document === 'undefined') return;
         this.closeModal();
@@ -512,46 +734,6 @@ export class AchievementManager {
         const modal = document.createElement('div');
         modal.id = 'achievements-viewer-modal';
         modal.className = 'achieve-modal-overlay';
-
-        let listHTML = '';
-        for (const key of Object.keys(ACHIEVEMENTS_CATALOG)) {
-            const ach = ACHIEVEMENTS_CATALOG[key];
-            const unlocked = this.isUnlocked(key);
-
-            let icon = ach.icon;
-            let title = ach.title;
-            let desc = ach.desc;
-            let badgeClass = 'achieve-badge-locked';
-            let badgeText = 'LOCKED';
-
-            if (unlocked) {
-                if (ach.isSecret) {
-                    badgeClass = 'achieve-badge-secret';
-                    badgeText = 'SECRET CLEARED';
-                } else {
-                    badgeClass = 'achieve-badge-unlocked';
-                    badgeText = 'UNLOCKED';
-                }
-            } else {
-                if (ach.isSecret) {
-                    icon = '❓';
-                    title = 'Classified Secret';
-                    desc = 'Classified intelligence. Discover and unlock in-game to reveal.';
-                    badgeText = 'CLASSIFIED';
-                }
-            }
-
-            listHTML += `
-                <div class="achieve-item ${unlocked ? 'unlocked' : ''} ${ach.isSecret ? 'secret' : ''}">
-                    <div class="achieve-item-icon ${!unlocked ? 'achieve-item-locked-icon' : ''}">${icon}</div>
-                    <div class="achieve-item-info">
-                        <div class="achieve-item-title">${title}</div>
-                        <div class="achieve-item-desc">${desc}</div>
-                    </div>
-                    <div class="achieve-item-badge ${badgeClass}">${badgeText}</div>
-                </div>
-            `;
-        }
 
         modal.innerHTML = `
             <div class="achieve-modal-card">
@@ -571,13 +753,80 @@ export class AchievementManager {
                         <div class="achieve-progress-bar-fill" style="width: ${progress.percent}%;"></div>
                     </div>
                 </div>
-                <div class="achieve-list">
-                    ${listHTML}
+                <div class="achieve-tabs-bar">
+                    <button class="achieve-tab-btn active" data-cat="all">ALL (${progress.total})</button>
+                    <button class="achieve-tab-btn" data-cat="kills">KILLS (40)</button>
+                    <button class="achieve-tab-btn" data-cat="survival">SURVIVAL (10)</button>
+                    <button class="achieve-tab-btn" data-cat="deaths">DEATHS & HAZARDS (13)</button>
+                    <button class="achieve-tab-btn" data-cat="special">TACTICS & SECRETS</button>
                 </div>
+                <div class="achieve-list" id="achieve-modal-list"></div>
             </div>
         `;
 
         document.body.appendChild(modal);
+
+        const listEl = modal.querySelector('#achieve-modal-list');
+        const tabBtns = modal.querySelectorAll('.achieve-tab-btn');
+
+        const renderItems = (category = 'all') => {
+            let listHTML = '';
+            for (const key of Object.keys(ACHIEVEMENTS_CATALOG)) {
+                const ach = ACHIEVEMENTS_CATALOG[key];
+                const unlocked = this.isUnlocked(key);
+
+                // Category filter check
+                if (category === 'kills' && ach.category !== 'kills') continue;
+                if (category === 'survival' && ach.category !== 'survival' && ach.category !== 'victory') continue;
+                if (category === 'deaths' && ach.category !== 'deaths') continue;
+                if (category === 'special' && ach.category !== 'tactics' && ach.category !== 'secret' && ach.category !== 'combat') continue;
+
+                let icon = ach.icon;
+                let title = ach.title;
+                let desc = ach.desc;
+                let badgeClass = 'achieve-badge-locked';
+                let badgeText = 'LOCKED';
+
+                if (unlocked) {
+                    if (ach.isSecret) {
+                        badgeClass = 'achieve-badge-secret';
+                        badgeText = 'SECRET CLEARED';
+                    } else {
+                        badgeClass = 'achieve-badge-unlocked';
+                        badgeText = 'UNLOCKED';
+                    }
+                } else {
+                    if (ach.isSecret) {
+                        icon = '❓';
+                        title = 'Classified Secret';
+                        desc = 'Classified intelligence. Discover and unlock in-game to reveal.';
+                        badgeText = 'CLASSIFIED';
+                    }
+                }
+
+                listHTML += `
+                    <div class="achieve-item ${unlocked ? 'unlocked' : ''} ${ach.isSecret ? 'secret' : ''}" data-cat="${ach.category}">
+                        <div class="achieve-item-icon ${!unlocked ? 'achieve-item-locked-icon' : ''}">${icon}</div>
+                        <div class="achieve-item-info">
+                            <div class="achieve-item-title">${title}</div>
+                            <div class="achieve-item-desc">${desc}</div>
+                        </div>
+                        <div class="achieve-item-badge ${badgeClass}">${badgeText}</div>
+                    </div>
+                `;
+            }
+            listEl.innerHTML = listHTML;
+        };
+
+        renderItems('all');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                renderItems(btn.getAttribute('data-cat'));
+            });
+        });
 
         modal.querySelector('#btn-close-achievements').addEventListener('click', () => {
             this.closeModal();
@@ -597,17 +846,6 @@ export class AchievementManager {
             modal.parentNode.removeChild(modal);
         }
     }
-
-    updateModalIfOpen() {
-        if (typeof document === 'undefined') return;
-        const modal = document.getElementById('achievements-viewer-modal');
-        if (modal) {
-            this.openModal();
-        }
-    }
 }
 
 export const achievementManager = new AchievementManager();
-if (typeof window !== 'undefined') {
-    window.achievementManager = achievementManager;
-}

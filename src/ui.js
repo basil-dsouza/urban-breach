@@ -2,6 +2,7 @@ import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from './difficulty.js
 import { TacticalRadar } from './radar.js';
 import { startManualHost, startManualClient, applyManualAnswer } from './manual-webrtc.js';
 import { achievementManager } from './achievements.js';
+import { soundEngine } from './audio.js';
 
 export const WEAPON_CONFIGS = {
     AK47: {
@@ -84,6 +85,34 @@ export const WEAPON_CONFIGS = {
             firePerShotKick: 5.0,
             recoverySpeed: 25.0
         }
+    },
+    MINIGUN: {
+        id: 'MINIGUN',
+        name: 'M134 VULCAN MINIGUN',
+        desc: '6-barrel heavy rotary cannon. Devastating rapid fire, 100-round capacity, barrel spin-up & sustained-fire overheat.',
+        icon: '⚙️',
+        color: '#10b981',
+        ammo: 100,
+        maxAmmo: 100,
+        damage: 28,
+        fireRate: 0.055,
+        reloadTime: 3.4,
+        aimFOV: 70, // No scope! (Normal FOV is 75)
+        recoilKick: 0.042,
+        spread: {
+            baseStanding: 10.0,
+            baseMoving: 16.0,
+            baseSprinting: 24.0,
+            baseCrouching: 6.0,
+            baseCrouchMoving: 10.0,
+            baseAiming: 8.0,
+            maxAimSpread: 18.0,
+            aimShotKick: 0.5,
+            maxSpread: 35.0,
+            fireSpreadRate: 15.0,
+            firePerShotKick: 0.6,
+            recoverySpeed: 18.0
+        }
     }
 };
 
@@ -127,12 +156,15 @@ export class UIManager {
                 </div>
             </div>
 
-            <div style="display: flex; gap: 14px; justify-content: center; align-items: center; margin-bottom: 20px;">
+            <div style="display: flex; gap: 14px; justify-content: center; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
                 <button id="btn-to-difficulty" class="btn-primary" style="margin-bottom: 0;">
                     START GAME
                 </button>
                 <button id="btn-open-achievements" class="btn-secondary" style="font-size: 14px; padding: 14px 22px; border-color: rgba(0, 229, 255, 0.45); color: #00e5ff; background: rgba(0, 229, 255, 0.08); font-weight: 700; letter-spacing: 0.8px;">
                     🏆 ACHIEVEMENTS
+                </button>
+                <button id="btn-toggle-music" class="btn-secondary" style="font-size: 14px; padding: 14px 20px; border-color: rgba(255, 255, 255, 0.2); color: #cbd5e1; background: rgba(255, 255, 255, 0.05); font-weight: 700; letter-spacing: 0.8px;">
+                    🎵 MUSIC: ON
                 </button>
             </div>
 
@@ -144,6 +176,7 @@ export class UIManager {
                 <div class="ctrl-row"><span>LMB (Hold)</span> Full-Auto Shooting</div>
                 <div class="ctrl-row"><span>RMB</span> Aim Down Sights (Pinpoint Optical Zoom)</div>
                 <div class="ctrl-row"><span>G</span> Throw Grenade (Bounces on Ground)</div>
+                <div class="ctrl-row"><span>M</span> Toggle Background Music On / Off</div>
                 <div class="ctrl-row alert-row"><span>RADAR</span> Tracks hostiles, buildings, vehicles, and climbable ladders</div>
             </div>
 
@@ -283,13 +316,19 @@ export class UIManager {
         let weaponsHTML = '';
         for (const [key, wep] of Object.entries(WEAPON_CONFIGS)) {
             const isSelected = key === 'AK47' ? 'selected' : '';
+            const isLocked = key === 'MINIGUN' && (typeof localStorage === 'undefined' || localStorage.getItem('urban_breach_minigun_unlocked') !== 'true');
+            const badgeText = isLocked ? '🔒 BEAT WAVE 50' : `${wep.ammo} RDS`;
+            const badgeBg = isLocked ? 'rgba(239, 68, 68, 0.2)' : `${wep.color}22`;
+            const badgeBorder = isLocked ? 'rgba(239, 68, 68, 0.4)' : `${wep.color}66`;
+            const badgeColor = isLocked ? '#ef4444' : wep.color;
+
             weaponsHTML += `
-                <div class="wep-card ${isSelected}" data-key="${key}" style="--accent-color:${wep.color}">
+                <div class="wep-card ${isSelected}" data-key="${key}" data-locked="${isLocked ? 'true' : 'false'}" style="--accent-color:${wep.color}; ${isLocked ? 'opacity: 0.72;' : ''}">
                     <div class="diff-header">
                         <span class="diff-name">${wep.icon} ${wep.name}</span>
-                        <span class="diff-badge" style="background:${wep.color}22; color:${wep.color}; border:1px solid ${wep.color}66">${wep.ammo} RDS</span>
+                        <span class="diff-badge" style="background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}">${badgeText}</span>
                     </div>
-                    <div class="diff-desc">${wep.desc}</div>
+                    <div class="diff-desc">${isLocked ? '⚠️ CLASSIFIED HEAVY ARMAMENT. Survive 50 waves in Urban Breach to unlock and deploy this weapon.' : wep.desc}</div>
                     <div class="diff-stats">
                         <div class="diff-stat-item">
                             <span class="stat-label">DAMAGE</span>
@@ -368,6 +407,12 @@ export class UIManager {
         this.hud.id = 'game-hud';
         this.hud.style.display = 'none';
         this.hud.innerHTML = `
+            <div class="hud-top-right" style="position: fixed; top: 20px; right: 20px; display: flex; gap: 10px; align-items: center; z-index: 100; pointer-events: auto;">
+                <button id="hud-btn-toggle-music" class="btn-secondary" style="font-size: 13px; padding: 6px 12px; border-radius: 6px; border-color: rgba(255,255,255,0.2); color: #cbd5e1; background: rgba(10,15,25,0.7); cursor: pointer;" title="Toggle Music (M)">
+                    🎵
+                </button>
+            </div>
+
             <div class="hud-top-left">
                 <div class="hud-item hud-hp">
                     <span class="hud-icon">❤️</span>
@@ -608,6 +653,15 @@ export class UIManager {
                         <span id="hud-grenade-count">💣 3 / 5</span>
                         <span id="hud-grenade-timer" class="hud-timer-badge"></span>
                     </div>
+                    <div id="hud-minigun-heat-row" style="display:none; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08);">
+                        <div style="display:flex; justify-content:space-between; font-size: 10px; font-weight:800; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 3px;">
+                            <span>🔥 BARREL TEMP</span>
+                            <span id="hud-minigun-heat-pct" style="color: #00e5ff;">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow:hidden;">
+                            <div id="hud-minigun-heat-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #00e5ff, #f59e0b, #ef4444); transition: width 0.08s linear;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -672,7 +726,7 @@ export class UIManager {
         `;
         this.uiRoot.appendChild(this.gameOverScreen);
 
-        // 7b. Wave 100 Victory Screen
+        // 7b. Wave 50 Victory Screen & Minigun Unlock
         this.victoryScreen = document.createElement('div');
         this.victoryScreen.id = 'victory-screen';
         this.victoryScreen.className = 'screen-overlay';
@@ -682,20 +736,20 @@ export class UIManager {
                 👑 TOTAL VICTORY ACHIEVED!
             </div>
             <div class="game-subtitle" style="color: #00e5ff; letter-spacing: 2px; font-size: 16px; margin-bottom: 16px;">
-                URBAN BREACH LIBERATED — ALL 100 WAVES CLEARED!
+                URBAN BREACH LIBERATED — WAVE 50 CONQUERED!
             </div>
 
-            <div style="max-width: 540px; margin: 0 auto 24px auto; color: #e2e8f0; font-size: 15px; line-height: 1.6; text-align: center; background: rgba(0, 229, 255, 0.06); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 10px; padding: 14px 20px;">
-                Against impossible tactical odds, you defended Metro Central, repelled all armored incursions, and conquered all 100 waves. You are the Supreme Combat Champion!
+            <div style="max-width: 580px; margin: 0 auto 20px auto; color: #e2e8f0; font-size: 15px; line-height: 1.6; text-align: center; background: rgba(0, 229, 255, 0.06); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 10px; padding: 14px 20px;">
+                Against impossible tactical odds, you held the urban frontline for 50 waves! As reward for your supreme defense, the <strong>M134 VULCAN MINIGUN</strong> (100-round capacity, high-speed rotary fire) is now permanently unlocked in your arsenal!
             </div>
 
             <div class="game-over-stats" style="border-color: rgba(241, 196, 15, 0.45); box-shadow: 0 0 30px rgba(241, 196, 15, 0.25); margin-bottom: 24px;">
                 <div class="go-stat">DIFFICULTY: <span id="vic-diff" style="color:#00e5ff">NORMAL</span></div>
-                <div class="go-stat">WAVES CONQUERED: <span id="vic-waves" style="color:#ffd700; font-weight: 800;">100 / 100</span></div>
+                <div class="go-stat">WAVES CONQUERED: <span id="vic-waves" style="color:#ffd700; font-weight: 800;">50 / 50</span></div>
                 <div class="go-stat">TOTAL HOSTILES PURGED: <span id="vic-kills" style="color:#ff4757; font-weight: 800;">0</span></div>
             </div>
 
-            <div style="display: flex; gap: 16px; justify-content: center; align-items: center;">
+            <div style="display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap;">
                 <button id="btn-vic-restart" class="btn-primary" style="background: linear-gradient(135deg, #f1c40f, #e67e22); color: #000; font-weight: 800; padding: 14px 28px;">
                     DEPLOY AGAIN
                 </button>
@@ -823,6 +877,50 @@ export class UIManager {
                 e.preventDefault();
                 e.stopPropagation();
                 achievementManager.openModal();
+            };
+        }
+
+        const updateMusicButtonsUI = (isMuted) => {
+            const titleBtn = document.getElementById('btn-toggle-music');
+            if (titleBtn) {
+                titleBtn.innerHTML = isMuted ? '🔇 MUSIC: OFF' : '🎵 MUSIC: ON';
+                titleBtn.style.color = isMuted ? '#ef4444' : '#00ff88';
+                titleBtn.style.borderColor = isMuted ? 'rgba(239, 68, 68, 0.4)' : 'rgba(0, 255, 136, 0.4)';
+            }
+            const hudBtn = document.getElementById('hud-btn-toggle-music');
+            if (hudBtn) {
+                hudBtn.innerHTML = isMuted ? '🔇' : '🎵';
+                hudBtn.title = isMuted ? 'Turn Music ON (M)' : 'Turn Music OFF (M)';
+                hudBtn.style.borderColor = isMuted ? 'rgba(239, 68, 68, 0.4)' : 'rgba(0, 255, 136, 0.4)';
+            }
+        };
+        this.updateMusicButtonsUI = updateMusicButtonsUI;
+
+        const initialMuted = typeof localStorage !== 'undefined' && localStorage.getItem('urban_breach_music_muted') === 'true';
+        updateMusicButtonsUI(initialMuted);
+
+        const btnToggleMusic = document.getElementById('btn-toggle-music');
+        if (btnToggleMusic) {
+            btnToggleMusic.onclick = (e) => {
+                e.preventDefault();
+                const sEngine = soundEngine || window.soundEngine;
+                if (sEngine && typeof sEngine.toggleMusic === 'function') {
+                    const enabled = sEngine.toggleMusic(false);
+                    updateMusicButtonsUI(!enabled);
+                }
+            };
+        }
+
+        const hudBtnToggleMusic = document.getElementById('hud-btn-toggle-music');
+        if (hudBtnToggleMusic) {
+            hudBtnToggleMusic.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const sEngine = soundEngine || window.soundEngine;
+                if (sEngine && typeof sEngine.toggleMusic === 'function') {
+                    const enabled = sEngine.toggleMusic(true);
+                    updateMusicButtonsUI(!enabled);
+                }
             };
         }
 
@@ -971,6 +1069,14 @@ export class UIManager {
         const wepCards = this.difficultyScreen.querySelectorAll('.wep-card');
         wepCards.forEach(card => {
             card.onclick = () => {
+                if (card.dataset.locked === 'true') {
+                    if (this.addChatMessage) {
+                        this.addChatMessage('HQ', '⚠️ CLASSIFIED ARMAMENT: Survive 50 waves in Urban Breach to unlock the M134 Minigun!');
+                    } else {
+                        alert('⚠️ LOCKED: Survive 50 waves in Urban Breach to unlock the M134 Vulcan Minigun!');
+                    }
+                    return;
+                }
                 wepCards.forEach(c => c.classList.remove('selected'));
                 card.classList.add('selected');
                 this.selectedWeaponKey = card.dataset.key;
@@ -1425,7 +1531,11 @@ export class UIManager {
             }
         }
 
-        // Ammo & Reload UI
+        // Weapon & Ammo UI
+        if (wepNameEl && weapon) {
+            wepNameEl.textContent = weapon.name;
+        }
+
         const ammoValEl = document.getElementById('hud-ammo-val');
         const maxAmmoValEl = document.getElementById('hud-maxammo-val');
         const reloadTagEl = document.getElementById('hud-reload-tag');
@@ -1437,6 +1547,24 @@ export class UIManager {
         if (maxAmmoValEl) maxAmmoValEl.textContent = maxAmmo;
         if (reloadTagEl) {
             reloadTagEl.style.display = isReloading ? 'inline-block' : 'none';
+        }
+
+        // Minigun Overheat Bar
+        const heatRowEl = document.getElementById('hud-minigun-heat-row');
+        const heatValEl = document.getElementById('hud-minigun-heat-pct');
+        const heatFillEl = document.getElementById('hud-minigun-heat-bar');
+        if (heatRowEl) {
+            if (weapon && weapon.id === 'MINIGUN') {
+                heatRowEl.style.display = 'block';
+                const heatPct = Math.min(100, Math.round((state.minigunHeat || 0) * 100));
+                if (heatValEl) {
+                    heatValEl.textContent = `${heatPct}%`;
+                    heatValEl.style.color = heatPct > 75 ? '#ff3344' : (heatPct > 45 ? '#f59e0b' : '#00e5ff');
+                }
+                if (heatFillEl) heatFillEl.style.width = `${heatPct}%`;
+            } else {
+                heatRowEl.style.display = 'none';
+            }
         }
 
         // Grenades UI
@@ -1668,7 +1796,7 @@ export class UIManager {
         this.gameOverScreen.style.display = 'flex';
     }
 
-    showVictoryScreen({ kills, wave = 100, difficulty }) {
+    showVictoryScreen({ kills, wave = 50, difficulty }) {
         this.hud.style.display = 'none';
         this.crosshair.style.display = 'none';
         this.scope.style.display = 'none';
@@ -1677,6 +1805,14 @@ export class UIManager {
             document.exitPointerLock();
         }
 
+        // Permanently unlock Minigun on wave 50 win
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.setItem('urban_breach_minigun_unlocked', 'true');
+            } catch (e) {}
+        }
+        this.unlockMinigunUI();
+
         const vicDiff = document.getElementById('vic-diff');
         if (vicDiff && difficulty) {
             vicDiff.textContent = difficulty.name;
@@ -1684,12 +1820,31 @@ export class UIManager {
         }
 
         const vicWaves = document.getElementById('vic-waves');
-        if (vicWaves) vicWaves.textContent = `${wave} / 100`;
+        if (vicWaves) vicWaves.textContent = `${wave} / 50`;
 
         const vicKills = document.getElementById('vic-kills');
         if (vicKills) vicKills.textContent = kills;
 
         this.victoryScreen.style.display = 'flex';
+    }
+
+    unlockMinigunUI() {
+        const minigunCard = this.difficultyScreen?.querySelector('.wep-card[data-key="MINIGUN"]');
+        if (minigunCard) {
+            minigunCard.dataset.locked = 'false';
+            minigunCard.style.opacity = '1';
+            const badge = minigunCard.querySelector('.diff-badge');
+            if (badge) {
+                badge.textContent = '100 RDS';
+                badge.style.background = 'rgba(16, 185, 129, 0.2)';
+                badge.style.color = '#10b981';
+                badge.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+            }
+            const desc = minigunCard.querySelector('.diff-desc');
+            if (desc && WEAPON_CONFIGS.MINIGUN) {
+                desc.textContent = WEAPON_CONFIGS.MINIGUN.desc;
+            }
+        }
     }
 
     setDifficultyKey(key) {

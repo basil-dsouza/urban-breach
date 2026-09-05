@@ -35,3 +35,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+scratch/
+scratch_*/
+scratch_edge_profile*/

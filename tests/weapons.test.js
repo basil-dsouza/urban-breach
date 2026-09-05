@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { WEAPON_CONFIGS } from '../src/ui.js';
 
-describe('Weapon Arsenal Configuration (AK-47, Barrett .50 Cal, & M590 Shotgun)', () => {
-    it('should have exactly the three primary weapons defined (AK47, SNIPER, and SHOTGUN)', () => {
+describe('Weapon Arsenal Configuration (AK-47, Barrett .50 Cal, M590 Shotgun, & M134 Minigun)', () => {
+    it('should have all weapons defined including unlockable M134 Minigun', () => {
         const keys = Object.keys(WEAPON_CONFIGS);
         expect(keys).toContain('AK47');
         expect(keys).toContain('SNIPER');
         expect(keys).toContain('SHOTGUN');
-        expect(keys.length).toBe(3);
+        expect(keys).toContain('MINIGUN');
+        expect(keys.length).toBe(4);
     });
 
     it('should configure AK-47 for tactical rapid assault rifle combat', () => {
@@ -39,5 +40,16 @@ describe('Weapon Arsenal Configuration (AK-47, Barrett .50 Cal, & M590 Shotgun)'
         expect(shotgun.pellets).toBe(8);
         expect(shotgun.fireRate).toBe(0.72);
         expect(shotgun.aimFOV).toBe(58);
+    });
+
+    it('should configure M134 Vulcan Minigun with 100 ammo, no scope, and rapid fire', () => {
+        const minigun = WEAPON_CONFIGS.MINIGUN;
+        expect(minigun.id).toBe('MINIGUN');
+        expect(minigun.ammo).toBe(100);
+        expect(minigun.maxAmmo).toBe(100);
+        expect(minigun.damage).toBe(28);
+        expect(minigun.fireRate).toBeLessThan(0.08); // rapid Gatling cycle
+        expect(minigun.aimFOV).toBe(70); // no scope (near normal 75 FOV)
+        expect(minigun.spread).toBeDefined();
     });
 });
