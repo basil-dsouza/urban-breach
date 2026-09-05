@@ -4747,7 +4747,7 @@ function updatePlayer(delta) {
 
 // 21. Player Damage Handler
 function damagePlayer(amount, source = 'generic') {
-    if (!gameStarted || testModeState.godMode) return;
+    if (!gameStarted || testModeState.godMode || window.testModeOpen) return;
 
     health -= amount;
     uiManager.triggerDamageFlash(source === 'ram' ? 0.95 : 0.65);
@@ -5133,6 +5133,13 @@ function animate() {
     const delta = Math.min(clock.getDelta(), 0.05);
 
     if (gameStarted) {
+        if (window.testModeOpen) {
+            soundEngine.stopRifleBurst();
+            mouseHeld = false;
+            renderer.render(scene, camera);
+            return;
+        }
+
         camera.rotation.y = yaw;
         camera.rotation.x = pitch;
         camera.updateMatrixWorld();

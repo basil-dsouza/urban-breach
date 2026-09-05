@@ -146,5 +146,27 @@ describe('Secret Test Mode & Wave Customization Console', () => {
             expect(bossTier).toBe(3);
             expect(bossLoc).toBe('front');
         });
+
+        it('should pause game state when auth modal or panel is open', () => {
+            globalThis.window = globalThis.window || {};
+            const manager = new TestModeManager();
+            expect(testModeState.isOpen).toBe(false);
+
+            manager.showAuthModal();
+            expect(testModeState.isOpen).toBe(true);
+            expect(globalThis.window.testModeOpen).toBe(true);
+
+            manager.hideAuthModal();
+            expect(testModeState.isOpen).toBe(false);
+            expect(globalThis.window.testModeOpen).toBe(false);
+
+            manager.showPanel();
+            expect(testModeState.isOpen).toBe(true);
+            expect(globalThis.window.testModeOpen).toBe(true);
+
+            manager.hidePanel();
+            expect(testModeState.isOpen).toBe(false);
+            expect(globalThis.window.testModeOpen).toBe(false);
+        });
     });
 });

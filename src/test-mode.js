@@ -171,7 +171,7 @@ export class TestModeManager {
                     <div class="test-panel-title-group">
                         <span class="test-panel-icon">⚡</span>
                         <div class="test-panel-title">COMMAND TEST CONSOLE</div>
-                        <span class="test-panel-version">DEV BUILD // AUTHENTICATED</span>
+                        <span class="test-panel-version">⏸ GAME PAUSED // DEV BUILD</span>
                     </div>
                     <div class="test-header-actions">
                         <button id="btn-minimize-test-panel" class="test-btn-icon" title="Minimize">─</button>
@@ -618,7 +618,7 @@ export class TestModeManager {
     }
 
     setupKeyboard() {
-        if (typeof window === 'undefined') return;
+        if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
 
         window.addEventListener('keydown', (e) => {
             // F2 key toggles the secret test console
@@ -657,17 +657,23 @@ export class TestModeManager {
         if (typeof document !== 'undefined' && document.pointerLockElement) {
             document.exitPointerLock();
         }
-        if (!this.authModal) this.initDOM();
-        this.authModal.style.display = 'flex';
-        const input = this.authModal.querySelector('#test-auth-input');
-        if (input) {
-            input.value = '';
-            setTimeout(() => input.focus(), 50);
+        if (!this.authModal && typeof document !== 'undefined') this.initDOM();
+        if (this.authModal) {
+            this.authModal.style.display = 'flex';
+            const input = this.authModal.querySelector('#test-auth-input');
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 50);
+            }
+            const feedback = this.authModal.querySelector('#test-auth-feedback');
+            if (feedback) {
+                feedback.textContent = '';
+                feedback.className = 'test-auth-feedback';
+            }
         }
-        const feedback = this.authModal.querySelector('#test-auth-feedback');
-        if (feedback) {
-            feedback.textContent = '';
-            feedback.className = 'test-auth-feedback';
+        testModeState.isOpen = true;
+        if (typeof window !== 'undefined') {
+            window.testModeOpen = true;
         }
     }
 
@@ -675,14 +681,22 @@ export class TestModeManager {
         if (this.authModal) {
             this.authModal.style.display = 'none';
         }
+        if (!this.panel || this.panel.style.display !== 'flex') {
+            testModeState.isOpen = false;
+            if (typeof window !== 'undefined') {
+                window.testModeOpen = false;
+            }
+        }
     }
 
     showPanel() {
         if (typeof document !== 'undefined' && document.pointerLockElement) {
             document.exitPointerLock();
         }
-        if (!this.panel) this.initDOM();
-        this.panel.style.display = 'flex';
+        if (!this.panel && typeof document !== 'undefined') this.initDOM();
+        if (this.panel) {
+            this.panel.style.display = 'flex';
+        }
         testModeState.isOpen = true;
         if (typeof window !== 'undefined') {
             window.testModeOpen = true;
