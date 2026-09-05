@@ -178,4 +178,23 @@ describe('Urban Breach — Achievements System & Victory Logic', () => {
         expect(p.total).toBe(75);
         expect(p.percent).toBe(4); // Math.round((3 / 75) * 100) = 4%
     });
+
+    it('should reset all achievement progress, death counts, and minigun unlock state', () => {
+        mgr.unlock('FIRST_BLOOD');
+        mgr.unlock('SURVIVE_WAVE_5');
+        mgr.recordDeath('bullet');
+        global.localStorage.setItem('urban_breach_minigun_unlocked', 'true');
+
+        expect(mgr.getProgress().unlockedCount).toBe(3);
+        expect(mgr.getTotalDeaths()).toBe(1);
+        expect(global.localStorage.getItem('urban_breach_minigun_unlocked')).toBe('true');
+
+        mgr.resetAllProgress();
+
+        expect(mgr.getProgress().unlockedCount).toBe(0);
+        expect(mgr.getProgress().percent).toBe(0);
+        expect(mgr.getTotalDeaths()).toBe(0);
+        expect(mgr.isUnlocked('FIRST_BLOOD')).toBe(false);
+        expect(global.localStorage.getItem('urban_breach_minigun_unlocked')).toBeNull();
+    });
 });

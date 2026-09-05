@@ -1833,6 +1833,7 @@ export class UIManager {
         const minigunCard = this.difficultyScreen?.querySelector('.wep-card[data-key="MINIGUN"]');
         if (minigunCard) {
             minigunCard.dataset.locked = 'false';
+            minigunCard.classList.remove('locked');
             minigunCard.style.opacity = '1';
             const badge = minigunCard.querySelector('.diff-badge');
             if (badge) {
@@ -1845,6 +1846,33 @@ export class UIManager {
             if (desc && WEAPON_CONFIGS.MINIGUN) {
                 desc.textContent = WEAPON_CONFIGS.MINIGUN.desc;
             }
+        }
+    }
+
+    lockMinigunUI() {
+        const minigunCard = this.difficultyScreen?.querySelector('.wep-card[data-key="MINIGUN"]');
+        if (minigunCard) {
+            minigunCard.dataset.locked = 'true';
+            minigunCard.classList.add('locked');
+            minigunCard.classList.remove('selected');
+            minigunCard.style.opacity = '0.55';
+            const badge = minigunCard.querySelector('.diff-badge');
+            if (badge) {
+                badge.textContent = '🔒 BEAT WAVE 50';
+                badge.style.background = 'rgba(239, 68, 68, 0.2)';
+                badge.style.color = '#ef4444';
+                badge.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+            }
+            const desc = minigunCard.querySelector('.diff-desc');
+            if (desc) {
+                desc.textContent = '🔒 CLASSIFIED WEAPON. Defend against 50 waves of hostiles to unlock the heavy M134 Rotary Minigun.';
+            }
+        }
+        // If MINIGUN was selected in UI, revert selection to AK47
+        if (this.selectedWeaponKey === 'MINIGUN') {
+            this.selectedWeaponKey = 'AK47';
+            const akCard = this.difficultyScreen?.querySelector('.wep-card[data-key="AK47"]');
+            if (akCard) akCard.classList.add('selected');
         }
     }
 

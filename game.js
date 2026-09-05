@@ -3513,22 +3513,22 @@ function applyWeaponModel(weaponKey = 'AK47') {
         ammoChute.position.set(-0.07, -0.02, 0.05);
         gunGroup.add(ammoChute);
 
-        // Rotor Central Axle Hub
-        const rotorRotor = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.12, 16), matSteelDark);
+        // Rotor Central Axle Hub (Enlarged)
+        const rotorRotor = new THREE.Mesh(new THREE.CylinderGeometry(0.068, 0.068, 0.14, 16), matSteelDark);
         rotorRotor.rotation.x = Math.PI / 2;
         rotorRotor.position.set(0, 0.02, -0.22);
         gunGroup.add(rotorRotor);
 
         // =========================================================
-        // ROTATING 6-BARREL GATLING ASSEMBLY (Spins when firing!)
+        // ROTATING 6-BARREL GATLING ASSEMBLY (Enlarged Heavy Rotor)
         // =========================================================
         const minigunRotorGroup = new THREE.Group();
         minigunRotorGroup.name = 'minigunRotor';
         minigunRotorGroup.position.set(0, 0.02, -0.22);
 
         const numBarrels = 6;
-        const barrelRadius = 0.048;
-        const barrelLength = 0.78;
+        const barrelRadius = 0.076; // Expanded heavy rotary radius
+        const barrelLength = 0.85;  // Extended barrel length
         minigunBarrelMeshes = [];
 
         for (let b = 0; b < numBarrels; b++) {
@@ -3536,9 +3536,9 @@ function applyWeaponModel(weaponKey = 'AK47') {
             const bx = Math.cos(angle) * barrelRadius;
             const by = Math.sin(angle) * barrelRadius;
 
-            // Individual Barrel Tube
+            // Individual Heavy Barrel Tube (Enlarged 0.019 radius)
             const bMesh = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.012, 0.012, barrelLength, 12),
+                new THREE.CylinderGeometry(0.019, 0.019, barrelLength, 12),
                 matBarrelSteel.clone()
             );
             bMesh.rotation.x = Math.PI / 2;
@@ -3548,21 +3548,21 @@ function applyWeaponModel(weaponKey = 'AK47') {
         }
 
         // Barrel Retaining Rings / Support Collars (3 rings along the length)
-        for (const rz of [-0.20, -0.45, -0.70]) {
-            const ring = new THREE.Mesh(new THREE.TorusGeometry(barrelRadius, 0.013, 8, 24), matClampRing);
+        for (const rz of [-0.22, -0.48, -0.74]) {
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(barrelRadius, 0.016, 8, 24), matClampRing);
             ring.position.set(0, 0, rz);
             minigunRotorGroup.add(ring);
         }
 
-        // Front Slotted Muzzle Shroud / Flash Suppressor Cage
-        const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.062, 0.12, 16, 1, true), matClampRing);
+        // Front Slotted Heavy Muzzle Shroud / Flash Suppressor Cage
+        const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.098, 0.14, 16, 1, true), matClampRing);
         cage.rotation.x = Math.PI / 2;
         cage.position.set(0, 0, -barrelLength - 0.04);
         minigunRotorGroup.add(cage);
 
         gunGroup.add(minigunRotorGroup);
 
-        muzzleFlashLight.position.set(0, 0.02, -1.08);
+        muzzleFlashLight.position.set(0, 0.02, -1.16);
     }
 
     // Operator Gloved Hands
@@ -3600,6 +3600,10 @@ function switchPlayerWeapon(weaponKey) {
             return;
         }
     }
+    soundEngine.stopRifleBurst();
+    if (typeof soundEngine.stopMinigunBurst === 'function') {
+        soundEngine.stopMinigunBurst();
+    }
     currentWeaponKey = weaponKey;
     currentWeapon = WEAPON_CONFIGS[weaponKey];
     ammo = currentWeapon.ammo;
@@ -3613,6 +3617,22 @@ function switchPlayerWeapon(weaponKey) {
     uiManager.updateHUD(getHUDState());
 }
 window.switchPlayerWeapon = switchPlayerWeapon;
+
+// Listen for achievement and arsenal progress resets
+window.addEventListener('urban_breach_progress_reset', () => {
+    uiManager.lockMinigunUI();
+    if (currentWeapon && currentWeapon.id === 'MINIGUN') {
+        switchPlayerWeapon('AK47');
+    }
+    soundEngine.stopRifleBurst();
+    if (typeof soundEngine.stopMinigunBurst === 'function') {
+        soundEngine.stopMinigunBurst();
+    }
+    minigunHeat = 0.0;
+    if (typeof uiManager !== 'undefined' && uiManager && typeof uiManager.addChatMessage === 'function') {
+        uiManager.addChatMessage('HQ', '🔄 Achievement milestones and M134 Minigun have been reset!');
+    }
+});
 
 applyWeaponModel('AK47');
 

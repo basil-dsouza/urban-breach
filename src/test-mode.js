@@ -341,6 +341,7 @@ export class TestModeManager {
                         <button id="btn-cheat-heal" class="test-btn-action green">💚 FULL HEAL & REPAIR BONES</button>
                         <button id="btn-cheat-grenades" class="test-btn-action amber">💣 REFILL GRENADES (5x MAX)</button>
                         <button id="btn-cheat-unlock-minigun" class="test-btn-action cyan">🔓 UNLOCK M134 MINIGUN</button>
+                        <button id="btn-cheat-reset-progress" class="test-btn-action red">🗑️ RESET ACHIEVEMENTS & MINIGUN</button>
                     </div>
 
                     <div class="test-section-title" style="margin-top:10px;">WEAPON SWITCHER</div>
@@ -620,6 +621,20 @@ export class TestModeManager {
                     this.api.switchWeapon('MINIGUN');
                 }
                 btnUnlockMinigun.textContent = '✅ M134 MINIGUN UNLOCKED & EQUIPPED';
+            });
+        }
+
+        const btnResetProgress = panel.querySelector('#btn-cheat-reset-progress');
+        if (btnResetProgress) {
+            btnResetProgress.addEventListener('click', () => {
+                achievementManager.resetAllProgress();
+                if (btnUnlockMinigun) {
+                    btnUnlockMinigun.textContent = '🔓 UNLOCK M134 MINIGUN';
+                }
+                btnResetProgress.textContent = '✅ ACHIEVEMENTS & MINIGUN RESET!';
+                setTimeout(() => {
+                    btnResetProgress.textContent = '🗑️ RESET ACHIEVEMENTS & MINIGUN';
+                }, 2500);
             });
         }
 

@@ -252,6 +252,26 @@ export class AchievementManager {
         } catch (e) {}
     }
 
+    resetAllProgress() {
+        this.unlocked = {};
+        this.totalDeaths = 0;
+        if (typeof localStorage !== 'undefined') {
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(STORAGE_DEATHS_KEY);
+                localStorage.removeItem('urban_breach_minigun_unlocked');
+            } catch (e) {}
+        }
+        this.save();
+
+        if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('urban_breach_progress_reset'));
+        }
+
+        console.log('[ACHIEVEMENTS] All achievements progress and M134 Minigun reset.');
+        return true;
+    }
+
     isUnlocked(id) {
         return !!this.unlocked[id];
     }
@@ -679,6 +699,49 @@ export class AchievementManager {
                     color: #f39c12;
                     border: 1px solid rgba(243, 156, 18, 0.4);
                 }
+                .achieve-modal-footer {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 14px 24px;
+                    background: rgba(6, 10, 16, 0.95);
+                    border-top: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 0 0 16px 16px;
+                }
+                .achieve-footer-hint {
+                    font-size: 11px;
+                    color: #64748b;
+                    font-weight: 600;
+                }
+                .achieve-btn-reset {
+                    background: rgba(239, 68, 68, 0.12);
+                    border: 1.5px solid rgba(239, 68, 68, 0.45);
+                    color: #ef4444;
+                    font-size: 11px;
+                    font-weight: 800;
+                    letter-spacing: 0.8px;
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: all 0.25s ease;
+                    text-transform: uppercase;
+                }
+                .achieve-btn-reset:hover {
+                    background: rgba(239, 68, 68, 0.28);
+                    border-color: #ef4444;
+                    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+                }
+                .achieve-btn-reset.confirming {
+                    background: #ef4444;
+                    color: #fff;
+                    border-color: #ff6b81;
+                    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+                    animation: pulseResetBtn 0.6s infinite alternate;
+                }
+                @keyframes pulseResetBtn {
+                    0% { transform: scale(0.98); }
+                    100% { transform: scale(1.02); }
+                }
             `;
             document.head.appendChild(style);
         }
@@ -761,6 +824,12 @@ export class AchievementManager {
                     <button class="achieve-tab-btn" data-cat="special">TACTICS & SECRETS</button>
                 </div>
                 <div class="achieve-list" id="achieve-modal-list"></div>
+                <div class="achieve-modal-footer">
+                    <div class="achieve-footer-hint">Progress & unlocks are stored locally</div>
+                    <button id="btn-reset-achievements" class="achieve-btn-reset">
+                        🗑️ RESET PROGRESS & LOCK MINIGUN
+                    </button>
+                </div>
             </div>
         `;
 
@@ -827,6 +896,51 @@ export class AchievementManager {
                 renderItems(btn.getAttribute('data-cat'));
             });
         });
+
+        const resetBtn = modal.querySelector('#btn-reset-achievements');
+        let resetConfirmActive = false;
+        let resetTimer = null;
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (!resetConfirmActive) {
+                    resetConfirmActive = true;
+                    resetBtn.classList.add('confirming');
+                    resetBtn.textContent = '⚠️ CONFIRM: RESET ACHIEVEMENTS & LOCK MINIGUN?';
+                    resetTimer = setTimeout(() => {
+                        resetConfirmActive = false;
+                        resetBtn.classList.remove('confirming');
+                        resetBtn.textContent = '🗑️ RESET PROGRESS & LOCK MINIGUN';
+                    }, 4500);
+                    return;
+                }
+
+                if (resetTimer) clearTimeout(resetTimer);
+                resetConfirmActive = false;
+                resetBtn.classList.remove('confirming');
+                resetBtn.textContent = '✅ PROGRESS & MINIGUN RESET!';
+
+                this.resetAllProgress();
+
+                // Immediately update the clearance progress banner
+                const p = this.getProgress();
+                const progText = modal.querySelector('.achieve-progress-row span:last-child');
+                if (progText) progText.textContent = `${p.unlockedCount} / ${p.total} (${p.percent}%)`;
+                const progBar = modal.querySelector('.achieve-progress-bar-fill');
+                if (progBar) progBar.style.width = `${p.percent}%`;
+
+                // Re-render items for currently active tab
+                const activeTab = modal.querySelector('.achieve-tab-btn.active');
+                renderItems(activeTab ? activeTab.getAttribute('data-cat') : 'all');
+
+                setTimeout(() => {
+                    resetBtn.textContent = '🗑️ RESET PROGRESS & LOCK MINIGUN';
+                }, 2500);
+            });
+        }
 
         modal.querySelector('#btn-close-achievements').addEventListener('click', () => {
             this.closeModal();

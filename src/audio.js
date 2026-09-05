@@ -185,8 +185,10 @@ class SoundEngine {
                     if (fallbackFn) fallbackFn();
                 });
             }
+            return audio;
         } catch (e) {
             if (fallbackFn) fallbackFn();
+            return null;
         }
     }
 
@@ -258,17 +260,17 @@ class SoundEngine {
      * Stop the rifle burst immediately when mouse is released or ammo empty
      */
     stopRifleBurst() {
+        this.stopMinigunBurst();
         if (!this.activeRifleBurst || !this.ctx) return;
         const t = this.ctx.currentTime;
         const { source, gainNode } = this.activeRifleBurst;
         try {
             gainNode.gain.cancelScheduledValues(t);
             gainNode.gain.setValueAtTime(gainNode.gain.value, t);
-            gainNode.gain.linearRampToValueAtTime(0.001, t + 0.03); // clean 30ms fade to avoid clicks
-            source.stop(t + 0.04);
+            gainNode.gain.linearRampToValueAtTime(0.001, t + 0.02); // clean 20ms fade to avoid clicks
+            source.stop(t + 0.03);
         } catch (e) {}
         this.activeRifleBurst = null;
-        this.stopMinigunBurst();
     }
 
     /**
@@ -308,25 +310,54 @@ class SoundEngine {
             return;
         }
 
-        this.playGunSample('minigunFire', () => {
+        // HTML5 Audio fallback - maintain single active stream instead of overlapping 5s files
+        if (this.activeMinigunAudio && !this.activeMinigunAudio.paused && !this.activeMinigunAudio.ended) {
+            return;
+        }
+        this.activeMinigunAudio = this.playGunSample('minigunFire', () => {
             this.playRifleShotSynthesized();
         });
     }
 
     /**
-     * Stop Minigun sustained rotary sound on trigger release
+     * Stop Minigun sustained rotary sound immediately on trigger release
      */
     stopMinigunBurst() {
-        if (!this.activeMinigunBurst || !this.ctx) return;
-        const t = this.ctx.currentTime;
-        const { source, gainNode } = this.activeMinigunBurst;
-        try {
-            gainNode.gain.cancelScheduledValues(t);
-            gainNode.gain.setValueAtTime(gainNode.gain.value, t);
-            gainNode.gain.linearRampToValueAtTime(0.001, t + 0.04);
-            source.stop(t + 0.05);
-        } catch (e) {}
-        this.activeMinigunBurst = null;
+        // 1. Immediately pause and rewind HTML5 audio element
+        if (this.activeMinigunAudio) {
+            try {
+                this.activeMinigunAudio.pause();
+                this.activeMinigunAudio.currentTime = 0;
+            } catch (e) {}
+            this.activeMinigunAudio = null;
+        }
+
+        // 2. Ensure all pool elements for minigunFire are paused immediately
+        if (this.samplePools && this.samplePools['minigunFire']) {
+            for (const a of this.samplePools['minigunFire'].pool) {
+                try {
+                    a.pause();
+                    a.currentTime = 0;
+                } catch (e) {}
+            }
+        }
+
+        // 3. Cut off Web Audio buffer source with rapid 20ms ramp to prevent clicks
+        if (this.activeMinigunBurst) {
+            try {
+                const t = this.ctx ? this.ctx.currentTime : 0;
+                const { source, gainNode } = this.activeMinigunBurst;
+                if (gainNode && this.ctx) {
+                    gainNode.gain.cancelScheduledValues(t);
+                    gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+                    gainNode.gain.linearRampToValueAtTime(0.001, t + 0.02);
+                }
+                if (source) {
+                    source.stop(t + 0.03);
+                }
+            } catch (e) {}
+            this.activeMinigunBurst = null;
+        }
     }
 
     /**
