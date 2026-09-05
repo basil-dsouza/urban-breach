@@ -1450,6 +1450,7 @@ export class UIManager {
         maxGrenades = 5,
         grenadeTimer = 0,
         weapon = null,
+        minigunHeat = 0,
         oxygen = 100,
         isSubmerged = false,
         inWater = false,
@@ -1556,7 +1557,7 @@ export class UIManager {
         if (heatRowEl) {
             if (weapon && weapon.id === 'MINIGUN') {
                 heatRowEl.style.display = 'block';
-                const heatPct = Math.min(100, Math.round((state.minigunHeat || 0) * 100));
+                const heatPct = Math.min(100, Math.round((minigunHeat || 0) * 100));
                 if (heatValEl) {
                     heatValEl.textContent = `${heatPct}%`;
                     heatValEl.style.color = heatPct > 75 ? '#ff3344' : (heatPct > 45 ? '#f59e0b' : '#00e5ff');
