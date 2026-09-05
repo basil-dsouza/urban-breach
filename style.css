@@ -3,6 +3,27 @@
     margin: 0;
     padding: 0;
     user-select: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 229, 255, 0.25) transparent;
+}
+
+/* Universal Cyberpunk Scrollbars (Unified with School Mode WebRTC styling) */
+*::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: rgba(0, 229, 255, 0.25);
+    border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 229, 255, 0.55);
 }
 
 body {

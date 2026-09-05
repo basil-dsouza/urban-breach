@@ -23,46 +23,6 @@ const BASE_CATALOG = {
         category: 'combat',
         isSecret: false
     },
-    ROOKIE_SURVIVOR: {
-        id: 'ROOKIE_SURVIVOR',
-        title: 'Rookie Survivor',
-        desc: 'Survive 5 waves of hostile urban breach incursions.',
-        icon: '🛡️',
-        category: 'survival',
-        isSecret: false
-    },
-    VETERAN_SURVIVOR: {
-        id: 'VETERAN_SURVIVOR',
-        title: 'Combat Veteran',
-        desc: 'Endure and survive 25 waves of relentless assaults.',
-        icon: '⚔️',
-        category: 'survival',
-        isSecret: false
-    },
-    ELITE_DEFENDER: {
-        id: 'ELITE_DEFENDER',
-        title: 'Apex Defender',
-        desc: 'Survive 50 waves against elite armored forces.',
-        icon: '🏅',
-        category: 'survival',
-        isSecret: false
-    },
-    PENULTIMATE_STAND: {
-        id: 'PENULTIMATE_STAND',
-        title: 'The 95th Frontier',
-        desc: 'Survive 95 brutal waves of hostile aggression.',
-        icon: '🔥',
-        category: 'survival',
-        isSecret: false
-    },
-    CENTURY_VICTORY: {
-        id: 'CENTURY_VICTORY',
-        title: 'Century Conqueror',
-        desc: 'Survive all 100 waves and achieve total victory in Urban Breach!',
-        icon: '👑',
-        category: 'victory',
-        isSecret: false
-    },
     ROOFTOP_RECON: {
         id: 'ROOFTOP_RECON',
         title: 'High-Rise Overwatch',
@@ -84,7 +44,7 @@ const BASE_CATALOG = {
         title: 'Combat Medic',
         desc: 'Treat bone fractures and stop bullet bleeding using a field medkit.',
         icon: '💉',
-        category: 'survival',
+        category: 'tactics',
         isSecret: false
     },
     VEHICLE_BUSTER: {
@@ -162,20 +122,12 @@ for (let k = 5; k <= 200; k += 5) {
     };
 }
 
-// 4. Death & Casualty Achievements: Up to 50, plus special deaths (water, broken bones)
+// 4. Death & Casualty Achievements: Up to 50, plus special deaths (water/drowning, broken bones)
 const DEATH_CATALOG = {
-    DEATH_FIRST: {
-        id: 'DEATH_FIRST',
-        title: "Oh, So That's What It Does",
-        desc: "Suffer your first combat casualty or discover lethal hazards the hard way.",
-        icon: '💀',
-        category: 'deaths',
-        isSecret: false
-    },
     DEATH_WATER: {
         id: 'DEATH_WATER',
-        title: 'Watery Grave',
-        desc: 'Perish from drowning or succumb to wounds while submerged in deep water.',
+        title: "Oh, So That's What It Does",
+        desc: 'Discover lethal aquatic hazards the hard way by perishing from drowning.',
         icon: '🌊',
         category: 'deaths',
         isSecret: false
@@ -326,12 +278,6 @@ export class AchievementManager {
      * Check and award wave survival milestone achievements (5 to 50 in multiples of 5)
      */
     recordWave(waveNumber) {
-        if (waveNumber >= 5) this.unlock('ROOKIE_SURVIVOR');
-        if (waveNumber >= 25) this.unlock('VETERAN_SURVIVOR');
-        if (waveNumber >= 50) this.unlock('ELITE_DEFENDER');
-        if (waveNumber >= 95) this.unlock('PENULTIMATE_STAND');
-        if (waveNumber >= 100) this.unlock('CENTURY_VICTORY');
-
         for (let w = 5; w <= 50; w += 5) {
             if (waveNumber >= w) {
                 this.unlock('SURVIVE_WAVE_' + w);
@@ -345,9 +291,6 @@ export class AchievementManager {
     recordDeath(cause = 'generic') {
         this.totalDeaths++;
         this.save();
-
-        // 1. "Oh, So That's What It Does" - awarded on first death
-        this.unlock('DEATH_FIRST');
 
         // 2. Cumulative death count milestones (5, 10, 15, ..., 50)
         for (let d = 5; d <= 50; d += 5) {
@@ -622,7 +565,21 @@ export class AchievementManager {
                     flex-direction: column;
                     gap: 10px;
                     scrollbar-width: thin;
-                    scrollbar-color: rgba(0, 229, 255, 0.3) transparent;
+                    scrollbar-color: rgba(0, 229, 255, 0.25) transparent;
+                }
+                .achieve-list::-webkit-scrollbar {
+                    width: 5px;
+                    height: 5px;
+                }
+                .achieve-list::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .achieve-list::-webkit-scrollbar-thumb {
+                    background: rgba(0, 229, 255, 0.25);
+                    border-radius: 4px;
+                }
+                .achieve-list::-webkit-scrollbar-thumb:hover {
+                    background: rgba(0, 229, 255, 0.55);
                 }
                 .achieve-item {
                     display: flex;
@@ -820,8 +777,8 @@ export class AchievementManager {
                     <button class="achieve-tab-btn active" data-cat="all">ALL (${progress.total})</button>
                     <button class="achieve-tab-btn" data-cat="kills">KILLS (40)</button>
                     <button class="achieve-tab-btn" data-cat="survival">SURVIVAL (10)</button>
-                    <button class="achieve-tab-btn" data-cat="deaths">DEATHS & HAZARDS (13)</button>
-                    <button class="achieve-tab-btn" data-cat="special">TACTICS & SECRETS</button>
+                    <button class="achieve-tab-btn" data-cat="deaths">DEATHS & HAZARDS (12)</button>
+                    <button class="achieve-tab-btn" data-cat="special">TACTICS & SECRETS (7)</button>
                 </div>
                 <div class="achieve-list" id="achieve-modal-list"></div>
                 <div class="achieve-modal-footer">
