@@ -357,3 +357,44 @@ describe('Anatomical Bone Fractures, Bullet Wounds & Debuffs', () => {
         expect(isBleeding).toBe(false);
     });
 });
+
+import { PREGENERATED_BRIDGES, getBridgeElevation, isOverBridge } from '../Game Code/JavaScript/world/bridges.js';
+
+describe('Pre-Generated River Bridges & Overpass Elevating System', () => {
+    it('should pre-generate exactly 3 arterial river bridges over waterways', () => {
+        expect(PREGENERATED_BRIDGES.length).toBe(3);
+        const westBridge = PREGENERATED_BRIDGES.find(b => b.x === -120);
+        const centralBridge = PREGENERATED_BRIDGES.find(b => b.x === 0);
+        const eastBridge = PREGENERATED_BRIDGES.find(b => b.x === 120);
+
+        expect(westBridge).toBeDefined();
+        expect(centralBridge).toBeDefined();
+        expect(eastBridge).toBeDefined();
+
+        expect(centralBridge.deckY).toBeGreaterThanOrEqual(1.9);
+        expect(centralBridge.width).toBe(16);
+    });
+
+    it('should elevate player and vehicle ground height over river crossings', () => {
+        // Grand Central Bridge at (0, 272)
+        const onDeckY = getBridgeElevation(0, 272);
+        expect(onDeckY).toBeCloseTo(1.95, 2);
+        expect(isOverBridge(0, 272)).toBe(true);
+
+        // Off-bridge point in normal city grid
+        expect(getBridgeElevation(0, 0)).toBeNull();
+        expect(isOverBridge(0, 0)).toBe(false);
+    });
+
+    it('should smoothly interpolate approach ramps leading up to bridge deck', () => {
+        // Ramp starts at z = 272 - 15 - 14 = 243, ends at z = 257
+        const rampBaseY = getBridgeElevation(0, 243);
+        const rampMidY = getBridgeElevation(0, 250);
+        const deckY = getBridgeElevation(0, 260);
+
+        expect(rampBaseY).toBeCloseTo(0.04, 1);
+        expect(rampMidY).toBeGreaterThan(rampBaseY);
+        expect(rampMidY).toBeLessThan(deckY);
+        expect(deckY).toBeCloseTo(1.95, 2);
+    });
+});
