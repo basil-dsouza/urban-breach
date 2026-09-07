@@ -87,14 +87,27 @@ class SoundEngine {
         for (const [key, path] of Object.entries(files)) {
             if (this.audioBuffers[key]) continue;
             try {
-                const resp = await fetch(path);
+                let resp = await fetch(path);
+                if (!resp.ok) {
+                    resp = await fetch('public/' + path);
+                }
                 if (resp.ok) {
                     const arrayBuffer = await resp.arrayBuffer();
                     this.ctx.decodeAudioData(arrayBuffer, (decoded) => {
                         this.audioBuffers[key] = decoded;
                     }, () => {});
                 }
-            } catch (e) {}
+            } catch (e) {
+                try {
+                    const resp = await fetch('public/' + path);
+                    if (resp && resp.ok) {
+                        const arrayBuffer = await resp.arrayBuffer();
+                        this.ctx.decodeAudioData(arrayBuffer, (decoded) => {
+                            this.audioBuffers[key] = decoded;
+                        }, () => {});
+                    }
+                } catch (e2) {}
+            }
         }
     }
 
@@ -169,6 +182,12 @@ class SoundEngine {
                     const audio = new Audio(src);
                     audio.volume = this.gunVolume; // exactly 30% of original volume
                     audio.preload = 'auto';
+                    audio.onerror = () => {
+                        if (!audio.dataset.retried) {
+                            audio.dataset.retried = '1';
+                            audio.src = 'public/' + src;
+                        }
+                    };
                     this.samplePools[key].pool.push(audio);
                 }
             }
@@ -1443,6 +1462,15 @@ class SoundEngine {
                 this.menuAudio.preload = "auto";
                 this.menuAudio.volume = 0.50;
                 this.menuAudio.loop = true;
+                this.menuAudio.onerror = () => {
+                    if (!this.menuAudio.dataset.retried) {
+                        this.menuAudio.dataset.retried = '1';
+                        this.menuAudio.src = 'public/background-sounds/superepic.mp3';
+                        if (this.currentMusic === this.menuAudio && !this.isMusicMuted) {
+                            this.menuAudio.play().catch(() => {});
+                        }
+                    }
+                };
             }
             this.currentMusic = this.menuAudio;
             this.currentMusic.currentTime = 0;
@@ -1493,6 +1521,15 @@ class SoundEngine {
             console.log("[MUSIC] Loading audio source: " + src);
             const audio = new Audio(src);
             audio.volume = 0.30; // set to 30% original volume
+            audio.onerror = () => {
+                if (!audio.dataset.retried) {
+                    audio.dataset.retried = '1';
+                    audio.src = 'public/' + src;
+                    if (this.currentMusic === audio && !this.isMusicMuted) {
+                        audio.play().catch(() => {});
+                    }
+                }
+            };
             
             audio.onended = () => {
                 console.log("[MUSIC] Game track ended. Playing next song...");
