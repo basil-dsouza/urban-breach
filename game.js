@@ -3629,6 +3629,8 @@ window.addEventListener('urban_breach_progress_reset', () => {
         soundEngine.stopMinigunBurst();
     }
     minigunHeat = 0.0;
+    endlessPlayOn = false;
+    gameWon = false;
     if (typeof uiManager !== 'undefined' && uiManager && typeof uiManager.addChatMessage === 'function') {
         uiManager.addChatMessage('HQ', '🔄 Achievement milestones and M134 Minigun have been reset!');
     }
@@ -3690,6 +3692,20 @@ const uiManager = new UIManager({
     },
     onRestart: () => {
         location.reload();
+    },
+    onPlayOn: () => {
+        endlessPlayOn = true;
+        gameWon = false;
+        try {
+            renderer.domElement.requestPointerLock();
+        } catch (e) {}
+        uiManager.showToast('🔥 ENDLESS COMBAT ENGAGED — BEYOND WAVE 50!');
+        if (soundEngine && typeof soundEngine.playLevelUp === 'function') {
+            soundEngine.playLevelUp();
+        }
+        const diff = getDifficulty();
+        spawnWave(diff);
+        uiManager.updateHUD(getHUDState());
     }
 });
 window.uiManager = uiManager;
@@ -3712,6 +3728,9 @@ const testModeManager = new TestModeManager({
         waveTimer = 0;
         enemySpawnTimer = 0;
         gameWon = false;
+        if (targetWave < 50) {
+            endlessPlayOn = false;
+        }
         checkWaveMilestones();
         if (!gameWon) {
             const diff = getDifficulty();
@@ -5154,11 +5173,12 @@ function spawnWave(difficulty) {
 }
 
 let gameWon = false;
+let endlessPlayOn = false;
 
 function checkWaveMilestones() {
     achievementManager.recordWave(wave);
 
-    if (wave >= 50) {
+    if (wave >= 50 && !endlessPlayOn) {
         if (!gameWon) {
             gameWon = true;
             try {

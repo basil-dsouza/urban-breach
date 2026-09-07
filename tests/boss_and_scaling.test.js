@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { DIFFICULTY_LEVELS, getWaveEnemyScaling } from '../src/difficulty.js';
 import { EnemyManager } from '../src/enemies.js';
@@ -51,6 +51,26 @@ describe('Progressive Wave & Difficulty Scaling Engine', () => {
         expect(bossWave10.bossLevel).toBe(2);
         expect(bossWave10.bossHealth).toBeGreaterThan(bossWave5.bossHealth);
         expect(bossWave10.bossDamage).toBeGreaterThanOrEqual(bossWave5.bossDamage);
+    });
+
+    it('should support endless scaling beyond Wave 50 for play-on mode', () => {
+        const diff = DIFFICULTY_LEVELS.MEDIUM;
+        const wave50 = getWaveEnemyScaling(50, diff);
+        const wave55 = getWaveEnemyScaling(55, diff);
+        const wave60 = getWaveEnemyScaling(60, diff);
+
+        expect(wave50.isBossWave).toBe(true);
+        expect(wave55.isBossWave).toBe(true);
+        expect(wave60.isBossWave).toBe(true);
+
+        expect(wave55.bossLevel).toBe(11);
+        expect(wave60.bossLevel).toBe(12);
+
+        expect(wave55.bossHealth).toBeGreaterThan(wave50.bossHealth);
+        expect(wave60.bossHealth).toBeGreaterThan(wave55.bossHealth);
+
+        expect(wave55.enemyHealth).toBeGreaterThan(wave50.enemyHealth);
+        expect(wave60.enemyHealth).toBeGreaterThan(wave55.enemyHealth);
     });
 });
 

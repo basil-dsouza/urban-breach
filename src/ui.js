@@ -121,9 +121,10 @@ export const WEAPON_CONFIGS = {
  */
 
 export class UIManager {
-    constructor({ onStartGame, onRestart }) {
+    constructor({ onStartGame, onRestart, onPlayOn }) {
         this.onStartGame = onStartGame;
         this.onRestart = onRestart;
+        this.onPlayOn = onPlayOn;
         this.selectedDifficultyKey = 'MEDIUM';
         this.selectedWeaponKey = 'AK47';
         this.radar = null;
@@ -750,7 +751,10 @@ export class UIManager {
             </div>
 
             <div style="display: flex; gap: 16px; justify-content: center; align-items: center; flex-wrap: wrap;">
-                <button id="btn-vic-restart" class="btn-primary" style="background: linear-gradient(135deg, #f1c40f, #e67e22); color: #000; font-weight: 800; padding: 14px 28px;">
+                <button id="btn-vic-playon" class="btn-primary" style="background: linear-gradient(135deg, #00e5ff, #00b4d8); color: #000; font-weight: 800; padding: 14px 28px; box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);">
+                    🔥 PLAY ON (WAVE 50+)
+                </button>
+                <button id="btn-vic-restart" class="btn-secondary" style="border-color: rgba(241, 196, 15, 0.5); color: #f1c40f; font-weight: 700; padding: 14px 28px;">
                     DEPLOY AGAIN
                 </button>
                 <button id="btn-vic-achievements" class="btn-secondary" style="border-color: rgba(0, 229, 255, 0.5); color: #00e5ff; font-weight: 700; padding: 14px 24px;">
@@ -1115,6 +1119,18 @@ export class UIManager {
                     this.onRestart();
                 } else {
                     location.reload();
+                }
+            };
+        }
+
+        const btnVicPlayOn = document.getElementById('btn-vic-playon');
+        if (btnVicPlayOn) {
+            btnVicPlayOn.onclick = () => {
+                this.victoryScreen.style.display = 'none';
+                this.hud.style.display = 'block';
+                this.crosshair.style.display = 'block';
+                if (typeof this.onPlayOn === 'function') {
+                    this.onPlayOn();
                 }
             };
         }
