@@ -455,6 +455,7 @@ export class AchievementManager {
                     font-family: 'Segoe UI', system-ui, sans-serif;
                     overflow: hidden;
                     position: relative;
+                    box-sizing: border-box;
                 }
                 .achieve-modal-header {
                     padding: 18px 24px;
@@ -463,6 +464,8 @@ export class AchievementManager {
                     justify-content: space-between;
                     align-items: center;
                     background: rgba(0, 0, 0, 0.25);
+                    flex-shrink: 0;
+                    box-sizing: border-box;
                 }
                 .achieve-modal-title-row {
                     display: flex;
@@ -493,31 +496,39 @@ export class AchievementManager {
                     background: rgba(255, 255, 255, 0.1);
                 }
                 .achieve-progress-banner {
-                    padding: 12px 24px;
+                    padding: 14px 24px;
                     background: rgba(0, 229, 255, 0.06);
                     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
                     display: flex;
                     flex-direction: column;
                     gap: 8px;
+                    flex-shrink: 0;
+                    box-sizing: border-box;
                 }
                 .achieve-progress-row {
                     display: flex;
                     justify-content: space-between;
+                    align-items: center;
                     font-size: 13px;
                     font-weight: 600;
+                    letter-spacing: 0.5px;
                 }
                 .achieve-progress-bar-bg {
                     width: 100%;
-                    height: 8px;
-                    background: rgba(255, 255, 255, 0.1);
-                    border-radius: 4px;
+                    height: 10px;
+                    background: rgba(255, 255, 255, 0.12);
+                    border-radius: 6px;
                     overflow: hidden;
+                    box-sizing: border-box;
+                    position: relative;
                 }
                 .achieve-progress-bar-fill {
                     height: 100%;
                     background: linear-gradient(90deg, #00e5ff, #00ff88);
-                    border-radius: 4px;
+                    border-radius: 6px;
                     transition: width 0.4s ease;
+                    min-width: 0;
+                    box-sizing: border-box;
                 }
 
                 /* Category Filter Tabs */
@@ -528,10 +539,20 @@ export class AchievementManager {
                     background: rgba(0, 0, 0, 0.35);
                     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
                     overflow-x: auto;
-                    scrollbar-width: none;
+                    flex-shrink: 0;
+                    box-sizing: border-box;
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(0, 229, 255, 0.25) transparent;
                 }
                 .achieve-tabs-bar::-webkit-scrollbar {
-                    display: none;
+                    height: 4px;
+                }
+                .achieve-tabs-bar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .achieve-tabs-bar::-webkit-scrollbar-thumb {
+                    background: rgba(0, 229, 255, 0.25);
+                    border-radius: 2px;
                 }
                 .achieve-tab-btn {
                     background: rgba(255, 255, 255, 0.05);
@@ -559,11 +580,14 @@ export class AchievementManager {
                 }
 
                 .achieve-list {
+                    flex: 1 1 auto;
+                    min-height: 0;
                     padding: 16px 24px;
                     overflow-y: auto;
                     display: flex;
                     flex-direction: column;
                     gap: 10px;
+                    box-sizing: border-box;
                     scrollbar-width: thin;
                     scrollbar-color: rgba(0, 229, 255, 0.25) transparent;
                 }
@@ -590,6 +614,8 @@ export class AchievementManager {
                     border-radius: 12px;
                     padding: 12px 16px;
                     transition: all 0.2s;
+                    box-sizing: border-box;
+                    min-width: 0;
                 }
                 .achieve-item.unlocked {
                     border-color: rgba(0, 229, 255, 0.4);
@@ -620,7 +646,10 @@ export class AchievementManager {
                     filter: grayscale(1) opacity(0.4);
                 }
                 .achieve-item-info {
-                    flex-grow: 1;
+                    flex: 1 1 auto;
+                    min-width: 0;
+                    overflow: hidden;
+                    word-break: break-word;
                 }
                 .achieve-item-title {
                     font-size: 15px;
@@ -640,6 +669,8 @@ export class AchievementManager {
                     padding: 6px 12px;
                     border-radius: 6px;
                     white-space: nowrap;
+                    flex-shrink: 0;
+                    align-self: center;
                 }
                 .achieve-badge-locked {
                     background: rgba(255, 255, 255, 0.06);
@@ -664,6 +695,8 @@ export class AchievementManager {
                     background: rgba(6, 10, 16, 0.95);
                     border-top: 1px solid rgba(255, 255, 255, 0.08);
                     border-radius: 0 0 16px 16px;
+                    flex-shrink: 0;
+                    box-sizing: border-box;
                 }
                 .achieve-footer-hint {
                     font-size: 11px;
@@ -698,6 +731,53 @@ export class AchievementManager {
                 @keyframes pulseResetBtn {
                     0% { transform: scale(0.98); }
                     100% { transform: scale(1.02); }
+                }
+
+                @media (max-width: 640px) {
+                    .achieve-modal-card {
+                        max-height: 92vh;
+                        border-radius: 12px;
+                    }
+                    .achieve-modal-header {
+                        padding: 12px 16px;
+                    }
+                    .achieve-progress-banner {
+                        padding: 10px 16px;
+                    }
+                    .achieve-tabs-bar {
+                        padding: 8px 16px;
+                    }
+                    .achieve-list {
+                        padding: 12px 16px;
+                    }
+                    .achieve-modal-footer {
+                        padding: 10px 16px;
+                        flex-direction: column;
+                        gap: 8px;
+                        align-items: stretch;
+                    }
+                    .achieve-btn-reset {
+                        text-align: center;
+                    }
+                    .achieve-item {
+                        gap: 10px;
+                        padding: 10px 12px;
+                    }
+                    .achieve-item-icon {
+                        width: 36px;
+                        height: 36px;
+                        font-size: 22px;
+                    }
+                    .achieve-item-title {
+                        font-size: 14px;
+                    }
+                    .achieve-item-desc {
+                        font-size: 11px;
+                    }
+                    .achieve-item-badge {
+                        padding: 4px 8px;
+                        font-size: 10px;
+                    }
                 }
             `;
             document.head.appendChild(style);

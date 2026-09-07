@@ -136,43 +136,55 @@ export function getWaveEnemyScaling(wave = 1, difficulty = currentDifficulty) {
     const baseRate = diff.scalingBase || 1.50;
     const tierMult = diff.tierMultiplier || 1.00;
 
-    // Continuous 7-round exponential growth factor: (baseRate)^((w - 1) / 7)
-    const roundStep = Math.max(0, (wave - 1) / 7.0);
+    // Continuous 7-round growth factor up to wave 22; smooth logarithmic damping beyond wave 22
+    let roundStep;
+    if (wave <= 22) {
+        roundStep = Math.max(0, (wave - 1) / 7.0);
+    } else {
+        const base22Step = (22 - 1) / 7.0; // 3.0
+        roundStep = base22Step + Math.log10(1 + (wave - 22) * 0.25) * 2.2;
+    }
     const waveMultiplier = Math.pow(baseRate, roundStep);
 
-    // Enemy Count Scaling: starts at initialEnemies, compounds per roundStep
-    const countMultiplier = Math.pow(baseRate * 0.92, roundStep);
+    // Enemy Count Scaling: starts at initialEnemies, capped comfortably for stable FPS and fair combat
+    const countMultiplier = Math.pow(baseRate * 0.90, roundStep);
     const enemyCount = Math.min(
-        Math.round((diff.initialEnemies * countMultiplier) + (wave - 1) * 0.8),
-        Math.round(diff.maxEnemies * Math.min(waveMultiplier, 3.2))
+        Math.round((diff.initialEnemies * countMultiplier) + Math.min(wave - 1, 30) * 0.6),
+        Math.round(diff.maxEnemies * Math.min(waveMultiplier, 2.2))
     );
 
     // Enemy Health Scaling
     const enemyHealth = Math.max(1, Math.round(diff.enemyHealth * waveMultiplier));
 
     // Enemy Movement Speed Scaling (gradual and capped for playability)
-    const speedMultiplier = Math.min(1.0 + (waveMultiplier - 1.0) * 0.20, 1.65);
+    const speedMultiplier = Math.min(1.0 + (waveMultiplier - 1.0) * 0.18, 1.55);
     const enemySpeedMin = diff.enemySpeedMin * speedMultiplier;
     const enemySpeedMax = diff.enemySpeedMax * speedMultiplier;
 
     // Enemy Damage Scaling
-    const damageMultiplier = Math.min(1.0 + (waveMultiplier - 1.0) * 0.38, 2.6);
+    const damageMultiplier = Math.min(1.0 + (waveMultiplier - 1.0) * 0.30, 2.4);
     const enemyGunDamage = Math.max(1, Math.round(diff.enemyGunDamage * damageMultiplier));
     const enemyMeleeDamage = Math.max(2, Math.round(diff.enemyMeleeDamage * damageMultiplier));
 
     // Enemy Shoot Interval Scaling (higher waves fire more aggressively)
-    const intervalDivisor = Math.min(1.0 + (waveMultiplier - 1.0) * 0.22, 2.0);
-    const enemyShootIntervalMin = Math.max(0.45, diff.enemyShootIntervalMin / intervalDivisor);
-    const enemyShootIntervalMax = Math.max(0.90, diff.enemyShootIntervalMax / intervalDivisor);
+    const intervalDivisor = Math.min(1.0 + (waveMultiplier - 1.0) * 0.20, 1.85);
+    const enemyShootIntervalMin = Math.max(0.55, diff.enemyShootIntervalMin / intervalDivisor);
+    const enemyShootIntervalMax = Math.max(1.00, diff.enemyShootIntervalMax / intervalDivisor);
 
     // Boss Attributes for Wave 5, 10, 15, 20...
     const isBossWave = (wave % 5 === 0);
     const bossLevel = Math.max(1, Math.floor(wave / 5));
-    // Boss scales progressively 1.5x on subsequent boss encounters (Wave 5 = 1x, Wave 10 = 1.5x, Wave 15 = 2.25x)
-    const bossMultiplier = Math.pow(1.5, bossLevel - 1) * tierMult;
+    // Boss scales progressively 1.5x up to Wave 25 (Boss 5), then controlled linear scaling for Waves 30+
+    let bossMultiplier;
+    if (bossLevel <= 5) {
+        bossMultiplier = Math.pow(1.5, bossLevel - 1) * tierMult;
+    } else {
+        const baseAt5 = Math.pow(1.5, 4) * tierMult;
+        bossMultiplier = baseAt5 * (1 + (bossLevel - 5) * 0.35);
+    }
     const bossHealth = Math.round(350 * bossMultiplier);
-    const bossDamage = Math.round((diff.enemyGunDamage * 1.5 + 4) * Math.min(1.0 + (bossLevel - 1) * 0.25, 2.5));
-    const bossSpeed = (diff.enemySpeedMin * 1.1) * Math.min(1.0 + (bossLevel - 1) * 0.08, 1.35);
+    const bossDamage = Math.round((diff.enemyGunDamage * 1.5 + 4) * Math.min(1.0 + (bossLevel - 1) * 0.20, 2.2));
+    const bossSpeed = (diff.enemySpeedMin * 1.1) * Math.min(1.0 + (bossLevel - 1) * 0.06, 1.28);
 
     return {
         wave,

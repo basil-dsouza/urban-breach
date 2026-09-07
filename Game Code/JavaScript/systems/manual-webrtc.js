@@ -117,10 +117,12 @@ export class ManualConnection {
     }
 }
 
+import { compressSessionToken, decompressSessionToken } from './webrtc-compression.js';
+
 /**
  * Host Flow Helper:
  * Creates the RTCPeerConnection and the local DataChannel, generates the SDP Offer,
- * and waits for full ICE gathering before resolving the Base64 offer string.
+ * and waits for full ICE gathering before resolving the compressed offer token.
  */
 export function startManualHost(onOfferCreated, onConnectionSuccess) {
     const pc = new RTCPeerConnection(WEBRTC_CONFIG);
@@ -140,9 +142,17 @@ export function startManualHost(onOfferCreated, onConnectionSuccess) {
         if (!event.candidate && !isGatheringDone) {
             isGatheringDone = true;
             console.log("[WebRTC Host] ICE candidate gathering complete.");
-            const localDescription = pc.localDescription;
-            const base64Offer = btoa(JSON.stringify(localDescription));
-            onOfferCreated(base64Offer);
+            try {
+                const offerToken = compressSessionToken({
+                    type: pc.localDescription.type,
+                    sdp: pc.localDescription.sdp
+                });
+                onOfferCreated(offerToken);
+            } catch (err) {
+                console.error("[WebRTC Host] Failed to compress offer:", err);
+                // Fallback to raw base64
+                onOfferCreated(btoa(JSON.stringify(pc.localDescription)));
+            }
         }
     };
 
@@ -162,10 +172,10 @@ export function startManualHost(onOfferCreated, onConnectionSuccess) {
 
 /**
  * Client Flow Helper:
- * Accepts Host's Base64 SDP Offer, sets remote description, generates SDP Answer,
- * and waits for full ICE gathering before resolving the Base64 answer string.
+ * Accepts Host's compressed SDP Offer, sets remote description, generates SDP Answer,
+ * and waits for full ICE gathering before resolving the compressed answer token.
  */
-export function startManualClient(base64Offer, onAnswerCreated, onConnectionSuccess) {
+export function startManualClient(offerToken, onAnswerCreated, onConnectionSuccess) {
     const pc = new RTCPeerConnection(WEBRTC_CONFIG);
     let isGatheringDone = false;
 
@@ -183,9 +193,16 @@ export function startManualClient(base64Offer, onAnswerCreated, onConnectionSucc
         if (!event.candidate && !isGatheringDone) {
             isGatheringDone = true;
             console.log("[WebRTC Client] ICE candidate gathering complete.");
-            const localDescription = pc.localDescription;
-            const base64Answer = btoa(JSON.stringify(localDescription));
-            onAnswerCreated(base64Answer);
+            try {
+                const answerToken = compressSessionToken({
+                    type: pc.localDescription.type,
+                    sdp: pc.localDescription.sdp
+                });
+                onAnswerCreated(answerToken);
+            } catch (err) {
+                console.error("[WebRTC Client] Failed to compress answer:", err);
+                onAnswerCreated(btoa(JSON.stringify(pc.localDescription)));
+            }
         }
     };
 
@@ -195,9 +212,23 @@ export function startManualClient(base64Offer, onAnswerCreated, onConnectionSucc
 
     // Process host offer
     try {
-        const offerDesc = JSON.parse(atob(base64Offer));
-        pc.setRemoteDescription(new RTCSessionDescription(offerDesc))
-            .then(() => pc.createAnswer())
+        const session = decompressSessionToken(offerToken);
+        pc.setRemoteDescription(new RTCSessionDescription({
+            type: session.type,
+            sdp: session.sdp
+        }))
+            .then(() => {
+                if (session.candidates && session.candidates.length > 0) {
+                    for (const c of session.candidates) {
+                        try {
+                            pc.addIceCandidate(new RTCIceCandidate(c));
+                        } catch (candErr) {
+                            console.warn("[WebRTC Client] Candidate addition warning:", candErr);
+                        }
+                    }
+                }
+                return pc.createAnswer();
+            })
             .then(answer => pc.setLocalDescription(answer))
             .catch(err => {
                 console.error("[WebRTC Client] Error in setRemoteDescription or createAnswer:", err);
@@ -205,7 +236,7 @@ export function startManualClient(base64Offer, onAnswerCreated, onConnectionSucc
             });
     } catch (err) {
         console.error("[WebRTC Client] Error decoding host offer:", err);
-        alert("Invalid offer code format. Make sure you copied the correct base64 code.");
+        alert("Invalid offer code format. Make sure you copied the correct code: " + err.message);
     }
 
     return pc;
@@ -213,13 +244,25 @@ export function startManualClient(base64Offer, onAnswerCreated, onConnectionSucc
 
 /**
  * Host Flow Part 2:
- * Applies the client's Base64 SDP Answer to establish connection.
+ * Applies the client's compressed SDP Answer to establish connection.
  */
-export function applyManualAnswer(pc, base64Answer) {
+export function applyManualAnswer(pc, answerToken) {
     try {
-        const answerDesc = JSON.parse(atob(base64Answer));
-        pc.setRemoteDescription(new RTCSessionDescription(answerDesc))
+        const session = decompressSessionToken(answerToken);
+        pc.setRemoteDescription(new RTCSessionDescription({
+            type: session.type,
+            sdp: session.sdp
+        }))
             .then(() => {
+                if (session.candidates && session.candidates.length > 0) {
+                    for (const c of session.candidates) {
+                        try {
+                            pc.addIceCandidate(new RTCIceCandidate(c));
+                        } catch (candErr) {
+                            console.warn("[WebRTC Host] Candidate addition warning:", candErr);
+                        }
+                    }
+                }
                 console.log("[WebRTC Host] Successfully applied remote answer description.");
             })
             .catch(err => {
@@ -228,6 +271,7 @@ export function applyManualAnswer(pc, base64Answer) {
             });
     } catch (err) {
         console.error("[WebRTC Host] Error decoding client answer:", err);
-        alert("Invalid answer code format. Make sure you copied the correct base64 code.");
+        alert("Invalid answer code format. Make sure you copied the correct code: " + err.message);
     }
 }
+
