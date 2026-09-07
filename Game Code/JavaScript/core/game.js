@@ -14,7 +14,7 @@ import { achievementManager } from '../systems/achievements.js';
 import { buildBridges, getBridgeElevation, isOverBridge } from '../world/bridges.js';
 import { getTerrainHeight, getWaterLevel as getRawWaterLevel, createTerrainMesh } from '../world/terrain.js';
 import { buildRoadNetwork, makeRoadSpan, makeResidentialRoad, makeDriveway, residentialRoadSegments } from '../world/roads.js';
-import { buildMassiveCity, buildings } from '../world/buildings.js';
+import { buildMassiveCity, buildings, obstacles } from '../world/buildings.js';
 import { buildVegetation, trees, stealthBushes } from '../world/vegetation.js';
 import { buildLadders, ladders } from '../world/ladders.js';
 
@@ -64,8 +64,7 @@ sun.shadow.camera.top = 260;
 sun.shadow.camera.bottom = -260;
 scene.add(sun);
 
-// 4. World Collections & Materials
-const obstacles = [];
+// 4. World Collections & Materials (obstacles imported from ../world/buildings.js)
 const activeGrenades = [];
 
 // High-Performance Object Pools & Static Caching Globals
@@ -163,8 +162,8 @@ buildBridges(scene, staticRaycastTargets);
 buildRoadNetwork(scene, staticRaycastTargets);
 buildMassiveCity(scene, staticRaycastTargets);
 createTerrainMesh(scene, buildings, residentialRoadSegments);
-buildVegetation(scene, buildings, residentialRoadSegments);
-buildLadders(scene, buildings, residentialRoadSegments);
+buildVegetation(scene, buildings, residentialRoadSegments, staticRaycastTargets);
+buildLadders(scene, buildings, staticRaycastTargets);
 
 function getWaterLevel(x, z) {
     return getRawWaterLevel(x, z, buildings);

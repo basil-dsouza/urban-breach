@@ -1,7 +1,11 @@
 import * as THREE from 'three';
-import { makeDriveway } from './roads.js';
+import { makeResidentialRoad as makeResidentialRoadBase, makeDriveway } from './roads.js';
 
 export const buildings = [];
+export const obstacles = [];
+
+let scene = null;
+let staticRaycastTargets = [];
 
 // 6. Hyper-Realistic Architecture Matching Reference Images
 // Image 1: Tropical Terracotta Clay-Tile Villa (Terracotta hipped roof, covered verandah, white pillars, coach lanterns, stone path)
@@ -1380,7 +1384,10 @@ function createBuilding({ x, z, width, depth, height, w, d, h, style = 'flat', r
 }
 
 // Generate Massive Open World: 3 Major Cities & 5 Distinct Small Towns & Hamlets
-export function buildMassiveCity(scene, staticRaycastTargets = []) {
+export function buildMassiveCity(inScene, inStaticRaycastTargets = []) {
+    scene = inScene;
+    staticRaycastTargets = inStaticRaycastTargets || [];
+    const makeResidentialRoad = (x1, z1, x2, z2, width = 8) => makeResidentialRoadBase(scene, staticRaycastTargets, x1, z1, x2, z2, width);
     function generateMassiveCity() {
     // ==========================================
     // 1. BIG CITY 1: METRO CENTRAL (Downtown Capital & Financial Core)

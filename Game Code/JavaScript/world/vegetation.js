@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { getTerrainHeight, getWaterLevel } from './terrain.js';
+import { obstacles } from './buildings.js';
 
 export const trees = [];
 export const stealthBushes = [];
 
-export function buildVegetation(scene, buildings = [], residentialRoadSegments = []) {
+export function buildVegetation(scene, buildings = [], residentialRoadSegments = [], staticRaycastTargets = []) {
 // 7. Dense Low-Poly Forest Ecosystems & Wilderness Biomes
 function isValidTreeLocation(x, z) {
     const roadClearMargin = 11.5;
