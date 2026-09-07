@@ -7,6 +7,11 @@ export const obstacles = [];
 let scene = null;
 let staticRaycastTargets = [];
 
+const defaultGlassMat = new THREE.MeshStandardMaterial({ color: 0x74b9ff, roughness: 0.15, metalness: 0.45, transparent: true, opacity: 0.82 });
+const defaultDarkMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, roughness: 0.9 });
+const glassMat = defaultGlassMat;
+const darkMat = defaultDarkMat;
+
 // 6. Hyper-Realistic Architecture Matching Reference Images
 // Image 1: Tropical Terracotta Clay-Tile Villa (Terracotta hipped roof, covered verandah, white pillars, coach lanterns, stone path)
 function createLowPolyCottage({ x, z, width, depth, height, w, d, h, rotY = 0 }) {
