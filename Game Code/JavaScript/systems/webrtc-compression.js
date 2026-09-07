@@ -9,7 +9,7 @@
  * 4. Robust decompression: backward-compatible with legacy Base64 payloads and robust error validation.
  */
 
-import LZString from 'lz-string';
+import LZString from './lz-string.js';
 
 /**
  * Strips non-essential attributes and redundant headers from an SDP string.
