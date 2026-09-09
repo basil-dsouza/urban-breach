@@ -24,6 +24,7 @@ export const riverWaypoints = [
 export const riverSplinePoints = riverWaypoints.map(p => new THREE.Vector3(p.x, 0, p.z));
 export const riverSpline = new THREE.CatmullRomCurve3(riverSplinePoints, false, 'catmullrom', 0.5);
 export const riverSplineSamples = riverSpline.getPoints(128);
+export const waterInstances = [];
 
 export function getRiverDistance(x, z) {
     let minDist = 9999;
@@ -200,6 +201,7 @@ export function getSimpleGround(x, z, buildings = [], residentialRoadSegments = 
 
 export function createTerrainMesh(scene, buildings = [], residentialRoadSegments = []) {
     const terrainGroup = new THREE.Group();
+    waterInstances.length = 0;
 
     // 1. High-Resolution Ground Elevation Grid
     const segs = 140;
@@ -248,6 +250,7 @@ export function createTerrainMesh(scene, buildings = [], residentialRoadSegments
         waterMesh.position.set(lake.x, lake.waterLevel, lake.z);
         waterMesh.receiveShadow = true;
         terrainGroup.add(waterMesh);
+        waterInstances.push(waterMesh);
     }
 
     // Continuous River Water Channel
@@ -266,6 +269,7 @@ export function createTerrainMesh(scene, buildings = [], residentialRoadSegments
         rMesh.rotation.y = angle;
         rMesh.receiveShadow = true;
         terrainGroup.add(rMesh);
+        waterInstances.push(rMesh);
     }
 
     scene.add(terrainGroup);

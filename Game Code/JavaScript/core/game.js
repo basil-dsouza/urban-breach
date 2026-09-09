@@ -12,7 +12,7 @@ import { achievementManager } from '../systems/achievements.js';
 
 // Pre-Generated World & River Bridges (Zero Z-Fighting)
 import { buildBridges, getBridgeElevation, isOverBridge } from '../world/bridges.js';
-import { getTerrainHeight, getWaterLevel as getRawWaterLevel, createTerrainMesh } from '../world/terrain.js';
+import { getTerrainHeight, getWaterLevel as getRawWaterLevel, createTerrainMesh, waterBodies, riverWaypoints, waterInstances } from '../world/terrain.js';
 import { buildRoadNetwork, makeRoadSpan, makeResidentialRoad, makeDriveway, residentialRoadSegments } from '../world/roads.js';
 import { buildMassiveCity, buildings, obstacles } from '../world/buildings.js';
 import { buildVegetation, trees, stealthBushes } from '../world/vegetation.js';
@@ -116,13 +116,7 @@ const glassMat = new THREE.MeshStandardMaterial({
 });
 const bulletMat = new THREE.MeshBasicMaterial({ color: 0xffff55 });
 
-// 4b. Water Bodies & Terrain Elevation Declarations
-const waterBodies = [
-    { name: 'alpine_reservoir', x: -270, z: 270, radius: 45, bedDepth: 3.5, waterLevel: 7.0 },
-    { name: 'emerald_lake', x: -90, z: 260, radius: 34, bedDepth: -3.2, waterLevel: 0.0 },
-    { name: 'eastern_delta', x: 260, z: 180, radius: 38, bedDepth: -3.4, waterLevel: 0.0 }
-];
-const waterMeshes = [];
+// 4b. Water Bodies & Terrain Elevation Declarations (Imported from terrain.js)
 let ground = null;
 
 // Initialize Pools
