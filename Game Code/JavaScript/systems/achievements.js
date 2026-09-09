@@ -212,6 +212,7 @@ export class AchievementManager {
                 localStorage.removeItem(STORAGE_KEY);
                 localStorage.removeItem(STORAGE_DEATHS_KEY);
                 localStorage.removeItem('urban_breach_minigun_unlocked');
+                localStorage.removeItem('urban_breach_highscore');
             } catch (e) {}
         }
         this.save();

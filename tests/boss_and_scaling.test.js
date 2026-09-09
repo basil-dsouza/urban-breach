@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { DIFFICULTY_LEVELS, getWaveEnemyScaling } from '../src/difficulty.js';
-import { EnemyManager } from '../src/enemies.js';
+import { DIFFICULTY_LEVELS, getWaveEnemyScaling } from '../Game Code/JavaScript/systems/difficulty.js';
+import { EnemyManager } from '../Game Code/JavaScript/systems/enemies.js';
 
 describe('Progressive Wave & Difficulty Scaling Engine', () => {
     it('should scale Survivor baseline attributes by 1.5x every 7 rounds', () => {

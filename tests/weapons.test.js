@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { WEAPON_CONFIGS } from '../src/ui.js';
+import { WEAPON_CONFIGS } from '../Game Code/JavaScript/systems/ui.js';
 
 describe('Weapon Arsenal Configuration (AK-47, Barrett .50 Cal, M590 Shotgun, & M134 Minigun)', () => {
     it('should have all weapons defined including unlockable M134 Minigun', () => {

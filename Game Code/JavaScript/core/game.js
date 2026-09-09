@@ -9,6 +9,7 @@ import { soundEngine } from '../systems/audio.js';
 import { MultiplayerManager } from '../systems/multiplayer.js';
 import { TestModeManager, testModeState } from '../systems/test-mode.js';
 import { achievementManager } from '../systems/achievements.js';
+import { highScoreManager } from '../systems/highscore.js';
 
 // Pre-Generated World & River Bridges (Zero Z-Fighting)
 import { buildBridges, getBridgeElevation, isOverBridge } from '../world/bridges.js';
@@ -193,6 +194,7 @@ function handleEnemyDamage(enemy, damage) {
     if (enemy.userData.health <= 0) {
         if (enemy.userData.isBoss) {
             kills += 5;
+            highScoreManager.recordBossKill();
             achievementManager.recordKill(kills);
             uiManager.hideBossHP(true);
             soundEngine.playBossDefeated();
@@ -390,12 +392,20 @@ function getHUDState() {
     const inWater = waterSurface > -900 && (camera.position.y - eyeHeight < waterSurface);
     const isSubmerged = waterSurface > -900 && (camera.position.y < waterSurface);
 
+    const diff = getDifficulty();
+    const diffKey = diff ? diff.name : 'NORMAL';
+    const score = highScoreManager.calculateScore({ kills, wave, difficultyKey: diffKey });
+    const bestRecord = highScoreManager.getHighScore();
+    const bestScore = Math.max(bestRecord.score, score);
+
     return {
         health,
         maxHealth,
         wave,
         kills,
-        difficulty: getDifficulty(),
+        score,
+        bestScore,
+        difficulty: diff,
         onLadder,
         isStealth: isPlayerHidden,
         isCrouching,
@@ -977,6 +987,7 @@ const uiManager = new UIManager({
         health = maxHealth;
         kills = 0;
         wave = 1;
+        highScoreManager.resetRun();
 
         currentWeaponKey = selectedWeaponKey || 'AK47';
         currentWeapon = WEAPON_CONFIGS[currentWeaponKey] || WEAPON_CONFIGS.AK47;
@@ -2451,7 +2462,8 @@ function damagePlayer(amount, source = 'generic') {
 
         achievementManager.recordDeath(deathCause);
 
-        uiManager.showGameOver({ kills, wave, difficulty: getDifficulty() });
+        const isCheat = !!(testModeState && (testModeState.godMode || testModeState.infiniteAmmo || testModeState.instaKill));
+        uiManager.showGameOver({ kills, wave, difficulty: getDifficulty(), isCheat });
         soundEngine.stopMusic();
     }
 }
@@ -2513,7 +2525,8 @@ function checkWaveMilestones() {
             try {
                 localStorage.setItem('urban_breach_minigun_unlocked', 'true');
             } catch (e) {}
-            uiManager.showVictoryScreen({ kills, wave: 50, difficulty: getDifficulty() });
+            const isCheat = !!(testModeState && (testModeState.godMode || testModeState.infiniteAmmo || testModeState.instaKill));
+            uiManager.showVictoryScreen({ kills, wave: 50, difficulty: getDifficulty(), isCheat });
             if (soundEngine && typeof soundEngine.playLevelUp === 'function') {
                 soundEngine.playLevelUp();
             }

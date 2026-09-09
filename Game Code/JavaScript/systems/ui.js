@@ -3,6 +3,7 @@ import { TacticalRadar } from './radar.js';
 import { startManualHost, startManualClient, applyManualAnswer } from './manual-webrtc.js';
 import { achievementManager } from './achievements.js';
 import { soundEngine } from './audio.js';
+import { highScoreManager } from './highscore.js';
 
 export const WEAPON_CONFIGS = {
     AK47: {
@@ -350,6 +351,9 @@ export class UIManager {
 
         this.difficultyScreen.innerHTML = `
             <div class="diff-title">SELECT DIFFICULTY</div>
+            <div id="diff-highscore-banner" class="diff-highscore-banner" style="max-width: 640px; margin: -6px auto 16px auto; padding: 10px 18px; background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.35); border-radius: 8px; text-align: center; font-size: 14px; letter-spacing: 1px; color: #cbd5e1;">
+                🏆 ALL-TIME BEST: <span id="menu-highscore-val" style="color:#ffd700; font-weight:800;">0</span> PTS &nbsp;|&nbsp; WAVE <span id="menu-highwave-val" style="color:#00e5ff; font-weight:800;">1</span> &nbsp;(<span id="menu-highdiff-val" style="color:#a4b0be;">SURVIVOR</span>)
+            </div>
             <div class="diff-cards-grid">
                 ${cardsHTML}
             </div>
@@ -582,6 +586,14 @@ export class UIManager {
             </div>
 
             <div class="hud-top-right">
+                <div class="hud-item hud-score">
+                    <span class="hud-label">SCORE:</span>
+                    <span id="hud-score-val" class="hud-number" style="color: #00e5ff;">0</span>
+                </div>
+                <div class="hud-item hud-best">
+                    <span class="hud-label">BEST:</span>
+                    <span id="hud-best-val" class="hud-number" style="color: #ffd700;">0</span>
+                </div>
                 <div class="hud-item">
                     <span class="hud-label">WAVE:</span>
                     <span id="hud-wave-val" class="hud-number">1</span>
@@ -716,8 +728,13 @@ export class UIManager {
         this.gameOverScreen.style.display = 'none';
         this.gameOverScreen.innerHTML = `
             <div class="game-over-title">YOU DIED</div>
+            <div id="go-record-badge" class="high-score-record-badge" style="display:none; margin: -6px auto 14px auto; padding: 6px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,165,0,0.15)); border: 1.5px solid #ffd700; border-radius: 20px; color: #ffd700; font-weight: 800; font-size: 14px; letter-spacing: 1.5px;">
+                🌟 NEW ALL-TIME HIGH SCORE RECORD! 🌟
+            </div>
             <div class="game-over-stats">
                 <div class="go-stat">DIFFICULTY: <span id="go-diff" style="color:#00e5ff">SURVIVOR</span></div>
+                <div class="go-stat">FINAL SCORE: <span id="go-score" style="color:#00e5ff; font-weight:800;">0</span></div>
+                <div class="go-stat">ALL-TIME BEST: <span id="go-highscore" style="color:#ffd700; font-weight:800;">0</span></div>
                 <div class="go-stat">WAVES SURVIVED: <span id="go-waves" style="color:#ffd700">1</span></div>
                 <div class="go-stat">HOSTILES ELIMINATED: <span id="go-kills" style="color:#ff3344">0</span></div>
             </div>
@@ -740,12 +757,18 @@ export class UIManager {
                 URBAN BREACH LIBERATED — WAVE 50 CONQUERED!
             </div>
 
+            <div id="vic-record-badge" class="high-score-record-badge" style="display:none; margin: -6px auto 14px auto; padding: 6px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,165,0,0.15)); border: 1.5px solid #ffd700; border-radius: 20px; color: #ffd700; font-weight: 800; font-size: 14px; letter-spacing: 1.5px;">
+                🌟 NEW ALL-TIME HIGH SCORE RECORD! 🌟
+            </div>
+
             <div style="max-width: 580px; margin: 0 auto 20px auto; color: #e2e8f0; font-size: 15px; line-height: 1.6; text-align: center; background: rgba(0, 229, 255, 0.06); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 10px; padding: 14px 20px;">
                 Against impossible tactical odds, you held the urban frontline for 50 waves! As reward for your supreme defense, the <strong>M134 VULCAN MINIGUN</strong> (100-round capacity, high-speed rotary fire) is now permanently unlocked in your arsenal!
             </div>
 
             <div class="game-over-stats" style="border-color: rgba(241, 196, 15, 0.45); box-shadow: 0 0 30px rgba(241, 196, 15, 0.25); margin-bottom: 24px;">
                 <div class="go-stat">DIFFICULTY: <span id="vic-diff" style="color:#00e5ff">NORMAL</span></div>
+                <div class="go-stat">FINAL SCORE: <span id="vic-score" style="color:#00e5ff; font-weight: 800;">0</span></div>
+                <div class="go-stat">ALL-TIME BEST: <span id="vic-highscore" style="color:#ffd700; font-weight: 800;">0</span></div>
                 <div class="go-stat">WAVES CONQUERED: <span id="vic-waves" style="color:#ffd700; font-weight: 800;">50 / 50</span></div>
                 <div class="go-stat">TOTAL HOSTILES PURGED: <span id="vic-kills" style="color:#ff4757; font-weight: 800;">0</span></div>
             </div>
@@ -1362,6 +1385,14 @@ export class UIManager {
                 }
             };
         }
+
+        this.updateMenuHighScore();
+        if (typeof window !== 'undefined') {
+            window.addEventListener('urban_breach_progress_reset', () => {
+                highScoreManager.resetHighScore();
+                this.updateMenuHighScore();
+            });
+        }
     }
 
     showEnvironmentModal() {
@@ -1455,6 +1486,8 @@ export class UIManager {
         maxHealth = 100,
         wave,
         kills,
+        score = 0,
+        bestScore = 0,
         difficulty,
         onLadder = false,
         isStealth = false,
@@ -1488,6 +1521,16 @@ export class UIManager {
         if (wepNameEl && weapon) {
             wepNameEl.textContent = weapon.name;
             wepNameEl.style.color = weapon.color || '#00e5ff';
+        }
+
+        const scoreEl = document.getElementById('hud-score-val');
+        if (scoreEl && score !== undefined) {
+            scoreEl.textContent = Number(score).toLocaleString();
+        }
+
+        const bestEl = document.getElementById('hud-best-val');
+        if (bestEl && bestScore !== undefined) {
+            bestEl.textContent = Number(bestScore).toLocaleString();
         }
 
         const waveEl = document.getElementById('hud-wave-val');
@@ -1793,15 +1836,43 @@ export class UIManager {
         }
     }
 
-    showGameOver({ kills, wave, difficulty }) {
+    updateMenuHighScore() {
+        const best = highScoreManager.getHighScore();
+        const highscoreVal = document.getElementById('menu-highscore-val');
+        const highwaveVal = document.getElementById('menu-highwave-val');
+        const highdiffVal = document.getElementById('menu-highdiff-val');
+        if (highscoreVal) highscoreVal.textContent = highScoreManager.formatScore(best.score);
+        if (highwaveVal) highwaveVal.textContent = best.wave || 1;
+        if (highdiffVal) highdiffVal.textContent = best.difficulty || 'SURVIVOR';
+    }
+
+    showGameOver({ kills, wave, difficulty, isCheat = false }) {
         this.hud.style.display = 'none';
         this.crosshair.style.display = 'none';
         this.scope.style.display = 'none';
+
+        const result = highScoreManager.submitScore({
+            kills,
+            wave,
+            difficultyKey: difficulty?.key || 'NORMAL',
+            isCheat
+        });
 
         const goDiff = document.getElementById('go-diff');
         if (goDiff && difficulty) {
             goDiff.textContent = difficulty.name;
             goDiff.style.color = difficulty.color;
+        }
+
+        const goScore = document.getElementById('go-score');
+        if (goScore) goScore.textContent = highScoreManager.formatScore(result.score);
+
+        const goHighScore = document.getElementById('go-highscore');
+        if (goHighScore) goHighScore.textContent = highScoreManager.formatScore(result.highScore);
+
+        const goBadge = document.getElementById('go-record-badge');
+        if (goBadge) {
+            goBadge.style.display = result.isNewRecord ? 'block' : 'none';
         }
 
         const goWaves = document.getElementById('go-waves');
@@ -1810,10 +1881,11 @@ export class UIManager {
         const goKills = document.getElementById('go-kills');
         if (goKills) goKills.textContent = kills;
 
+        this.updateMenuHighScore();
         this.gameOverScreen.style.display = 'flex';
     }
 
-    showVictoryScreen({ kills, wave = 50, difficulty }) {
+    showVictoryScreen({ kills, wave = 50, difficulty, isCheat = false }) {
         this.hud.style.display = 'none';
         this.crosshair.style.display = 'none';
         this.scope.style.display = 'none';
@@ -1830,10 +1902,28 @@ export class UIManager {
         }
         this.unlockMinigunUI();
 
+        const result = highScoreManager.submitScore({
+            kills,
+            wave,
+            difficultyKey: difficulty?.key || 'NORMAL',
+            isCheat
+        });
+
         const vicDiff = document.getElementById('vic-diff');
         if (vicDiff && difficulty) {
             vicDiff.textContent = difficulty.name;
             vicDiff.style.color = difficulty.color;
+        }
+
+        const vicScore = document.getElementById('vic-score');
+        if (vicScore) vicScore.textContent = highScoreManager.formatScore(result.score);
+
+        const vicHighScore = document.getElementById('vic-highscore');
+        if (vicHighScore) vicHighScore.textContent = highScoreManager.formatScore(result.highScore);
+
+        const vicBadge = document.getElementById('vic-record-badge');
+        if (vicBadge) {
+            vicBadge.style.display = result.isNewRecord ? 'block' : 'none';
         }
 
         const vicWaves = document.getElementById('vic-waves');
@@ -1842,6 +1932,7 @@ export class UIManager {
         const vicKills = document.getElementById('vic-kills');
         if (vicKills) vicKills.textContent = kills;
 
+        this.updateMenuHighScore();
         this.victoryScreen.style.display = 'flex';
     }
 

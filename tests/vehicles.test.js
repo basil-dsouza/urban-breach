@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { VehicleManager } from '../src/vehicles.js';
-import { DIFFICULTY_LEVELS } from '../src/difficulty.js';
+import { VehicleManager } from '../Game Code/JavaScript/systems/vehicles.js';
+import { DIFFICULTY_LEVELS } from '../Game Code/JavaScript/systems/difficulty.js';
 
 describe('VehicleManager — Active Combat Pursuit & Ramming AI', () => {
     it('should create realistic 3D hostile vehicle mesh with wheels and bullbar ram', () => {

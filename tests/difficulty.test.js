@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from '../src/difficulty.js';
+import { DIFFICULTY_LEVELS, setDifficulty, getDifficulty } from '../Game Code/JavaScript/systems/difficulty.js';
 
 describe('Difficulty System — Rebalanced Progression', () => {
     it('should scale player health to make early levels forgiving on RECRUIT/SURVIVOR', () => {

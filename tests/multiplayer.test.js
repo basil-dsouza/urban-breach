@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
-import { MultiplayerManager } from '../src/multiplayer.js';
+import { MultiplayerManager } from '../Game Code/JavaScript/systems/multiplayer.js';
 
 // Mock window.Peer
 global.window = global.window || {};

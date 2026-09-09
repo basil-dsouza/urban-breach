@@ -2607,3 +2607,47 @@ body {
 .footer-dot {
     color: #00e5ff;
 }
+
+/* =========================================================
+   LOCAL HIGH SCORE STYLING
+   ========================================================= */
+.diff-highscore-banner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(0, 229, 255, 0.08));
+    border: 1px solid rgba(255, 215, 0, 0.35);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    text-transform: uppercase;
+}
+
+.high-score-record-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 100, 0, 0.25));
+    border: 1px solid #ffd700;
+    color: #ffd700;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.4);
+    animation: pulseRecordBadge 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulseRecordBadge {
+    0% {
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+        transform: scale(0.98);
+    }
+    100% {
+        box-shadow: 0 0 22px rgba(255, 215, 0, 0.7);
+        transform: scale(1.02);
+    }
+}
+

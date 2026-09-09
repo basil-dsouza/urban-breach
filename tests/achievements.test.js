@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { AchievementManager, ACHIEVEMENTS_CATALOG } from '../src/achievements.js';
-import { verifyTestModePassword } from '../src/test-mode.js';
+import { AchievementManager, ACHIEVEMENTS_CATALOG } from '../Game Code/JavaScript/systems/achievements.js';
+import { verifyTestModePassword } from '../Game Code/JavaScript/systems/test-mode.js';
 
 describe('Urban Breach — Achievements System & Victory Logic', () => {
     let mgr;

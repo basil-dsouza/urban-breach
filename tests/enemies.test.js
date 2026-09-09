@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { EnemyManager, EnemyBulletManager } from '../src/enemies.js';
-import { DIFFICULTY_LEVELS } from '../src/difficulty.js';
+import { EnemyManager, EnemyBulletManager } from '../Game Code/JavaScript/systems/enemies.js';
+import { DIFFICULTY_LEVELS } from '../Game Code/JavaScript/systems/difficulty.js';
 
 describe('EnemyManager & Lifelike Humanoid Modeling', () => {
     it('should generate lifelike human face features (eyes, eyebrows, nose, lips, ears, headset)', () => {

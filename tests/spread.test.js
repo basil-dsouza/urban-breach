@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SpreadSystem, SPREAD_CONFIG } from '../src/spread.js';
+import { SpreadSystem, SPREAD_CONFIG } from '../Game Code/JavaScript/systems/spread.js';
 
 describe('SpreadSystem — Balanced Hip-Fire & Pinpoint ADS', () => {
     let spread;

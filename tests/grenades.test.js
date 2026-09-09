@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GrenadePhysics, GRENADE_CONFIG } from '../src/grenades.js';
+import { GrenadePhysics, GRENADE_CONFIG } from '../Game Code/JavaScript/systems/grenades.js';
 
 describe('GrenadePhysics — Ground Collision & Bounce Mechanics', () => {
     let physics;

@@ -4,7 +4,7 @@ import {
     verifyTestModePassword, 
     TestModeManager, 
     testModeState 
-} from '../src/test-mode.js';
+} from '../Game Code/JavaScript/systems/test-mode.js';
 
 describe('Secret Test Mode & Wave Customization Console', () => {
 
