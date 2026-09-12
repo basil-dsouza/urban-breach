@@ -80,7 +80,9 @@ export const WEAPON_CONFIGS = {
             baseSprinting: 120.0,
             baseCrouching: 50.0,
             baseCrouchMoving: 65.0,
-            baseAiming: 40.0,
+            baseAiming: 80.0,
+            maxAimSpread: 120.0,
+            aimShotKick: 8.0,
             maxSpread: 140.0,
             fireSpreadRate: 0.0,
             firePerShotKick: 5.0,
@@ -412,12 +414,6 @@ export class UIManager {
         this.hud.id = 'game-hud';
         this.hud.style.display = 'none';
         this.hud.innerHTML = `
-            <div class="hud-top-right" style="position: fixed; top: 20px; right: 20px; display: flex; gap: 10px; align-items: center; z-index: 100; pointer-events: auto;">
-                <button id="hud-btn-toggle-music" class="btn-secondary" style="font-size: 13px; padding: 6px 12px; border-radius: 6px; border-color: rgba(255,255,255,0.2); color: #cbd5e1; background: rgba(10,15,25,0.7); cursor: pointer;" title="Toggle Music (M)">
-                    🎵
-                </button>
-            </div>
-
             <div class="hud-top-left">
                 <div class="hud-item hud-hp">
                     <span class="hud-icon">❤️</span>
@@ -586,6 +582,9 @@ export class UIManager {
             </div>
 
             <div class="hud-top-right">
+                <button id="hud-btn-toggle-music" class="hud-music-btn" title="Toggle Music (M)">
+                    🎵
+                </button>
                 <div class="hud-item hud-score">
                     <span class="hud-label">SCORE:</span>
                     <span id="hud-score-val" class="hud-number" style="color: #00e5ff;">0</span>
@@ -926,29 +925,36 @@ export class UIManager {
         const initialMuted = typeof localStorage !== 'undefined' && localStorage.getItem('urban_breach_music_muted') === 'true';
         updateMusicButtonsUI(initialMuted);
 
+        const handleMusicToggle = (e, isGame = false) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const sEngine = soundEngine || window.soundEngine;
+            if (sEngine && typeof sEngine.toggleMusic === 'function') {
+                const enabled = sEngine.toggleMusic(isGame);
+                updateMusicButtonsUI(!enabled);
+            }
+        };
+
+        const stopEvt = (e) => {
+            if (e) {
+                e.stopPropagation();
+            }
+        };
+
         const btnToggleMusic = document.getElementById('btn-toggle-music');
         if (btnToggleMusic) {
-            btnToggleMusic.onclick = (e) => {
-                e.preventDefault();
-                const sEngine = soundEngine || window.soundEngine;
-                if (sEngine && typeof sEngine.toggleMusic === 'function') {
-                    const enabled = sEngine.toggleMusic(false);
-                    updateMusicButtonsUI(!enabled);
-                }
-            };
+            btnToggleMusic.onclick = (e) => handleMusicToggle(e, false);
+            btnToggleMusic.addEventListener('mousedown', stopEvt);
+            btnToggleMusic.addEventListener('pointerdown', stopEvt);
         }
 
         const hudBtnToggleMusic = document.getElementById('hud-btn-toggle-music');
         if (hudBtnToggleMusic) {
-            hudBtnToggleMusic.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const sEngine = soundEngine || window.soundEngine;
-                if (sEngine && typeof sEngine.toggleMusic === 'function') {
-                    const enabled = sEngine.toggleMusic(true);
-                    updateMusicButtonsUI(!enabled);
-                }
-            };
+            hudBtnToggleMusic.onclick = (e) => handleMusicToggle(e, true);
+            hudBtnToggleMusic.addEventListener('mousedown', stopEvt);
+            hudBtnToggleMusic.addEventListener('pointerdown', stopEvt);
         }
 
 

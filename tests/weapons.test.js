@@ -40,6 +40,9 @@ describe('Weapon Arsenal Configuration (AK-47, Barrett .50 Cal, M590 Shotgun, & 
         expect(shotgun.pellets).toBe(8);
         expect(shotgun.fireRate).toBe(0.72);
         expect(shotgun.aimFOV).toBe(58);
+        expect(shotgun.spread.baseAiming).toBe(80.0); // 100% widened scope spread
+        expect(shotgun.spread.maxAimSpread).toBe(120.0);
+        expect(shotgun.spread.aimShotKick).toBe(8.0);
     });
 
     it('should configure M134 Vulcan Minigun with 100 ammo, no scope, and rapid fire', () => {

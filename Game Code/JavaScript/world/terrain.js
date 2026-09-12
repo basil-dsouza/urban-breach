@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { getBridgeElevation, isOverBridge } from './bridges.js';
 
 export const waterBodies = [
-    { name: 'alpine_reservoir', x: -245, z: 230, radius: 46, waterLevel: 8.5, bedDepth: 6.5 },
+    { name: 'alpine_reservoir', x: -225, z: 230, radius: 52, waterLevel: 8.5, bedDepth: 6.0 },
     { name: 'emerald_lake', x: -90, z: 260, radius: 34, waterLevel: 0.0, bedDepth: -3.8 },
     { name: 'delta_lagoon', x: 280, z: 180, radius: 48, waterLevel: 0.0, bedDepth: -4.2 }
 ];
@@ -77,13 +77,16 @@ export function getWaterLevel(x, z, buildings = []) {
     for (const lake of waterBodies) {
         const dist = Math.hypot(x - lake.x, z - lake.z);
         if (dist <= lake.radius) {
+            if (lake.name === 'alpine_reservoir' && x > -178) {
+                continue;
+            }
             return lake.waterLevel;
         }
     }
 
-    // Winding river channel
+    // Winding river channel (downstream of dam)
     const riverDist = getRiverDistance(x, z);
-    if (riverDist <= 10.0 && x > -180) {
+    if (riverDist <= 11.0 && x >= -180) {
         return 0.0;
     }
 
@@ -118,6 +121,7 @@ export function getTerrainHeight(x, z, buildings = [], residentialRoadSegments =
     for (const lake of waterBodies) {
         const dist = Math.hypot(x - lake.x, z - lake.z);
         if (dist < lake.radius) {
+            if (lake.name === 'alpine_reservoir' && x > -178) continue;
             const t = dist / lake.radius;
             const depthFactor = Math.cos(t * Math.PI * 0.5);
             if (lake.name === 'alpine_reservoir') {
@@ -181,6 +185,23 @@ export function getTerrainHeight(x, z, buildings = [], residentialRoadSegments =
 
         if (x < -210 && Math.abs(z - 230) < 40) {
             mountainHeight = Math.max(mountainHeight, 14.0);
+        }
+
+        // River Valley & Canyon Carving: ensures river and dam spillway flow naturally at ground level
+        const riverDist = getRiverDistance(x, z);
+        if (x > -185 && riverDist < 48.0) {
+            const valleyFactor = Math.min(1.0, Math.pow(riverDist / 48.0, 1.6));
+            mountainHeight *= valleyFactor;
+        }
+
+        // Dam Canyon Floor Carving: carve out the base where the dam wall stands
+        const damDx = x - (-180);
+        const damDz = z - 230;
+        const distToDam = Math.hypot(damDx, damDz);
+        if (distToDam < 28.0) {
+            const canyonFactor = Math.min(1.0, Math.pow(Math.abs(damDz) / 28.0, 2.0));
+            const damLongFactor = Math.min(1.0, Math.pow(distToDam / 28.0, 2.0));
+            mountainHeight *= Math.min(canyonFactor, damLongFactor);
         }
     }
 

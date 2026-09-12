@@ -934,16 +934,19 @@ function createHydroelectricDam({ x = -180, z = 230, rotY = -0.42 }) {
     const yellowStripeMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f });
     const railMat = new THREE.MeshStandardMaterial({ color: 0xa4b0be, metalness: 0.7, roughness: 0.3 });
 
-    // 1. Massive Sloped Concrete Dam Wall
-    const damBody = new THREE.Mesh(new THREE.BoxGeometry(crestWidth + 6, height, length), concreteMat);
-    damBody.position.set(0, height / 2, 0);
+    const embedDepth = 6.0;
+    const totalBodyH = height + embedDepth;
+
+    // 1. Massive Sloped Concrete Dam Wall with Deep Bedrock Foundation (Never floats)
+    const damBody = new THREE.Mesh(new THREE.BoxGeometry(crestWidth + 6, totalBodyH, length), concreteMat);
+    damBody.position.set(0, (height - embedDepth) / 2, 0);
     damBody.castShadow = true;
     damBody.receiveShadow = true;
     group.add(damBody);
 
     // Sloped Spillway Face on Downstream Side
-    const spillwayFace = new THREE.Mesh(new THREE.BoxGeometry(8.0, height, length), darkConcreteMat);
-    spillwayFace.position.set(6.0, height / 2 - 1.5, 0);
+    const spillwayFace = new THREE.Mesh(new THREE.BoxGeometry(8.0, totalBodyH, length), darkConcreteMat);
+    spillwayFace.position.set(6.0, (height - embedDepth) / 2 - 1.5, 0);
     spillwayFace.rotation.z = -0.32;
     group.add(spillwayFace);
 
@@ -987,18 +990,18 @@ function createHydroelectricDam({ x = -180, z = 230, rotY = -0.42 }) {
     obstacles.push({
         x,
         z,
-        w: 24,
-        d: 78,
+        w: 16,
+        d: 76,
         rotY,
-        bottom: 0,
+        bottom: -4.0,
         top: height + 0.25
     });
 
     buildings.push({
         x,
         z,
-        w: 24,
-        d: 78,
+        w: 16,
+        d: 76,
         h: height + 0.25,
         style: 'flat',
         rotY,

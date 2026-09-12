@@ -43,7 +43,7 @@ export class SpreadSystem {
         if (aiming) {
             if (this.config.baseAiming <= 0.1) return; // Sniper pinpoint laser
             const kick = (crouching ? this.config.firePerShotKick * 0.65 : this.config.firePerShotKick) * (this.config.aimShotKick || 0.35);
-            const max = this.config.maxAimSpread || 5.5;
+            const max = this.config.maxAimSpread !== undefined ? this.config.maxAimSpread : Math.max(5.5, this.config.baseAiming * 1.5);
             this.currentSpread = Math.min(max, this.currentSpread + kick);
             return;
         }
@@ -60,7 +60,7 @@ export class SpreadSystem {
         if (aiming) {
             if (isFiring && this.config.baseAiming > 0.1) {
                 const spreadRate = (crouching ? this.config.fireSpreadRate * 0.6 : this.config.fireSpreadRate) * 0.35;
-                const max = this.config.maxAimSpread || 5.5;
+                const max = this.config.maxAimSpread !== undefined ? this.config.maxAimSpread : Math.max(5.5, this.config.baseAiming * 1.5);
                 this.currentSpread = Math.min(max, this.currentSpread + spreadRate * delta);
             } else {
                 // Recover/snap towards the aiming target base spread (e.g. 1.8 for AK47, 0.0 for Sniper)

@@ -1665,7 +1665,7 @@ document.addEventListener('mousedown', e => {
     soundEngine.init();
     soundEngine.resume();
 
-    if (window.chatInputActive || window.testModeOpen || (e.target && e.target.closest && e.target.closest('#test-mode-panel, #test-mode-auth-modal, #btn-secret-test-mode'))) {
+    if (window.chatInputActive || window.testModeOpen || (e.target && e.target.closest && e.target.closest('#test-mode-panel, #test-mode-auth-modal, #btn-secret-test-mode, button, input, textarea, a, .screen-overlay, #hud-btn-toggle-music, #btn-toggle-music, #achievements-modal'))) {
         return;
     }
 
@@ -1770,7 +1770,7 @@ function shoot() {
     if (fireCooldown > 0 || isReloading) return;
 
     if (ammo <= 0) {
-        soundEngine.stopRifleBurst();
+        soundEngine.stopRifleBurst(true);
         soundEngine.playDryFire();
         startReload();
         fireCooldown = 0.3;

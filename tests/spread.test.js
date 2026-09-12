@@ -65,4 +65,28 @@ describe('SpreadSystem — Balanced Hip-Fire & Pinpoint ADS', () => {
         expect(dir.y).toBe(0);
         expect(dir.z).toBe(-1);
     });
+
+    it('should respect custom weapon spread config with wide scope spread (e.g. shotgun)', () => {
+        const shotgunSpread = new SpreadSystem({
+            baseStanding: 65.0,
+            baseMoving: 85.0,
+            baseSprinting: 120.0,
+            baseCrouching: 50.0,
+            baseCrouchMoving: 65.0,
+            baseAiming: 80.0,
+            maxAimSpread: 120.0,
+            aimShotKick: 8.0,
+            maxSpread: 140.0,
+            fireSpreadRate: 0.0,
+            firePerShotKick: 5.0,
+            recoverySpeed: 25.0
+        });
+        expect(shotgunSpread.getBaseSpread({ aiming: true })).toBe(80.0);
+        for (let i = 0; i < 5; i++) {
+            shotgunSpread.update(0.1, { aiming: true });
+        }
+        expect(shotgunSpread.currentSpread).toBe(80.0);
+        shotgunSpread.onFire(true);
+        expect(shotgunSpread.currentSpread).toBeGreaterThan(80.0);
+    });
 });

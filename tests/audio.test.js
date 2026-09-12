@@ -125,4 +125,20 @@ describe('Procedural Sound Engine', () => {
         soundEngine.playSurfacingGasp();
         expect(soundEngine.ctx.createBufferSource).toHaveBeenCalled();
     });
+
+    it('should play Minigun Fire and track sustained fire burst', () => {
+        soundEngine.playMinigunFire();
+        expect(soundEngine.minigunFireStartTime).toBeGreaterThan(0);
+    });
+
+    it('should delay minigun stop if released immediately (single tap click) to ensure audible burst', () => {
+        soundEngine.playMinigunFire();
+        soundEngine.stopMinigunBurst(false);
+        // Should have scheduled a timer rather than silencing immediately
+        expect(soundEngine.minigunStopTimer).not.toBeNull();
+        // Immediate stop should cancel timer and clear state
+        soundEngine.stopMinigunBurst(true);
+        expect(soundEngine.minigunStopTimer).toBeNull();
+        expect(soundEngine.minigunFireStartTime).toBe(0);
+    });
 });

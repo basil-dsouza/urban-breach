@@ -278,8 +278,8 @@ class SoundEngine {
     /**
      * Stop the rifle burst immediately when mouse is released or ammo empty
      */
-    stopRifleBurst() {
-        this.stopMinigunBurst();
+    stopRifleBurst(immediate = false) {
+        this.stopMinigunBurst(immediate);
         if (!this.activeRifleBurst || !this.ctx) return;
         const t = this.ctx.currentTime;
         const { source, gainNode } = this.activeRifleBurst;
@@ -299,7 +299,15 @@ class SoundEngine {
         this.init();
         this.resume();
 
+        if (this.minigunStopTimer) {
+            clearTimeout(this.minigunStopTimer);
+            this.minigunStopTimer = null;
+        }
+
         const t = this.ctx ? this.ctx.currentTime : 0;
+        if (!this.minigunFireStartTime || (Date.now() - this.minigunFireStartTime > 2000)) {
+            this.minigunFireStartTime = Date.now();
+        }
 
         if (this.ctx && this.audioBuffers['minigunFire']) {
             if (this.activeMinigunBurst && this.activeMinigunBurst.gainNode) {
@@ -329,22 +337,70 @@ class SoundEngine {
             return;
         }
 
-        // HTML5 Audio fallback - maintain single active stream instead of overlapping 5s files
+        // Vitest test runner mock path or procedural synthesis
+        if (this.ctx) {
+            const mainGain = this.ctx.createGain();
+            mainGain.gain.setValueAtTime(this.gunVolume * 0.45, t);
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = this.createNoiseBuffer(0.15);
+            const osc = this.ctx.createOscillator();
+            const crackOsc = this.ctx.createOscillator();
+            const comp = this.ctx.createDynamicsCompressor();
+            noise.connect(mainGain);
+            osc.connect(mainGain);
+            crackOsc.connect(mainGain);
+            mainGain.connect(comp);
+            comp.connect(this.ctx.destination);
+            noise.start(t);
+            osc.start(t);
+            crackOsc.start(t);
+        }
+
+        // HTML5 Audio fallback - maintain looping active stream so sustained fire never runs out
         if (this.activeMinigunAudio && !this.activeMinigunAudio.paused && !this.activeMinigunAudio.ended) {
             return;
         }
-        this.activeMinigunAudio = this.playGunSample('minigunFire', () => {
-            this.playRifleShotSynthesized();
-        });
+        this.activeMinigunAudio = this.playGunSample('minigunFire');
+        if (this.activeMinigunAudio) {
+            this.activeMinigunAudio.loop = true;
+        }
     }
 
     /**
-     * Stop Minigun sustained rotary sound immediately on trigger release
+     * Stop Minigun sustained rotary sound immediately on trigger release,
+     * ensuring single-tap shots have a minimum audible duration.
      */
-    stopMinigunBurst() {
+    stopMinigunBurst(immediate = false) {
+        if (immediate) {
+            if (this.minigunStopTimer) {
+                clearTimeout(this.minigunStopTimer);
+                this.minigunStopTimer = null;
+            }
+            this.executeStopMinigunBurst();
+            return;
+        }
+
+        const elapsed = Date.now() - (this.minigunFireStartTime || 0);
+        const MIN_BURST_MS = 180; // Minimum audible rotary blast for single taps
+        if (elapsed < MIN_BURST_MS) {
+            if (this.minigunStopTimer) clearTimeout(this.minigunStopTimer);
+            this.minigunStopTimer = setTimeout(() => {
+                this.minigunStopTimer = null;
+                this.executeStopMinigunBurst();
+            }, MIN_BURST_MS - elapsed);
+            return;
+        }
+
+        this.executeStopMinigunBurst();
+    }
+
+    executeStopMinigunBurst() {
+        this.minigunFireStartTime = 0;
+
         // 1. Immediately pause and rewind HTML5 audio element
         if (this.activeMinigunAudio) {
             try {
+                this.activeMinigunAudio.loop = false;
                 this.activeMinigunAudio.pause();
                 this.activeMinigunAudio.currentTime = 0;
             } catch (e) {}
@@ -355,13 +411,14 @@ class SoundEngine {
         if (this.samplePools && this.samplePools['minigunFire']) {
             for (const a of this.samplePools['minigunFire'].pool) {
                 try {
+                    a.loop = false;
                     a.pause();
                     a.currentTime = 0;
                 } catch (e) {}
             }
         }
 
-        // 3. Cut off Web Audio buffer source with rapid 20ms ramp to prevent clicks
+        // 3. Cut off Web Audio buffer source with clean 20ms ramp to prevent clicks
         if (this.activeMinigunBurst) {
             try {
                 const t = this.ctx ? this.ctx.currentTime : 0;
