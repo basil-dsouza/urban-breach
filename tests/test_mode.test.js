@@ -25,20 +25,21 @@ describe('Secret Test Mode & Wave Customization Console', () => {
     });
 
     describe('Passcode Authentication', () => {
-        it('should require the exact password "rapha_tester123"', () => {
-            expect(TEST_MODE_PASSWORD).toBe('rapha_tester123');
+        it('should require the exact password "raphael_tester123"', () => {
+            expect(TEST_MODE_PASSWORD).toBe('raphael_tester123');
         });
 
         it('should return true for the valid password', () => {
-            expect(verifyTestModePassword('rapha_tester123')).toBe(true);
-            expect(verifyTestModePassword('  rapha_tester123  ')).toBe(true);
+            expect(verifyTestModePassword('raphael_tester123')).toBe(true);
+            expect(verifyTestModePassword('  raphael_tester123  ')).toBe(true);
+            expect(verifyTestModePassword('rapha_tester123')).toBe(true); // backward compatible
         });
 
         it('should return false for invalid passwords', () => {
             expect(verifyTestModePassword('')).toBe(false);
             expect(verifyTestModePassword('admin')).toBe(false);
-            expect(verifyTestModePassword('rapha')).toBe(false);
-            expect(verifyTestModePassword('rapha_tester')).toBe(false);
+            expect(verifyTestModePassword('raphael')).toBe(false);
+            expect(verifyTestModePassword('raphael_tester')).toBe(false);
             expect(verifyTestModePassword('123456')).toBe(false);
             expect(verifyTestModePassword(null)).toBe(false);
             expect(verifyTestModePassword(undefined)).toBe(false);
@@ -168,5 +169,24 @@ describe('Secret Test Mode & Wave Customization Console', () => {
             expect(testModeState.isOpen).toBe(false);
             expect(globalThis.window.testModeOpen).toBe(false);
         });
+
+        it('should display Wave 100+ secret hint in auth modal when wave 100 is unlocked', () => {
+            const fakeStorage = {};
+            globalThis.localStorage = {
+                getItem: (k) => fakeStorage[k] || null,
+                setItem: (k, v) => { fakeStorage[k] = String(v); }
+            };
+            fakeStorage['urban_breach_wave_100_unlocked'] = 'true';
+
+            const manager = new TestModeManager();
+            manager.showAuthModal();
+
+            const hint = manager.authModal?.querySelector('#test-wave100-hint');
+            if (hint) {
+                expect(hint.style.display).toBe('block');
+                expect(hint.textContent).toContain('raphael_tester123');
+            }
+        });
     });
 });
+

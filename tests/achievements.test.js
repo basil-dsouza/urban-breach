@@ -89,7 +89,7 @@ describe('Urban Breach — Achievements System & Victory Logic', () => {
     });
 
     it('should unlock Secret Achievement 2 when authenticating with the developer password', () => {
-        expect(verifyTestModePassword('rapha_tester123')).toBe(true);
+        expect(verifyTestModePassword('raphael_tester123')).toBe(true);
         expect(mgr.isUnlocked('SECRET_AUTH')).toBe(false);
         mgr.unlock('SECRET_AUTH');
         expect(mgr.isUnlocked('SECRET_AUTH')).toBe(true);

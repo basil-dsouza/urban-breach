@@ -987,6 +987,7 @@ const uiManager = new UIManager({
         health = maxHealth;
         kills = 0;
         wave = 1;
+        wave100PasswordUnlocked = false;
         highScoreManager.resetRun();
 
         currentWeaponKey = selectedWeaponKey || 'AK47';
@@ -1426,6 +1427,14 @@ multiplayerManager.onGameStartSync = (difficultyKey) => {
 function startReload() {
     soundEngine.stopRifleBurst();
     if (isReloading || ammo >= maxAmmo) return;
+    if (currentWeapon && currentWeapon.id === 'MINIGUN') {
+        ammo = maxAmmo;
+        isReloading = false;
+        reloadTimer = 0;
+        soundEngine.playReloadMagIn();
+        uiManager.updateHUD(getHUDState());
+        return;
+    }
     isReloading = true;
     aiming = false;
     const armPenalty = (bodyBones.leftArm || bodyBones.rightArm) ? 1.5 : 1.0;
@@ -1444,6 +1453,15 @@ function startReload() {
 
 function updateReload(delta) {
     if (!isReloading) return;
+
+    if (currentWeapon && currentWeapon.id === 'MINIGUN') {
+        isReloading = false;
+        ammo = maxAmmo;
+        reloadTimer = 0;
+        reloadPhase = 0;
+        uiManager.updateHUD(getHUDState());
+        return;
+    }
 
     const prevTimer = reloadTimer;
     reloadTimer -= delta;
@@ -1770,17 +1788,29 @@ function shoot() {
     if (fireCooldown > 0 || isReloading) return;
 
     if (ammo <= 0) {
-        soundEngine.stopRifleBurst(true);
-        soundEngine.playDryFire();
-        startReload();
-        fireCooldown = 0.3;
-        return;
+        if (currentWeapon && currentWeapon.id === 'MINIGUN') {
+            ammo = maxAmmo;
+            isReloading = false;
+            reloadTimer = 0;
+            soundEngine.playReloadMagIn();
+            uiManager.updateHUD(getHUDState());
+        } else {
+            soundEngine.stopRifleBurst(true);
+            soundEngine.playDryFire();
+            startReload();
+            fireCooldown = 0.3;
+            return;
+        }
     }
 
     if (testModeState.infiniteAmmo) {
         ammo = maxAmmo;
     } else {
         ammo--;
+        if (ammo <= 0 && currentWeapon && currentWeapon.id === 'MINIGUN') {
+            ammo = maxAmmo;
+            soundEngine.playReloadMagIn();
+        }
     }
     stealthBreakTimer = 4.0; // Shooting breaks stealth
     isPlayerHidden = false;
@@ -2515,9 +2545,27 @@ function spawnWave(difficulty) {
 
 let gameWon = false;
 let endlessPlayOn = false;
+let wave100PasswordUnlocked = false;
 
 function checkWaveMilestones() {
     achievementManager.recordWave(wave);
+
+    if (wave > 100) {
+        try {
+            localStorage.setItem('urban_breach_wave_100_unlocked', 'true');
+            localStorage.setItem('urban_breach_wave_100_password', 'raphael_tester123');
+        } catch (e) {}
+
+        if (!wave100PasswordUnlocked) {
+            wave100PasswordUnlocked = true;
+            if (uiManager && typeof uiManager.notifyPastWave100 === 'function') {
+                uiManager.notifyPastWave100('raphael_tester123');
+            }
+            if (soundEngine && typeof soundEngine.playLevelUp === 'function') {
+                soundEngine.playLevelUp();
+            }
+        }
+    }
 
     if (wave >= 50 && !endlessPlayOn) {
         if (!gameWon) {

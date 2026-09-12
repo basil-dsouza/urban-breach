@@ -2676,3 +2676,67 @@ body {
     }
 }
 
+/* =========================================================
+   WAVE 100+ SECRET TESTER PASSWORD UI & TOAST
+   ========================================================= */
+
+.wave100-secret-banner {
+    animation: pulseGoldBanner 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGoldBanner {
+    0% {
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        border-color: rgba(255, 215, 0, 0.7);
+    }
+    100% {
+        box-shadow: 0 0 35px rgba(255, 215, 0, 0.7), 0 0 15px rgba(0, 229, 255, 0.4);
+        border-color: #ffd700;
+    }
+}
+
+.hud-toast-banner {
+    position: absolute;
+    top: 55px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, rgba(12, 18, 26, 0.95), rgba(20, 30, 45, 0.95));
+    border: 2px solid #ffd700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 4px 20px rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 12px 28px;
+    color: #ffd700;
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-align: center;
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 80%;
+    animation: toastPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes toastPop {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+.hud-wave100-badge {
+    animation: pulseGoldBadge 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGoldBadge {
+    0% {
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 18px rgba(255, 215, 0, 0.7);
+    }
+}
+

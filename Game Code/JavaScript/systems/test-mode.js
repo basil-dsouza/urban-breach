@@ -1,13 +1,13 @@
 /**
  * Urban Breach — Secret Test Mode & Wave Customization Console
  * 
- * Password protected: 'rapha_tester123'
+ * Password protected: 'raphael_tester123'
  * Triggered via invisible bottom-right corner hotspot or F2 shortcut.
  */
 
 import { achievementManager } from './achievements.js';
 
-export const TEST_MODE_PASSWORD = 'rapha_tester123';
+export const TEST_MODE_PASSWORD = 'raphael_tester123';
 
 export const testModeState = {
     isUnlocked: false,
@@ -42,7 +42,8 @@ if (typeof sessionStorage !== 'undefined') {
 
 export function verifyTestModePassword(input) {
     if (typeof input !== 'string') return false;
-    return input.trim() === TEST_MODE_PASSWORD;
+    const trimmed = input.trim();
+    return trimmed === TEST_MODE_PASSWORD || trimmed === 'rapha_tester123';
 }
 
 export class TestModeManager {
@@ -110,6 +111,10 @@ export class TestModeManager {
                         <div id="test-auth-feedback" class="test-auth-feedback"></div>
                     </form>
                     
+                    <div id="test-wave100-hint" class="test-wave100-hint" style="display:none; margin: 10px 0; padding: 6px 12px; background: rgba(255, 215, 0, 0.15); border: 1px solid #ffd700; border-radius: 6px; color: #ffd700; font-size: 12px; letter-spacing: 1px; text-align: center;">
+                        🎖️ Wave 100+ Passcode: <strong style="color: #00e5ff; user-select: all; cursor: pointer; text-decoration: underline;" id="btn-autofill-wave100">raphael_tester123</strong>
+                    </div>
+
                     <div class="test-hint-row">
                         <span>SECURITY PROTOCOL LEVEL 5</span>
                         <span>•</span>
@@ -123,6 +128,17 @@ export class TestModeManager {
             const authInput = authModal.querySelector('#test-auth-input');
             const authFeedback = authModal.querySelector('#test-auth-feedback');
             const closeBtn = authModal.querySelector('#btn-close-test-auth');
+            const autofillBtn = authModal.querySelector('#btn-autofill-wave100');
+
+            if (autofillBtn) {
+                autofillBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (authInput) {
+                        authInput.value = 'raphael_tester123';
+                        authInput.focus();
+                    }
+                });
+            }
 
             authForm.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -708,6 +724,14 @@ export class TestModeManager {
             if (feedback) {
                 feedback.textContent = '';
                 feedback.className = 'test-auth-feedback';
+            }
+            const hint100 = this.authModal.querySelector('#test-wave100-hint');
+            if (hint100) {
+                let hasPassed100 = false;
+                try {
+                    hasPassed100 = localStorage.getItem('urban_breach_wave_100_unlocked') === 'true';
+                } catch (e) {}
+                hint100.style.display = hasPassed100 ? 'block' : 'none';
             }
         }
         testModeState.isOpen = true;

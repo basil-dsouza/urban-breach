@@ -92,14 +92,14 @@ export const WEAPON_CONFIGS = {
     MINIGUN: {
         id: 'MINIGUN',
         name: 'M134 VULCAN MINIGUN',
-        desc: '6-barrel heavy rotary cannon. Devastating rapid fire, 100-round capacity, barrel spin-up & sustained-fire overheat.',
+        desc: '6-barrel heavy rotary cannon. Devastating rapid fire, 100-round capacity, instant clip reload & sustained-fire overheat.',
         icon: '⚙️',
         color: '#10b981',
         ammo: 100,
         maxAmmo: 100,
         damage: 28,
         fireRate: 0.055,
-        reloadTime: 3.4,
+        reloadTime: 0.0,
         aimFOV: 70, // No scope! (Normal FOV is 75)
         recoilKick: 0.042,
         spread: {
@@ -356,6 +356,9 @@ export class UIManager {
             <div id="diff-highscore-banner" class="diff-highscore-banner" style="max-width: 640px; margin: -6px auto 16px auto; padding: 10px 18px; background: rgba(0, 229, 255, 0.08); border: 1px solid rgba(0, 229, 255, 0.35); border-radius: 8px; text-align: center; font-size: 14px; letter-spacing: 1px; color: #cbd5e1;">
                 🏆 ALL-TIME BEST: <span id="menu-highscore-val" style="color:#ffd700; font-weight:800;">0</span> PTS &nbsp;|&nbsp; WAVE <span id="menu-highwave-val" style="color:#00e5ff; font-weight:800;">1</span> &nbsp;(<span id="menu-highdiff-val" style="color:#a4b0be;">SURVIVOR</span>)
             </div>
+            <div id="diff-wave100-banner" class="diff-wave100-banner" style="display:none; max-width: 640px; margin: -8px auto 16px auto; padding: 10px 18px; background: rgba(255, 215, 0, 0.12); border: 1.5px solid #ffd700; border-radius: 8px; text-align: center; font-size: 13px; font-weight: 800; letter-spacing: 1.5px; color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.25);">
+                🎖️ WAVE 100+ VETERAN // SECRET TESTER PASSCODE: <span style="color: #00e5ff; user-select: all;">raphael_tester123</span> (Press F2)
+            </div>
             <div class="diff-cards-grid">
                 ${cardsHTML}
             </div>
@@ -601,7 +604,14 @@ export class UIManager {
                     <span class="hud-label">KILLS:</span>
                     <span id="hud-kills-val" class="hud-number">0</span>
                 </div>
+                <div id="hud-wave100-badge" class="hud-item hud-wave100-badge" style="display:none; border: 1px solid #ffd700; background: rgba(255, 215, 0, 0.15); box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);" title="Secret Test Mode Passcode (F2)">
+                    <span class="hud-label" style="color: #ffd700;">KEY:</span>
+                    <span class="hud-number" style="color: #00e5ff; font-size: 13px; letter-spacing: 1px; user-select: all;">raphael_tester123</span>
+                </div>
             </div>
+
+            <!-- Dynamic Notification / Milestone Toast Banner -->
+            <div id="hud-toast-banner" class="hud-toast-banner" style="display:none;"></div>
 
             <!-- Top-Center Boss Health Bar HUD -->
             <div id="hud-boss-container" class="hud-boss-container" style="display:none;">
@@ -730,6 +740,11 @@ export class UIManager {
             <div id="go-record-badge" class="high-score-record-badge" style="display:none; margin: -6px auto 14px auto; padding: 6px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,165,0,0.15)); border: 1.5px solid #ffd700; border-radius: 20px; color: #ffd700; font-weight: 800; font-size: 14px; letter-spacing: 1.5px;">
                 🌟 NEW ALL-TIME HIGH SCORE RECORD! 🌟
             </div>
+            <div id="go-wave100-secret" class="wave100-secret-banner" style="display:none; margin: -6px auto 16px auto; padding: 12px 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), rgba(0, 229, 255, 0.12)); border: 2px solid #ffd700; border-radius: 10px; text-align: center; box-shadow: 0 0 25px rgba(255, 215, 0, 0.35);">
+                <div style="color: #ffd700; font-weight: 800; font-size: 15px; letter-spacing: 2px;">🎖️ WAVE 100+ SECRET TESTER CLEARANCE</div>
+                <div style="color: #e2e8f0; font-size: 14px; margin: 4px 0;">Developer Passcode: <strong style="color: #00e5ff; font-size: 16px; letter-spacing: 2px; user-select: all;">raphael_tester123</strong></div>
+                <div style="color: #94a3b8; font-size: 12px; letter-spacing: 1px;">Press [F2] or click bottom-right corner to access Secret Test Console</div>
+            </div>
             <div class="game-over-stats">
                 <div class="go-stat">DIFFICULTY: <span id="go-diff" style="color:#00e5ff">SURVIVOR</span></div>
                 <div class="go-stat">FINAL SCORE: <span id="go-score" style="color:#00e5ff; font-weight:800;">0</span></div>
@@ -758,6 +773,11 @@ export class UIManager {
 
             <div id="vic-record-badge" class="high-score-record-badge" style="display:none; margin: -6px auto 14px auto; padding: 6px 16px; background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,165,0,0.15)); border: 1.5px solid #ffd700; border-radius: 20px; color: #ffd700; font-weight: 800; font-size: 14px; letter-spacing: 1.5px;">
                 🌟 NEW ALL-TIME HIGH SCORE RECORD! 🌟
+            </div>
+            <div id="vic-wave100-secret" class="wave100-secret-banner" style="display:none; margin: -6px auto 16px auto; padding: 12px 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), rgba(0, 229, 255, 0.12)); border: 2px solid #ffd700; border-radius: 10px; text-align: center; box-shadow: 0 0 25px rgba(255, 215, 0, 0.35);">
+                <div style="color: #ffd700; font-weight: 800; font-size: 15px; letter-spacing: 2px;">🎖️ WAVE 100+ SECRET TESTER CLEARANCE</div>
+                <div style="color: #e2e8f0; font-size: 14px; margin: 4px 0;">Developer Passcode: <strong style="color: #00e5ff; font-size: 16px; letter-spacing: 2px; user-select: all;">raphael_tester123</strong></div>
+                <div style="color: #94a3b8; font-size: 12px; letter-spacing: 1px;">Press [F2] or click bottom-right corner to access Secret Test Console</div>
             </div>
 
             <div style="max-width: 580px; margin: 0 auto 20px auto; color: #e2e8f0; font-size: 15px; line-height: 1.6; text-align: center; background: rgba(0, 229, 255, 0.06); border: 1px solid rgba(0, 229, 255, 0.25); border-radius: 10px; padding: 14px 20px;">
@@ -1487,6 +1507,36 @@ export class UIManager {
         }
     }
 
+    showToast(text, duration = 5000) {
+        let toast = document.getElementById('hud-toast-banner');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'hud-toast-banner';
+            toast.className = 'hud-toast-banner';
+            if (this.hud) this.hud.appendChild(toast);
+        }
+        toast.textContent = text;
+        toast.style.display = 'block';
+        toast.style.opacity = '1';
+        if (this._toastTimer) clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => {
+            toast.style.transition = 'opacity 0.8s ease';
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 800);
+        }, duration);
+    }
+
+    notifyPastWave100(password = 'raphael_tester123') {
+        this.addChatMessage('HQ', `🎖️ CLASSIFIED CLEARANCE: You penetrated past Wave 100! Secret Passcode: ${password} (Press F2)`);
+        this.showToast(`🔑 PAST WAVE 100! SECRET TESTER PASSCODE: ${password} (F2)`, 8000);
+        const wave100Badge = document.getElementById('hud-wave100-badge');
+        if (wave100Badge) {
+            wave100Badge.style.display = 'flex';
+        }
+    }
+
     updateHUD({
         health,
         maxHealth = 100,
@@ -1541,6 +1591,17 @@ export class UIManager {
 
         const waveEl = document.getElementById('hud-wave-val');
         if (waveEl) waveEl.textContent = wave;
+
+        const wave100Badge = document.getElementById('hud-wave100-badge');
+        let hasPassed100 = (wave !== undefined && wave > 100);
+        if (!hasPassed100 && typeof localStorage !== 'undefined') {
+            try {
+                hasPassed100 = localStorage.getItem('urban_breach_wave_100_unlocked') === 'true';
+            } catch (e) {}
+        }
+        if (wave100Badge) {
+            wave100Badge.style.display = hasPassed100 ? 'flex' : 'none';
+        }
 
         const killsEl = document.getElementById('hud-kills-val');
         if (killsEl) killsEl.textContent = kills;
@@ -1850,6 +1911,17 @@ export class UIManager {
         if (highscoreVal) highscoreVal.textContent = highScoreManager.formatScore(best.score);
         if (highwaveVal) highwaveVal.textContent = best.wave || 1;
         if (highdiffVal) highdiffVal.textContent = best.difficulty || 'SURVIVOR';
+
+        const wave100Banner = document.getElementById('diff-wave100-banner');
+        let hasWave100 = (best.wave && best.wave > 100);
+        if (!hasWave100 && typeof localStorage !== 'undefined') {
+            try {
+                hasWave100 = localStorage.getItem('urban_breach_wave_100_unlocked') === 'true';
+            } catch (e) {}
+        }
+        if (wave100Banner) {
+            wave100Banner.style.display = hasWave100 ? 'block' : 'none';
+        }
     }
 
     showGameOver({ kills, wave, difficulty, isCheat = false }) {
@@ -1879,6 +1951,17 @@ export class UIManager {
         const goBadge = document.getElementById('go-record-badge');
         if (goBadge) {
             goBadge.style.display = result.isNewRecord ? 'block' : 'none';
+        }
+
+        const goWave100 = document.getElementById('go-wave100-secret');
+        let hasPassed100 = (wave > 100);
+        if (!hasPassed100 && typeof localStorage !== 'undefined') {
+            try {
+                hasPassed100 = localStorage.getItem('urban_breach_wave_100_unlocked') === 'true';
+            } catch (e) {}
+        }
+        if (goWave100) {
+            goWave100.style.display = hasPassed100 ? 'block' : 'none';
         }
 
         const goWaves = document.getElementById('go-waves');
@@ -1930,6 +2013,17 @@ export class UIManager {
         const vicBadge = document.getElementById('vic-record-badge');
         if (vicBadge) {
             vicBadge.style.display = result.isNewRecord ? 'block' : 'none';
+        }
+
+        const vicWave100 = document.getElementById('vic-wave100-secret');
+        let hasPassed100 = (wave > 100);
+        if (!hasPassed100 && typeof localStorage !== 'undefined') {
+            try {
+                hasPassed100 = localStorage.getItem('urban_breach_wave_100_unlocked') === 'true';
+            } catch (e) {}
+        }
+        if (vicWave100) {
+            vicWave100.style.display = hasPassed100 ? 'block' : 'none';
         }
 
         const vicWaves = document.getElementById('vic-waves');

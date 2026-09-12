@@ -45,13 +45,14 @@ describe('Weapon Arsenal Configuration (AK-47, Barrett .50 Cal, M590 Shotgun, & 
         expect(shotgun.spread.aimShotKick).toBe(8.0);
     });
 
-    it('should configure M134 Vulcan Minigun with 100 ammo, no scope, and rapid fire', () => {
+    it('should configure M134 Vulcan Minigun with 100 ammo, instant clip reload, and rapid fire', () => {
         const minigun = WEAPON_CONFIGS.MINIGUN;
         expect(minigun.id).toBe('MINIGUN');
         expect(minigun.ammo).toBe(100);
         expect(minigun.maxAmmo).toBe(100);
         expect(minigun.damage).toBe(28);
         expect(minigun.fireRate).toBeLessThan(0.08); // rapid Gatling cycle
+        expect(minigun.reloadTime).toBe(0.0); // instant clip reload
         expect(minigun.aimFOV).toBe(70); // no scope (near normal 75 FOV)
         expect(minigun.spread).toBeDefined();
     });
