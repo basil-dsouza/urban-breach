@@ -4,6 +4,7 @@ import { startManualHost, startManualClient, applyManualAnswer } from './manual-
 import { achievementManager } from './achievements.js';
 import { soundEngine } from './audio.js';
 import { highScoreManager } from './highscore.js';
+import { goldManager } from './gold.js';
 
 export const WEAPON_CONFIGS = {
     AK47: {
@@ -116,6 +117,96 @@ export const WEAPON_CONFIGS = {
             firePerShotKick: 0.6,
             recoverySpeed: 18.0
         }
+    },
+    SW_MODEL29: {
+        id: 'SW_MODEL29',
+        name: 'SMITH & WESSON MODEL 29',
+        desc: 'Iconic .44 Remington Magnum double-action revolver. Massive kinetic energy with a 6-round fluted revolving cylinder.',
+        icon: '🎯',
+        color: '#e2e8f0',
+        price: 200,
+        isPistol: true,
+        ammo: 6,
+        maxAmmo: 6,
+        damage: 115,
+        fireRate: 0.32,
+        reloadTime: 2.6,
+        aimFOV: 50,
+        recoilKick: 0.16,
+        spread: {
+            baseStanding: 8.5,
+            baseMoving: 15.0,
+            baseSprinting: 22.0,
+            baseCrouching: 4.2,
+            baseCrouchMoving: 7.5,
+            baseAiming: 1.9,
+            maxAimSpread: 5.8,
+            aimShotKick: 0.7,
+            maxSpread: 26.0,
+            fireSpreadRate: 24.0,
+            firePerShotKick: 3.2,
+            recoverySpeed: 15.0
+        }
+    },
+    M1911: {
+        id: 'M1911',
+        name: 'M1911 PISTOL',
+        desc: 'Legendary .45 ACP military semi-automatic pistol. 7-round single-stack steel magazine, fast cyclic rate, and crisp handling.',
+        icon: '🔫',
+        color: '#94a3b8',
+        price: 400,
+        isPistol: true,
+        ammo: 7,
+        maxAmmo: 7,
+        damage: 60,
+        fireRate: 0.18,
+        reloadTime: 1.8,
+        aimFOV: 52,
+        recoilKick: 0.10,
+        spread: {
+            baseStanding: 7.8,
+            baseMoving: 13.5,
+            baseSprinting: 20.0,
+            baseCrouching: 3.8,
+            baseCrouchMoving: 6.8,
+            baseAiming: 2.0,
+            maxAimSpread: 5.2,
+            aimShotKick: 0.45,
+            maxSpread: 24.0,
+            fireSpreadRate: 20.0,
+            firePerShotKick: 2.0,
+            recoverySpeed: 17.0
+        }
+    },
+    LUGER_P08: {
+        id: 'LUGER_P08',
+        name: 'LUGER P08',
+        desc: 'Classic 9x19mm Parabellum toggle-lock precision handgun. 8-round capacity, steep grip angle, and razor-sharp trigger accuracy.',
+        icon: '🎖️',
+        color: '#cbd5e1',
+        price: 600,
+        isPistol: true,
+        ammo: 8,
+        maxAmmo: 8,
+        damage: 48,
+        fireRate: 0.14,
+        reloadTime: 2.0,
+        aimFOV: 52,
+        recoilKick: 0.08,
+        spread: {
+            baseStanding: 6.2,
+            baseMoving: 11.5,
+            baseSprinting: 17.0,
+            baseCrouching: 3.0,
+            baseCrouchMoving: 5.2,
+            baseAiming: 1.4,
+            maxAimSpread: 4.2,
+            aimShotKick: 0.35,
+            maxSpread: 21.0,
+            fireSpreadRate: 17.0,
+            firePerShotKick: 1.5,
+            recoverySpeed: 19.0
+        }
     }
 };
 
@@ -163,6 +254,9 @@ export class UIManager {
             <div style="display: flex; gap: 14px; justify-content: center; align-items: center; margin-bottom: 20px; flex-wrap: wrap;">
                 <button id="btn-to-difficulty" class="btn-primary" style="margin-bottom: 0;">
                     START GAME
+                </button>
+                <button id="btn-open-shop" class="btn-secondary" style="font-size: 14px; padding: 14px 22px; border-color: rgba(234, 179, 8, 0.6); color: #fbbf24; background: rgba(234, 179, 8, 0.12); font-weight: 800; letter-spacing: 0.8px; box-shadow: 0 0 14px rgba(234, 179, 8, 0.25);">
+                    🪙 WEAPONS SHOP
                 </button>
                 <button id="btn-open-achievements" class="btn-secondary" style="font-size: 14px; padding: 14px 22px; border-color: rgba(0, 229, 255, 0.45); color: #00e5ff; background: rgba(0, 229, 255, 0.08); font-weight: 700; letter-spacing: 0.8px;">
                     🏆 ACHIEVEMENTS
@@ -319,12 +413,36 @@ export class UIManager {
 
         let weaponsHTML = '';
         for (const [key, wep] of Object.entries(WEAPON_CONFIGS)) {
-            const isSelected = key === 'AK47' ? 'selected' : '';
-            const isLocked = key === 'MINIGUN' && (typeof localStorage === 'undefined' || localStorage.getItem('urban_breach_minigun_unlocked') !== 'true');
-            const badgeText = isLocked ? '🔒 BEAT WAVE 50' : `${wep.ammo} RDS`;
-            const badgeBg = isLocked ? 'rgba(239, 68, 68, 0.2)' : `${wep.color}22`;
-            const badgeBorder = isLocked ? 'rgba(239, 68, 68, 0.4)' : `${wep.color}66`;
-            const badgeColor = isLocked ? '#ef4444' : wep.color;
+            const isSelected = key === this.selectedWeaponKey ? 'selected' : '';
+            let isLocked = false;
+            let badgeText = `${wep.ammo} RDS`;
+            let badgeBg = `${wep.color}22`;
+            let badgeBorder = `${wep.color}66`;
+            let badgeColor = wep.color;
+            let desc = wep.desc;
+
+            if (key === 'MINIGUN') {
+                isLocked = (typeof localStorage === 'undefined' || localStorage.getItem('urban_breach_minigun_unlocked') !== 'true');
+                if (isLocked) {
+                    badgeText = '🔒 BEAT WAVE 50';
+                    badgeBg = 'rgba(239, 68, 68, 0.2)';
+                    badgeBorder = 'rgba(239, 68, 68, 0.4)';
+                    badgeColor = '#ef4444';
+                    desc = '⚠️ CLASSIFIED HEAVY ARMAMENT. Survive 50 waves in Urban Breach to unlock and deploy this weapon.';
+                }
+            } else if (wep.isPistol) {
+                const isOwned = goldManager.isWeaponOwned(key);
+                isLocked = !isOwned;
+                if (isLocked) {
+                    badgeText = `🔒 ${wep.price} GOLD`;
+                    badgeBg = 'rgba(234, 179, 8, 0.2)';
+                    badgeBorder = 'rgba(234, 179, 8, 0.4)';
+                    badgeColor = '#fbbf24';
+                    desc = `⚠️ ARMORY SIDEARM. Purchase in the Weapons Shop on the title screen for ${wep.price} Gold.`;
+                } else {
+                    badgeText = `${wep.ammo} RDS (OWNED)`;
+                }
+            }
 
             weaponsHTML += `
                 <div class="wep-card ${isSelected}" data-key="${key}" data-locked="${isLocked ? 'true' : 'false'}" style="--accent-color:${wep.color}; ${isLocked ? 'opacity: 0.72;' : ''}">
@@ -332,7 +450,7 @@ export class UIManager {
                         <span class="diff-name">${wep.icon} ${wep.name}</span>
                         <span class="diff-badge" style="background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}">${badgeText}</span>
                     </div>
-                    <div class="diff-desc">${isLocked ? '⚠️ CLASSIFIED HEAVY ARMAMENT. Survive 50 waves in Urban Breach to unlock and deploy this weapon.' : wep.desc}</div>
+                    <div class="diff-desc">${desc}</div>
                     <div class="diff-stats">
                         <div class="diff-stat-item">
                             <span class="stat-label">DAMAGE</span>
@@ -603,6 +721,10 @@ export class UIManager {
                 <div class="hud-item">
                     <span class="hud-label">KILLS:</span>
                     <span id="hud-kills-val" class="hud-number">0</span>
+                </div>
+                <div class="hud-item hud-gold" style="border: 1px solid rgba(234, 179, 8, 0.45); background: rgba(234, 179, 8, 0.12); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2);">
+                    <span class="hud-label" style="color: #fbbf24;">GOLD:</span>
+                    <span id="hud-gold-val" class="hud-number" style="color: #ffd700;">0</span>
                 </div>
                 <div id="hud-wave100-badge" class="hud-item hud-wave100-badge" style="display:none; border: 1px solid #ffd700; background: rgba(255, 215, 0, 0.15); box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);" title="Secret Test Mode Passcode (F2)">
                     <span class="hud-label" style="color: #ffd700;">KEY:</span>
@@ -926,6 +1048,15 @@ export class UIManager {
             };
         }
 
+        const btnOpenShop = document.getElementById('btn-open-shop');
+        if (btnOpenShop) {
+            btnOpenShop.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.openShop();
+            };
+        }
+
         const updateMusicButtonsUI = (isMuted) => {
             const titleBtn = document.getElementById('btn-toggle-music');
             if (titleBtn) {
@@ -1123,7 +1254,10 @@ export class UIManager {
         wepCards.forEach(card => {
             card.onclick = () => {
                 if (card.dataset.locked === 'true') {
-                    if (this.addChatMessage) {
+                    const wep = WEAPON_CONFIGS[card.dataset.key];
+                    if (wep && wep.isPistol) {
+                        this.showToast(`⚠️ LOCKED: Unlock ${wep.name} in the Weapons Shop for ${wep.price} Gold!`, 3500);
+                    } else if (this.addChatMessage) {
                         this.addChatMessage('HQ', '⚠️ CLASSIFIED ARMAMENT: Survive 50 waves in Urban Breach to unlock the M134 Minigun!');
                     } else {
                         alert('⚠️ LOCKED: Survive 50 waves in Urban Breach to unlock the M134 Vulcan Minigun!');
@@ -1605,6 +1739,11 @@ export class UIManager {
 
         const killsEl = document.getElementById('hud-kills-val');
         if (killsEl) killsEl.textContent = kills;
+
+        const goldEl = document.getElementById('hud-gold-val');
+        if (goldEl) {
+            goldEl.textContent = Number(goldManager.getGold()).toLocaleString();
+        }
 
         const ladderEl = document.getElementById('hud-ladder-prompt');
         if (ladderEl) {
@@ -2117,6 +2256,217 @@ export class UIManager {
             btnLaunch.style.display = 'none';
             waitingEl.style.display = 'block';
         }
+    }
+
+    openShop() {
+        if (typeof document === 'undefined') return;
+        this.closeShop();
+
+        const currentGold = goldManager.getGold();
+        const ownedWeapons = goldManager.getOwnedWeapons();
+        const equippedPistol = goldManager.getEquippedPistol() || (this.selectedWeaponKey && WEAPON_CONFIGS[this.selectedWeaponKey]?.isPistol ? this.selectedWeaponKey : null);
+
+        const modal = document.createElement('div');
+        modal.id = 'weapons-shop-modal';
+        modal.className = 'shop-modal-overlay';
+
+        const pistols = [
+            WEAPON_CONFIGS.SW_MODEL29,
+            WEAPON_CONFIGS.M1911,
+            WEAPON_CONFIGS.LUGER_P08
+        ];
+
+        let cardsHTML = '';
+        for (const p of pistols) {
+            const isOwned = ownedWeapons.includes(p.id);
+            const isEquipped = (equippedPistol === p.id) || (this.selectedWeaponKey === p.id);
+            const canAfford = currentGold >= p.price;
+
+            let cardClass = 'shop-card';
+            if (isEquipped) cardClass += ' equipped';
+            else if (isOwned) cardClass += ' owned';
+
+            let actionBtnHTML = '';
+            if (isEquipped) {
+                actionBtnHTML = `<button class="shop-btn shop-btn-equipped">✓ EQUIPPED</button>`;
+            } else if (isOwned) {
+                actionBtnHTML = `<button class="shop-btn shop-btn-equip" data-key="${p.id}">EQUIP FOR COMBAT</button>`;
+            } else {
+                actionBtnHTML = `<button class="shop-btn shop-btn-buy" data-key="${p.id}" ${canAfford ? '' : 'disabled'}>
+                    ${canAfford ? `BUY FOR ${p.price} GOLD` : `LOCKED (NEED ${p.price} GOLD)`}
+                </button>`;
+            }
+
+            cardsHTML += `
+                <div class="${cardClass}" data-key="${p.id}">
+                    <div class="shop-card-top">
+                        <div class="shop-card-title">${p.icon} ${p.name}</div>
+                        <div class="shop-card-price">🪙 ${p.price} GOLD</div>
+                    </div>
+                    <div class="shop-card-desc">${p.desc}</div>
+                    <div class="shop-stats-grid">
+                        <div class="shop-stat-item">
+                            <span class="shop-stat-label">DAMAGE</span>
+                            <span class="shop-stat-val" style="color:#ef4444;">${p.damage} HP</span>
+                        </div>
+                        <div class="shop-stat-item">
+                            <span class="shop-stat-label">CAPACITY</span>
+                            <span class="shop-stat-val" style="color:#00e5ff;">${p.ammo} ROUNDS</span>
+                        </div>
+                        <div class="shop-stat-item">
+                            <span class="shop-stat-label">CYCLIC RATE</span>
+                            <span class="shop-stat-val">${p.fireRate}s</span>
+                        </div>
+                        <div class="shop-stat-item">
+                            <span class="shop-stat-label">RELOAD TIME</span>
+                            <span class="shop-stat-val">${p.reloadTime}s</span>
+                        </div>
+                    </div>
+                    <div class="shop-card-actions">
+                        ${actionBtnHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        modal.innerHTML = `
+            <div class="shop-modal-card">
+                <div class="shop-modal-header">
+                    <div class="shop-modal-title-row">
+                        <span style="font-size: 26px;">🛒</span>
+                        <div class="shop-modal-title">ARMORY WEAPONS SHOP</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div class="shop-gold-badge">
+                            <span>🪙</span>
+                            <span><strong id="shop-gold-val">${currentGold}</strong> GOLD</span>
+                        </div>
+                        <button class="shop-modal-close" id="btn-close-shop" title="Close Shop">✕</button>
+                    </div>
+                </div>
+                <div class="shop-subheader">
+                    ⚡ <strong>TACTICAL SIDEARMS ARSENAL:</strong> Earn Gold for combat kills (<strong>5 Gold</strong> Normal, <strong>10 Gold</strong> Vehicles, <strong>50 Gold</strong> Bosses). Select and equip your handgun here, or select your primary weapon in the deployment menu.
+                </div>
+                <div class="shop-cards-grid">
+                    ${cardsHTML}
+                </div>
+                <div class="shop-modal-footer">
+                    <div style="font-size: 13px; color: #94a3b8;">
+                        💡 <em>Purchased weapons and accumulated gold are saved locally in your permanent profile.</em>
+                    </div>
+                    <button class="btn-secondary" id="btn-shop-done" style="font-size: 13px; padding: 10px 22px;">
+                        ← BACK TO MENU
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const closeBtn = modal.querySelector('#btn-close-shop');
+        const doneBtn = modal.querySelector('#btn-shop-done');
+        const handleClose = (e) => {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            this.closeShop();
+        };
+        if (closeBtn) closeBtn.onclick = handleClose;
+        if (doneBtn) doneBtn.onclick = handleClose;
+
+        const buyBtns = modal.querySelectorAll('.shop-btn-buy');
+        buyBtns.forEach(btn => {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const key = btn.dataset.key;
+                const config = WEAPON_CONFIGS[key];
+                if (!config) return;
+                if (!goldManager.canAfford(config.price)) {
+                    this.showToast('⚠️ Insufficient Gold to purchase ' + config.name + '!', 2500);
+                    return;
+                }
+                const success = goldManager.spendGold(config.price);
+                if (success) {
+                    goldManager.unlockWeapon(key);
+                    goldManager.setEquippedPistol(key);
+                    this.selectedWeaponKey = key;
+                    if (typeof soundEngine !== 'undefined' && soundEngine && typeof soundEngine.playMedkitPickup === 'function') {
+                        soundEngine.playMedkitPickup();
+                    }
+                    this.showToast(`🎉 UNLOCKED & EQUIPPED ${config.name}!`, 3500);
+                    this.openShop();
+                    this.refreshWeaponCards();
+                }
+            };
+        });
+
+        const equipBtns = modal.querySelectorAll('.shop-btn-equip');
+        equipBtns.forEach(btn => {
+            btn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const key = btn.dataset.key;
+                const config = WEAPON_CONFIGS[key];
+                if (!config) return;
+                goldManager.setEquippedPistol(key);
+                this.selectedWeaponKey = key;
+                this.showToast(`🔫 EQUIPPED ${config.name}!`, 2500);
+                if (typeof window !== 'undefined' && window.switchPlayerWeapon) {
+                    window.switchPlayerWeapon(key);
+                }
+                this.openShop();
+                this.refreshWeaponCards();
+            };
+        });
+    }
+
+    closeShop() {
+        const existing = document.getElementById('weapons-shop-modal');
+        if (existing && existing.parentNode) {
+            existing.parentNode.removeChild(existing);
+        }
+    }
+
+    refreshWeaponCards() {
+        if (!this.difficultyScreen) return;
+        const wepCards = this.difficultyScreen.querySelectorAll('.wep-card');
+        wepCards.forEach(card => {
+            const key = card.dataset.key;
+            const wep = WEAPON_CONFIGS[key];
+            if (!wep) return;
+            let isLocked = false;
+            if (key === 'MINIGUN') {
+                isLocked = (typeof localStorage === 'undefined' || localStorage.getItem('urban_breach_minigun_unlocked') !== 'true');
+            } else if (wep.isPistol) {
+                isLocked = !goldManager.isWeaponOwned(key);
+            }
+            card.dataset.locked = isLocked ? 'true' : 'false';
+            card.style.opacity = isLocked ? '0.72' : '1.0';
+            const badge = card.querySelector('.diff-badge');
+            if (badge) {
+                if (key === 'MINIGUN') {
+                    badge.textContent = isLocked ? '🔒 BEAT WAVE 50' : `${wep.ammo} RDS`;
+                } else if (wep.isPistol) {
+                    badge.textContent = isLocked ? `🔒 ${wep.price} GOLD` : `${wep.ammo} RDS (OWNED)`;
+                    badge.style.color = isLocked ? '#fbbf24' : wep.color;
+                    badge.style.background = isLocked ? 'rgba(234, 179, 8, 0.2)' : `${wep.color}22`;
+                }
+            }
+            if (key === this.selectedWeaponKey) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    }
+
+    updateGoldDisplay(val) {
+        const goldEl = document.getElementById('hud-gold-val');
+        if (goldEl) goldEl.textContent = Number(val).toLocaleString();
+        const shopGoldEl = document.getElementById('shop-gold-val');
+        if (shopGoldEl) shopGoldEl.textContent = Number(val).toLocaleString();
     }
 
     resetSingleplayerUI() {

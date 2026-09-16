@@ -10,6 +10,7 @@ import { MultiplayerManager } from '../systems/multiplayer.js';
 import { TestModeManager, testModeState } from '../systems/test-mode.js';
 import { achievementManager } from '../systems/achievements.js';
 import { highScoreManager } from '../systems/highscore.js';
+import { goldManager } from '../systems/gold.js';
 
 // Pre-Generated World & River Bridges (Zero Z-Fighting)
 import { buildBridges, getBridgeElevation, isOverBridge } from '../world/bridges.js';
@@ -194,12 +195,13 @@ function handleEnemyDamage(enemy, damage) {
     if (enemy.userData.health <= 0) {
         if (enemy.userData.isBoss) {
             kills += 5;
+            goldManager.addGold(50, 'Boss Defeated');
             highScoreManager.recordBossKill();
             achievementManager.recordKill(kills);
             uiManager.hideBossHP(true);
             soundEngine.playBossDefeated();
             if (multiplayerManager?.chatPanel) {
-                multiplayerManager.addSystemMessage(`🏆 VICTORY: ${enemy.userData.bossName} DEFEATED! (+5 KILLS)`);
+                multiplayerManager.addSystemMessage(`🏆 VICTORY: ${enemy.userData.bossName} DEFEATED! (+5 KILLS, +50 GOLD)`);
             }
             // Drop 3x High-Tier Medkits
             for (let m = 0; m < 3; m++) {
@@ -213,6 +215,7 @@ function handleEnemyDamage(enemy, damage) {
                 enemyManager.createMedkitMesh(enemy.position.x, enemy.position.y, enemy.position.z);
             }
             kills++;
+            goldManager.addGold(5, 'Enemy Eliminated');
             achievementManager.recordKill(kills);
         }
 
@@ -223,6 +226,13 @@ function handleEnemyDamage(enemy, damage) {
         }
         uiManager.updateHUD(getHUDState());
     }
+}
+
+function handleVehicleDestroyed(car) {
+    kills += 3;
+    goldManager.addGold(10, 'Pursuit Car Destroyed');
+    achievementManager.unlock('VEHICLE_BUSTER');
+    uiManager.updateHUD(getHUDState());
 }
 
 window.damageEnemyLocal = (enemyId, damage) => {
@@ -237,13 +247,116 @@ window.damageVehicleLocal = (vehicleId, damage) => {
     const car = vehicleManager.vehicles.find(c => c.userData.id === vehicleId);
     if (car) {
         vehicleManager.damageVehicle(car, damage, () => {
-            kills += 3;
-            achievementManager.unlock('VEHICLE_BUSTER');
-            uiManager.updateHUD(getHUDState());
+            handleVehicleDestroyed(car);
         });
         createHitEffect(car.position, 0xffaa00);
     }
 };
+
+/**
+ * Shootable Rooftop Donut Easter Egg Explosion
+ */
+function explodeDonut(donutObj, hitPoint = null) {
+    let assembly = donutObj;
+    if (donutObj.userData?.assembly) {
+        assembly = donutObj.userData.assembly;
+    } else {
+        let cur = donutObj;
+        while (cur.parent && cur.parent !== scene) {
+            if (cur.name === 'donut_sign_assembly') {
+                assembly = cur;
+                break;
+            }
+            cur = cur.parent;
+        }
+    }
+
+    if (assembly.userData && assembly.userData.exploded) return;
+    if (assembly.userData) assembly.userData.exploded = true;
+
+    // 1. Audio blast & camera shake
+    soundEngine.playGrenadeExplosion();
+    cameraShake = Math.max(cameraShake, 0.45);
+
+    // 2. Award Gold & Achievements
+    goldManager.addGold(25, 'Giant Donut Easter Egg');
+    uiManager.showToast('🍩 SECRET FOUND! GIANT ROOFTOP DONUT EXPLODED (+25 GOLD)', 4000);
+    achievementManager.unlock('DONUT_DESTROYER');
+
+    // 3. Visual explosion flash sphere
+    const blastPos = hitPoint ? hitPoint.clone() : assembly.position.clone();
+    const flash = new THREE.Mesh(
+        new THREE.SphereGeometry(3.0, 16, 16),
+        new THREE.MeshBasicMaterial({
+            color: 0xffa500,
+            transparent: true,
+            opacity: 0.95
+        })
+    );
+    flash.position.copy(blastPos);
+    scene.add(flash);
+
+    let flashLife = 0.25;
+    const updateFlash = () => {
+        flashLife -= 0.016;
+        flash.scale.multiplyScalar(1.08);
+        flash.material.opacity = Math.max(0, flashLife / 0.25);
+        if (flashLife <= 0) {
+            scene.remove(flash);
+            flash.geometry.dispose();
+            flash.material.dispose();
+        } else {
+            requestAnimationFrame(updateFlash);
+        }
+    };
+    requestAnimationFrame(updateFlash);
+
+    // 4. Colorful donut crumb & sprinkle particle burst
+    const colors = [0xdfa064, 0xffffff, 0xff3366, 0x00ccff, 0xffe600, 0x00ff88, 0xbb44ff];
+    for (let i = 0; i < 45; i++) {
+        const pColor = colors[Math.floor(Math.random() * colors.length)];
+        const pSize = 0.08 + Math.random() * 0.16;
+        const pGeom = (i % 3 === 0) 
+            ? new THREE.CylinderGeometry(0.04, 0.04, 0.22, 6) 
+            : new THREE.BoxGeometry(pSize, pSize, pSize);
+        const pMat = new THREE.MeshStandardMaterial({ color: pColor, roughness: 0.6 });
+        const pMesh = new THREE.Mesh(pGeom, pMat);
+        pMesh.position.copy(blastPos).add(new THREE.Vector3(
+            (Math.random() - 0.5) * 1.5,
+            (Math.random() - 0.5) * 1.5,
+            (Math.random() - 0.5) * 1.5
+        ));
+        scene.add(pMesh);
+
+        const vel = new THREE.Vector3(
+            (Math.random() - 0.5) * 18,
+            Math.random() * 14 + 4,
+            (Math.random() - 0.5) * 18
+        );
+        let pLife = 1.2 + Math.random() * 0.8;
+        const pStep = () => {
+            pLife -= 0.02;
+            vel.y -= 18 * 0.02;
+            pMesh.position.addScaledVector(vel, 0.02);
+            pMesh.rotation.x += 0.1;
+            pMesh.rotation.y += 0.15;
+            if (pLife <= 0) {
+                scene.remove(pMesh);
+                pGeom.dispose();
+                pMat.dispose();
+            } else {
+                requestAnimationFrame(pStep);
+            }
+        };
+        requestAnimationFrame(pStep);
+    }
+
+    // 5. Hide the donut assembly
+    assembly.visible = false;
+    if (window.donutTargets) {
+        window.donutTargets = window.donutTargets.filter(t => t !== assembly && t !== donutObj && t.userData?.assembly !== assembly);
+    }
+}
 
 // Ground & Slanted Roof Surface Height Calculation
 function getSimpleGround(x, z, queryY = null) {
@@ -902,13 +1015,332 @@ function applyWeaponModel(weaponKey = 'AK47') {
         gunGroup.add(minigunRotorGroup);
 
         muzzleFlashLight.position.set(0, 0.02, -1.16);
+    } else if (weaponKey === 'SW_MODEL29') {
+        // =========================================================
+        // SMITH & WESSON MODEL 29 (.44 REMINGTON MAGNUM REVOLVER)
+        // Faithful reproduction matching user reference photo:
+        // Polished nickel frame, 6.5" target barrel with top rib & under-shroud,
+        // 6-shot fluted cylinder, target hammer, orange ramp front sight,
+        // black micrometer rear sight, carved walnut wood grip.
+        // =========================================================
+        const matPolishedNickel = new THREE.MeshStandardMaterial({ color: 0xdde5ed, metalness: 0.94, roughness: 0.16 });
+        const matDarkSight = new THREE.MeshStandardMaterial({ color: 0x181a1d, metalness: 0.85, roughness: 0.35 });
+        const matWalnutWood = new THREE.MeshStandardMaterial({ color: 0x6e381c, roughness: 0.55 });
+        const matOrangeSight = new THREE.MeshBasicMaterial({ color: 0xff3b00 });
+        const matBrassMedallion = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.25 });
+
+        // Main Frame Housing
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.076, 0.16), matPolishedNickel);
+        frame.position.set(0, 0.018, -0.01);
+        gunGroup.add(frame);
+
+        // Top Strap
+        const topStrap = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.018, 0.19), matPolishedNickel);
+        topStrap.position.set(0, 0.062, -0.02);
+        gunGroup.add(topStrap);
+
+        // 6-Shot Revolving Cylinder (Fluted)
+        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.033, 0.033, 0.11, 16), matPolishedNickel);
+        cylinder.rotation.x = Math.PI / 2;
+        cylinder.position.set(0, 0.018, -0.015);
+        gunGroup.add(cylinder);
+
+        // Cylinder Flutes (6 subtle machined grooves)
+        for (let f = 0; f < 6; f++) {
+            const fAngle = (f / 6) * Math.PI * 2;
+            const fx = Math.cos(fAngle) * 0.031;
+            const fy = Math.sin(fAngle) * 0.031;
+            const flute = new THREE.Mesh(new THREE.BoxGeometry(0.007, 0.007, 0.08), matDarkSight);
+            flute.position.set(fx, 0.018 + fy, -0.015);
+            gunGroup.add(flute);
+        }
+
+        // Long 6.5" Heavy Target Barrel
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.019, 0.30, 16), matPolishedNickel);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.038, -0.23);
+        gunGroup.add(barrel);
+
+        // Full Under-Barrel Shroud / Ejector Rod Enclosure
+        const underShroud = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.030, 0.26), matPolishedNickel);
+        underShroud.position.set(0, 0.014, -0.22);
+        gunGroup.add(underShroud);
+
+        // Knurled Ejector Rod Tip
+        const ejectorTip = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.03, 8), matDarkSight);
+        ejectorTip.rotation.x = Math.PI / 2;
+        ejectorTip.position.set(0, 0.014, -0.16);
+        gunGroup.add(ejectorTip);
+
+        // Solid Top Ventilated Rib with Anti-Glare Serrations
+        const topRib = new THREE.Mesh(new THREE.BoxGeometry(0.020, 0.010, 0.30), matPolishedNickel);
+        topRib.position.set(0, 0.058, -0.23);
+        gunGroup.add(topRib);
+
+        // Red Ramp Front Sight Blade
+        const frontRamp = new THREE.Mesh(new THREE.BoxGeometry(0.010, 0.020, 0.04), matPolishedNickel);
+        frontRamp.position.set(0, 0.070, -0.36);
+        gunGroup.add(frontRamp);
+
+        const orangeInsert = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.010, 0.02), matOrangeSight);
+        orangeInsert.position.set(0, 0.072, -0.355);
+        gunGroup.add(orangeInsert);
+
+        // Micrometer Click Adjustable Black Target Rear Sight
+        const rearSight = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.016, 0.035), matDarkSight);
+        rearSight.position.set(0, 0.074, 0.065);
+        gunGroup.add(rearSight);
+
+        // Spurred Target Hammer
+        const hammer = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.030, 0.035), matDarkSight);
+        hammer.rotation.x = -0.35;
+        hammer.position.set(0, 0.055, 0.085);
+        gunGroup.add(hammer);
+
+        // Trigger Guard & Smooth Combat Trigger
+        const trigGuard = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.005, 8, 16, Math.PI), matPolishedNickel);
+        trigGuard.rotation.x = Math.PI;
+        trigGuard.position.set(0, -0.035, 0.02);
+        gunGroup.add(trigGuard);
+
+        const trigger = new THREE.Mesh(new THREE.BoxGeometry(0.007, 0.024, 0.014), matDarkSight);
+        trigger.position.set(0, -0.028, 0.02);
+        gunGroup.add(trigger);
+
+        // Ergonomic Checkered Walnut Stock with Thumb Indentation
+        const grip = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.14, 0.075), matWalnutWood);
+        grip.rotation.x = -0.28;
+        grip.position.set(0, -0.075, 0.08);
+        gunGroup.add(grip);
+
+        // S&W Golden Medallion on Both Sides
+        for (const side of [-1, 1]) {
+            const medallion = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.003, 12), matBrassMedallion);
+            medallion.rotation.z = Math.PI / 2;
+            medallion.position.set(side * 0.020, -0.055, 0.07);
+            gunGroup.add(medallion);
+        }
+
+        muzzleFlashLight.position.set(0, 0.038, -0.39);
+    } else if (weaponKey === 'M1911') {
+        // =========================================================
+        // M1911 PISTOL (.45 ACP SERVICE PISTOL)
+        // Faithful reproduction matching user reference photo:
+        // Parkerized combat steel slide with rear cocking serrations,
+        // exposed silver chamber hood ejection port, barrel bushing & recoil plug,
+        // beavertail grip safety, commander hammer, flat walnut wood diamond grip panels.
+        // =========================================================
+        const matM1911Steel = new THREE.MeshStandardMaterial({ color: 0x292d32, metalness: 0.90, roughness: 0.28 });
+        const matChamberSilver = new THREE.MeshStandardMaterial({ color: 0xc6ced6, metalness: 0.96, roughness: 0.16 });
+        const matWalnutGrip = new THREE.MeshStandardMaterial({ color: 0x5a2d14, roughness: 0.62 });
+        const matScrew = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.88, roughness: 0.35 });
+
+        // Slide (Boxy Upper Assembly)
+        const slide = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.048, 0.30), matM1911Steel);
+        slide.position.set(0, 0.036, -0.07);
+        gunGroup.add(slide);
+
+        // Rounded Top Slide Contour
+        const slideCrown = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.30, 16), matM1911Steel);
+        slideCrown.rotation.x = Math.PI / 2;
+        slideCrown.position.set(0, 0.056, -0.07);
+        gunGroup.add(slideCrown);
+
+        // Ejection Port Cutout showing Silver .45 ACP Chamber Hood
+        const chamberHood = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.024, 0.055), matChamberSilver);
+        chamberHood.position.set(0.012, 0.046, -0.015);
+        gunGroup.add(chamberHood);
+
+        // Rear Vertical Cocking Serrations (Machined slide grip grooves)
+        for (let z = 0.02; z <= 0.07; z += 0.011) {
+            for (const s of [-1, 1]) {
+                const groove = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.032, 0.005), matReceiver);
+                groove.position.set(s * 0.019, 0.038, z);
+                gunGroup.add(groove);
+            }
+        }
+
+        // Lower Frame & Dust Cover
+        const lowerFrame = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.038, 0.22), matM1911Steel);
+        lowerFrame.position.set(0, 0.006, -0.05);
+        gunGroup.add(lowerFrame);
+
+        // Muzzle Face: Barrel Bushing & Recoil Spring Plug
+        const barrelFace = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.015, 12), matChamberSilver);
+        barrelFace.rotation.x = Math.PI / 2;
+        barrelFace.position.set(0, 0.044, -0.225);
+        gunGroup.add(barrelFace);
+
+        const recoilPlug = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.012, 12), matM1911Steel);
+        recoilPlug.rotation.x = Math.PI / 2;
+        recoilPlug.position.set(0, 0.022, -0.223);
+        gunGroup.add(recoilPlug);
+
+        // Tactical 3-Dot Combat Sights
+        const frontPost = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.014, 0.018), matM1911Steel);
+        frontPost.position.set(0, 0.078, -0.205);
+        gunGroup.add(frontPost);
+
+        const rearNotch = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.016, 0.022), matM1911Steel);
+        rearNotch.position.set(0, 0.080, 0.072);
+        gunGroup.add(rearNotch);
+
+        // Trigger Guard & Serrated Trigger
+        const tg = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.0045, 8, 16, Math.PI), matM1911Steel);
+        tg.rotation.x = Math.PI;
+        tg.position.set(0, -0.028, -0.02);
+        gunGroup.add(tg);
+
+        const trig = new THREE.Mesh(new THREE.BoxGeometry(0.009, 0.024, 0.016), matM1911Steel);
+        trig.position.set(0, -0.022, -0.02);
+        gunGroup.add(trig);
+
+        // Extended Beavertail Grip Safety & Cocked Hammer
+        const beavertail = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.026, 0.045), matM1911Steel);
+        beavertail.rotation.x = 0.45;
+        beavertail.position.set(0, 0.022, 0.085);
+        gunGroup.add(beavertail);
+
+        const hammer1911 = new THREE.Mesh(new THREE.BoxGeometry(0.010, 0.026, 0.026), matM1911Steel);
+        hammer1911.rotation.x = -0.45;
+        hammer1911.position.set(0, 0.052, 0.090);
+        gunGroup.add(hammer1911);
+
+        // Classic 18-Degree Raked Grip Frame
+        const gripFrame = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.14, 0.068), matM1911Steel);
+        gripFrame.rotation.x = -0.32;
+        gripFrame.position.set(0, -0.075, 0.05);
+        gunGroup.add(gripFrame);
+
+        // Checkered Walnut Wood Grip Panels on Left & Right
+        for (const s of [-1, 1]) {
+            const panel = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.12, 0.055), matWalnutGrip);
+            panel.rotation.x = -0.32;
+            panel.position.set(s * 0.019, -0.073, 0.05);
+            gunGroup.add(panel);
+
+            // Grip Screws
+            for (const yOff of [-0.035, 0.035]) {
+                const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0045, 0.003, 8), matScrew);
+                screw.rotation.z = Math.PI / 2;
+                screw.position.set(s * 0.022, -0.073 + yOff, 0.05 - yOff * 0.32);
+                gunGroup.add(screw);
+            }
+        }
+
+        // Flat Magazine Baseplate at Grip Heel
+        const magBase = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.010, 0.062), matM1911Steel);
+        magBase.position.set(0, -0.146, 0.065);
+        gunGroup.add(magBase);
+
+        muzzleFlashLight.position.set(0, 0.044, -0.24);
+    } else if (weaponKey === 'LUGER_P08') {
+        // =========================================================
+        // LUGER P08 PARABELLUM (9x19mm TOGGLE-LOCK PISTOL)
+        // Faithful reproduction matching user reference photo:
+        // Slender tapered cannon barrel, raised triangular front sight,
+        // iconic articulating toggle-lock knee joint with round knurled pivot knobs,
+        // distinctive steep ~55-degree raked grip angle with checkered walnut wood,
+        // lower lanyard loop and magazine base plug.
+        // =========================================================
+        const matLugerSteel = new THREE.MeshStandardMaterial({ color: 0x20242a, metalness: 0.92, roughness: 0.22 });
+        const matToggleJoints = new THREE.MeshStandardMaterial({ color: 0x181c20, metalness: 0.95, roughness: 0.26 });
+        const matLugerWood = new THREE.MeshStandardMaterial({ color: 0x563018, roughness: 0.65 });
+        const matLugerPin = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.9, roughness: 0.3 });
+
+        // Slender 4" Tapered Cylindrical Barrel
+        const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.015, 0.26, 16), matLugerSteel);
+        barrel.rotation.x = Math.PI / 2;
+        barrel.position.set(0, 0.042, -0.22);
+        gunGroup.add(barrel);
+
+        // Barrel Extension Sleeve / Breech Block Housing
+        const breech = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.036, 0.12), matLugerSteel);
+        breech.position.set(0, 0.042, -0.09);
+        gunGroup.add(breech);
+
+        // Raised Triangular Front Sight Block
+        const sightBlock = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.018, 0.024), matLugerSteel);
+        sightBlock.position.set(0, 0.060, -0.33);
+        gunGroup.add(sightBlock);
+
+        // Iconic Toggle-Lock Mechanism
+        // 1. Front Toggle Link
+        const toggleFront = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.024, 0.075), matToggleJoints);
+        toggleFront.position.set(0, 0.052, -0.045);
+        gunGroup.add(toggleFront);
+
+        // 2. Rear Toggle Link
+        const toggleRear = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.024, 0.075), matToggleJoints);
+        toggleRear.position.set(0, 0.052, 0.028);
+        gunGroup.add(toggleRear);
+
+        // 3. Circular Knurled Knee Joint Knobs on Left & Right Sides
+        const togglePivot = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.042, 16), matToggleJoints);
+        togglePivot.rotation.z = Math.PI / 2;
+        togglePivot.position.set(0, 0.056, -0.008);
+        gunGroup.add(togglePivot);
+
+        for (const s of [-1, 1]) {
+            const knobRing = new THREE.Mesh(new THREE.TorusGeometry(0.015, 0.004, 8, 16), matLugerSteel);
+            knobRing.rotation.y = Math.PI / 2;
+            knobRing.position.set(s * 0.022, 0.056, -0.008);
+            gunGroup.add(knobRing);
+        }
+
+        // Integrated Rear V-Notch Sight
+        const rearVNotch = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.014, 0.018), matLugerSteel);
+        rearVNotch.position.set(0, 0.068, 0.065);
+        gunGroup.add(rearVNotch);
+
+        // Lower Frame Housing & Takedown Lever
+        const lowerFrame = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.038, 0.20), matLugerSteel);
+        lowerFrame.position.set(0, 0.014, -0.04);
+        gunGroup.add(lowerFrame);
+
+        // Circular Trigger Guard & Curved Trigger
+        const trigGuard = new THREE.Mesh(new THREE.TorusGeometry(0.020, 0.004, 8, 16), matLugerSteel);
+        trigGuard.position.set(0, -0.024, -0.02);
+        gunGroup.add(trigGuard);
+
+        const trig = new THREE.Mesh(new THREE.BoxGeometry(0.007, 0.020, 0.012), matLugerSteel);
+        trig.position.set(0, -0.022, -0.02);
+        gunGroup.add(trig);
+
+        // Steep 55-Degree Luger Grip Angle
+        const lugerGrip = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.14, 0.060), matLugerSteel);
+        lugerGrip.rotation.x = -0.62;
+        lugerGrip.position.set(0, -0.070, 0.045);
+        gunGroup.add(lugerGrip);
+
+        // Dark Checkered Walnut Grip Panels
+        for (const s of [-1, 1]) {
+            const panel = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.12, 0.050), matLugerWood);
+            panel.rotation.x = -0.62;
+            panel.position.set(s * 0.018, -0.070, 0.045);
+            gunGroup.add(panel);
+        }
+
+        // Aluminum Magazine Base Plug with Concentric Circular Finger Knobs & Lanyard Ring
+        const magPlug = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.014, 0.048), matLugerSteel);
+        magPlug.position.set(0, -0.138, 0.082);
+        gunGroup.add(magPlug);
+
+        const lanyardLoop = new THREE.Mesh(new THREE.TorusGeometry(0.008, 0.003, 8, 12), matLugerPin);
+        lanyardLoop.position.set(0, -0.152, 0.098);
+        gunGroup.add(lanyardLoop);
+
+        muzzleFlashLight.position.set(0, 0.042, -0.36);
     }
 
     // Operator Gloved Hands
+    const isPistol = (weaponKey === 'SW_MODEL29' || weaponKey === 'M1911' || weaponKey === 'LUGER_P08');
     const handRight = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), matGlove);
     handRight.name = 'handRight';
     if (weaponKey === 'MINIGUN') {
         handRight.position.set(0, -0.05, 0.32);
+    } else if (isPistol) {
+        handRight.position.set(0, -0.09, 0.05);
     } else {
         handRight.position.set(0, -0.12, 0.11);
     }
@@ -922,6 +1354,8 @@ function applyWeaponModel(weaponKey = 'AK47') {
         handLeft.position.set(0.0, 0.01, -0.32); // Holds the forearm pump directly!
     } else if (weaponKey === 'MINIGUN') {
         handLeft.position.set(0, 0.20, 0); // Holds top carry handle bar!
+    } else if (isPistol) {
+        handLeft.position.set(-0.02, -0.09, 0.04); // Supporting left hand wrapped in Weaver stance
     } else {
         handLeft.position.set(-0.05, 0.0, -0.33);
     }
@@ -935,6 +1369,15 @@ function switchPlayerWeapon(weaponKey) {
         if (!isUnlocked && !testModeState.godMode) {
             if (typeof uiManager !== 'undefined' && uiManager && typeof uiManager.addChatMessage === 'function') {
                 uiManager.addChatMessage('HQ', '⚠️ M134 Minigun is LOCKED! Survive Wave 50 to unlock.');
+            }
+            return;
+        }
+    }
+    if (WEAPON_CONFIGS[weaponKey]?.isPistol) {
+        const isOwned = goldManager.isWeaponOwned(weaponKey);
+        if (!isOwned && !testModeState.godMode) {
+            if (typeof uiManager !== 'undefined' && uiManager && typeof uiManager.showToast === 'function') {
+                uiManager.showToast(`⚠️ ${WEAPON_CONFIGS[weaponKey].name} is LOCKED! Unlock it in the Weapons Shop.`, 2500);
             }
             return;
         }
@@ -1445,6 +1888,12 @@ function startReload() {
         soundEngine.playShotgunShellInsert();
     } else if (currentWeapon.id === 'SNIPER') {
         soundEngine.playSniperReload();
+    } else if (currentWeapon.id === 'SW_MODEL29') {
+        soundEngine.playRevolverReload();
+    } else if (currentWeapon.id === 'M1911') {
+        soundEngine.playM1911Reload();
+    } else if (currentWeapon.id === 'LUGER_P08') {
+        soundEngine.playLugerReload();
     } else {
         soundEngine.playReloadMagOut();
     }
@@ -1479,8 +1928,8 @@ function updateReload(delta) {
             soundEngine.playShotgunPump();
             reloadPhase = 1;
         }
-    } else if (currentWeapon.id === 'SNIPER') {
-        // Handled via soundEngine.playSniperReload()
+    } else if (currentWeapon.id === 'SNIPER' || currentWeapon.id === 'SW_MODEL29' || currentWeapon.id === 'M1911' || currentWeapon.id === 'LUGER_P08') {
+        // Handled via respective dedicated audio.js sequencing
     } else {
         if (reloadTimer <= 1.2 && reloadPhase === 0) {
             soundEngine.playReloadMagIn();
@@ -1644,6 +2093,9 @@ window.addEventListener('keydown', e => {
         else if (e.code === 'Digit2') switchPlayerWeapon('SNIPER');
         else if (e.code === 'Digit3') switchPlayerWeapon('SHOTGUN');
         else if (e.code === 'Digit4') switchPlayerWeapon('MINIGUN');
+        else if (e.code === 'Digit5') switchPlayerWeapon('SW_MODEL29');
+        else if (e.code === 'Digit6') switchPlayerWeapon('M1911');
+        else if (e.code === 'Digit7') switchPlayerWeapon('LUGER_P08');
     }
 
     if (e.code === 'KeyR' && gameStarted) {
@@ -1742,6 +2194,14 @@ function performShootRaycast(bulletDir) {
                 targets.push(rp.mesh);
                 targetMap.set(rp.mesh, { type: 'player', peerId: peerId, object: rp });
             }
+        }
+    }
+
+    // 4. Shootable Rooftop Donut Targets
+    if (window.donutTargets && window.donutTargets.length > 0) {
+        for (const dt of window.donutTargets) {
+            targets.push(dt);
+            targetMap.set(dt, { type: 'donut', object: dt });
         }
     }
 
@@ -1845,6 +2305,8 @@ function shoot() {
         } else {
             soundEngine.playRifleShot(aiming);
         }
+    } else if (currentWeapon.id === 'SW_MODEL29' || currentWeapon.id === 'M1911' || currentWeapon.id === 'LUGER_P08') {
+        soundEngine.playPistolFire(aiming);
     } else {
         soundEngine.playRifleShot(aiming);
     }
@@ -1889,6 +2351,8 @@ function shoot() {
                     createHitEffect(hitData.point);
                     playerHits.set(hitData.peerId, (playerHits.get(hitData.peerId) || 0) + currentWeapon.damage);
                 }
+            } else if (hitData.type === 'donut' || (hitData.object && hitData.object.userData && hitData.object.userData.isDonut)) {
+                explodeDonut(hitData.object, hitData.point);
             } else if (hitData.type === 'obstacle') {
                 let worldNormal = new THREE.Vector3(0, 1, 0);
                 if (hitData.face && hitData.object) {
@@ -1935,9 +2399,7 @@ function shoot() {
             });
         } else {
             vehicleManager.damageVehicle(car, dmg, () => {
-                kills += 3;
-                achievementManager.unlock('VEHICLE_BUSTER');
-                uiManager.updateHUD(getHUDState());
+                handleVehicleDestroyed(car);
             });
         }
     }
@@ -2061,9 +2523,18 @@ function explodeGrenadeAt(grenadeData) {
         const dmg = grenadePhysics.calculateDamage(dist);
         if (dmg > 0) {
             vehicleManager.damageVehicle(car, dmg, () => {
-                kills += 3;
-                achievementManager.unlock('VEHICLE_BUSTER');
+                handleVehicleDestroyed(car);
             });
+        }
+    }
+
+    if (window.donutTargets && window.donutTargets.length > 0) {
+        for (const dt of [...window.donutTargets]) {
+            const worldPos = new THREE.Vector3();
+            dt.getWorldPosition(worldPos);
+            if (worldPos.distanceTo(pos) < 9.0) {
+                explodeDonut(dt, pos);
+            }
         }
     }
 

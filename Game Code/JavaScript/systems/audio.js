@@ -81,7 +81,8 @@ class SoundEngine {
             'shotgunPump': 'gun-sounds/shotgun-reload.mp3',
             'sniperFire': 'gun-sounds/sniper-fire.mp3',
             'sniperReload': 'gun-sounds/sniper-reload.mp3',
-            'minigunFire': 'gun-sounds/minigun-fire.mp3'
+            'minigunFire': 'gun-sounds/minigun-fire.mp3',
+            'pistolFire': 'gun-sounds/8d82b5_Colt_1911_Firing_Sound_Effect.mp3'
         };
 
         for (const [key, path] of Object.entries(files)) {
@@ -162,7 +163,8 @@ class SoundEngine {
             'shotgunPump': 'gun-sounds/shotgun-reload.mp3',
             'sniperFire': 'gun-sounds/sniper-fire.mp3',
             'sniperReload': 'gun-sounds/sniper-reload.mp3',
-            'minigunFire': 'gun-sounds/minigun-fire.mp3'
+            'minigunFire': 'gun-sounds/minigun-fire.mp3',
+            'pistolFire': 'gun-sounds/8d82b5_Colt_1911_Firing_Sound_Effect.mp3'
         };
 
         const src = pathMap[key];
@@ -587,6 +589,200 @@ class SoundEngine {
         }
 
         this.playGunSample('shotgunPump');
+    }
+
+    /**
+     * Pistol Gunshot Sound (.45 Colt / 9mm / .44 Magnum)
+     * Uses user-attached Colt 1911 sound asset with zero-latency buffer and synthesis fallback.
+     */
+    playPistolFire(scoped = false) {
+        this.init();
+        this.resume();
+
+        const t = this.ctx ? this.ctx.currentTime : 0;
+
+        if (this.ctx && this.audioBuffers['pistolFire']) {
+            const source = this.ctx.createBufferSource();
+            source.buffer = this.audioBuffers['pistolFire'];
+            const gainNode = this.ctx.createGain();
+            gainNode.gain.setValueAtTime(this.gunVolume * 1.05, t); // 30% volume scale
+            source.connect(gainNode);
+            gainNode.connect(this.ctx.destination);
+            source.start(t);
+            return;
+        }
+
+        // Procedural synthesis fallback (crisp high-pressure handgun gunshot)
+        if (this.ctx) {
+            const mainGain = this.ctx.createGain();
+            mainGain.gain.setValueAtTime(this.gunVolume * 0.5, t);
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = this.createNoiseBuffer(0.25);
+            const crack = this.ctx.createOscillator();
+            crack.type = 'triangle';
+            crack.frequency.setValueAtTime(240, t);
+            crack.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+            const comp = this.ctx.createDynamicsCompressor();
+            noise.connect(mainGain);
+            crack.connect(mainGain);
+            mainGain.connect(comp);
+            comp.connect(this.ctx.destination);
+            noise.start(t);
+            crack.start(t);
+        }
+
+        this.playGunSample('pistolFire');
+    }
+
+    /**
+     * S&W Model 29 .44 Magnum Revolver Reload
+     * Cylinder swing out, ejector rod push, spent brass casings dump, speedloader/cartridge insert, cylinder swing shut lock, hammer cock.
+     */
+    playRevolverReload() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        const t = this.ctx.currentTime;
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.setValueAtTime(this.gunVolume * 0.85, t);
+        mainGain.connect(this.ctx.destination);
+
+        // 1. (t = 0.0s) Cylinder thumb-latch release & cylinder swing out click
+        const latchOsc = this.ctx.createOscillator();
+        const latchGain = this.ctx.createGain();
+        latchOsc.type = 'triangle';
+        latchOsc.frequency.setValueAtTime(1400, t);
+        latchOsc.frequency.exponentialRampToValueAtTime(500, t + 0.07);
+        latchGain.gain.setValueAtTime(0.4, t);
+        latchGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        latchOsc.connect(latchGain);
+        latchGain.connect(mainGain);
+        latchOsc.start(t);
+        latchOsc.stop(t + 0.09);
+
+        // 2. (t = 0.55s) Ejector rod push & brass shell dump clatter
+        setTimeout(() => {
+            if (!this.ctx) return;
+            this.playShellCasingDrop();
+            setTimeout(() => this.playShellCasingDrop(), 90);
+        }, 550);
+
+        // 3. (t = 1.35s) Fresh .44 cartridges inserted into steel chambers
+        setTimeout(() => {
+            if (!this.ctx) return;
+            const t3 = this.ctx.currentTime;
+            const insNoise = this.ctx.createBufferSource();
+            insNoise.buffer = this.createNoiseBuffer(0.12);
+            const insFilter = this.ctx.createBiquadFilter();
+            insFilter.type = 'bandpass';
+            insFilter.frequency.setValueAtTime(1800, t3);
+            const insGain = this.ctx.createGain();
+            insGain.gain.setValueAtTime(0.35, t3);
+            insGain.gain.exponentialRampToValueAtTime(0.001, t3 + 0.11);
+            insNoise.connect(insFilter);
+            insFilter.connect(insGain);
+            insGain.connect(this.ctx.destination);
+            insNoise.start(t3);
+            insNoise.stop(t3 + 0.12);
+        }, 1350);
+
+        // 4. (t = 2.05s) Cylinder swings shut and locks into crane with firm click
+        setTimeout(() => {
+            if (!this.ctx) return;
+            const t4 = this.ctx.currentTime;
+            const shutOsc = this.ctx.createOscillator();
+            const shutGain = this.ctx.createGain();
+            shutOsc.type = 'triangle';
+            shutOsc.frequency.setValueAtTime(750, t4);
+            shutOsc.frequency.exponentialRampToValueAtTime(220, t4 + 0.09);
+            shutGain.gain.setValueAtTime(0.65, t4);
+            shutGain.gain.exponentialRampToValueAtTime(0.001, t4 + 0.10);
+            shutOsc.connect(shutGain);
+            shutGain.connect(this.ctx.destination);
+            shutOsc.start(t4);
+            shutOsc.stop(t4 + 0.11);
+        }, 2050);
+
+        // 5. (t = 2.35s) Hammer cocked into position
+        setTimeout(() => {
+            if (!this.ctx) return;
+            const t5 = this.ctx.currentTime;
+            const cockOsc = this.ctx.createOscillator();
+            const cockGain = this.ctx.createGain();
+            cockOsc.type = 'sine';
+            cockOsc.frequency.setValueAtTime(1900, t5);
+            cockOsc.frequency.exponentialRampToValueAtTime(1200, t5 + 0.05);
+            cockGain.gain.setValueAtTime(0.35, t5);
+            cockGain.gain.exponentialRampToValueAtTime(0.001, t5 + 0.06);
+            cockOsc.connect(cockGain);
+            cockGain.connect(this.ctx.destination);
+            cockOsc.start(t5);
+            cockOsc.stop(t5 + 0.07);
+        }, 2350);
+    }
+
+    /**
+     * M1911 Pistol Semi-Auto Reload
+     * Mag release button click, single-stack steel magazine drop, fresh mag slam into well, slide release snap forward.
+     */
+    playM1911Reload() {
+        this.init();
+        this.resume();
+        this.playReloadMagOut();
+        setTimeout(() => this.playReloadMagIn(), 750);
+        setTimeout(() => this.playBoltRelease(), 1400);
+    }
+
+    /**
+     * Luger P08 Pistol Precision Toggle-Lock Reload
+     * Magazine heel release, mag drop, fresh magazine seating, dual-toggle joint pull up and snap forward into locked battery.
+     */
+    playLugerReload() {
+        this.init();
+        this.resume();
+        if (!this.ctx) return;
+
+        // 1. (t = 0.0s) Magazine bottom release catch click
+        this.playReloadMagOut();
+
+        // 2. (t = 0.75s) Magazine inserted into steep angled grip
+        setTimeout(() => {
+            this.playReloadMagIn();
+        }, 750);
+
+        // 3. (t = 1.45s) Toggle lock knee joints pull upward & snap into horizontal locked battery ("clack-click")
+        setTimeout(() => {
+            if (!this.ctx) return;
+            const t3 = this.ctx.currentTime;
+            
+            // First knee joint click
+            const toggle1 = this.ctx.createOscillator();
+            const toggleGain1 = this.ctx.createGain();
+            toggle1.type = 'triangle';
+            toggle1.frequency.setValueAtTime(1800, t3);
+            toggle1.frequency.exponentialRampToValueAtTime(800, t3 + 0.04);
+            toggleGain1.gain.setValueAtTime(0.45 * this.gunVolume, t3);
+            toggleGain1.gain.exponentialRampToValueAtTime(0.001, t3 + 0.05);
+            toggle1.connect(toggleGain1);
+            toggleGain1.connect(this.ctx.destination);
+            toggle1.start(t3);
+            toggle1.stop(t3 + 0.06);
+
+            // Second battery lock snap (0.08s later)
+            const t4 = t3 + 0.08;
+            const toggle2 = this.ctx.createOscillator();
+            const toggleGain2 = this.ctx.createGain();
+            toggle2.type = 'sawtooth';
+            toggle2.frequency.setValueAtTime(1100, t4);
+            toggle2.frequency.exponentialRampToValueAtTime(320, t4 + 0.06);
+            toggleGain2.gain.setValueAtTime(0.55 * this.gunVolume, t4);
+            toggleGain2.gain.exponentialRampToValueAtTime(0.001, t4 + 0.07);
+            toggle2.connect(toggleGain2);
+            toggleGain2.connect(this.ctx.destination);
+            toggle2.start(t4);
+            toggle2.stop(t4 + 0.08);
+        }, 1450);
     }
 
     /**

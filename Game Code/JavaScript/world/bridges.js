@@ -53,11 +53,10 @@ export function getBridgeElevation(x, z) {
                 // On flat elevated bridge deck
                 return b.deckY;
             } else if (Math.abs(zRel) <= totalHalf) {
-                // On transition approach ramp
+                // On linear transition approach ramp
                 const rampDist = totalHalf - Math.abs(zRel);
                 const t = Math.max(0, Math.min(1, rampDist / b.rampLength));
-                const smoothT = 0.5 - 0.5 * Math.cos(t * Math.PI);
-                return 0.04 + (b.deckY - 0.04) * smoothT;
+                return 0.04 + (b.deckY - 0.04) * t;
             }
         }
     }
@@ -172,7 +171,7 @@ export function buildBridges(scene, staticRaycastTargets = []) {
 
             const rampMesh = new THREE.Mesh(new THREE.BoxGeometry(b.width, 0.06, rampL), asphaltMat);
             rampMesh.position.set(0, (b.deckY + 0.04) / 2 + 0.03, 0);
-            rampMesh.rotation.x = -rDir * rampAngle;
+            rampMesh.rotation.x = rDir * rampAngle;
             rampMesh.receiveShadow = true;
             rampGroup.add(rampMesh);
 
@@ -180,7 +179,7 @@ export function buildBridges(scene, staticRaycastTargets = []) {
                 const sideX = side * (b.width / 2 + sideW / 2);
                 const rampCurb = new THREE.Mesh(new THREE.BoxGeometry(sideW, 0.20, rampL), concreteMat);
                 rampCurb.position.set(sideX, (b.deckY + 0.04) / 2 + 0.10, 0);
-                rampCurb.rotation.x = -rDir * rampAngle;
+                rampCurb.rotation.x = rDir * rampAngle;
                 rampCurb.receiveShadow = true;
                 rampGroup.add(rampCurb);
             }
@@ -190,7 +189,9 @@ export function buildBridges(scene, staticRaycastTargets = []) {
 
         bridgeGroup.add(bGroup);
         if (staticRaycastTargets) {
-            staticRaycastTargets.push(bGroup);
+            bGroup.traverse(child => {
+                if (child.isMesh) staticRaycastTargets.push(child);
+            });
         }
     }
 

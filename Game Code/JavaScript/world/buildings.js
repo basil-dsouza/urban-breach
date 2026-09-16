@@ -544,19 +544,22 @@ function createGiantDonutDiner({ x, z, rotY = 0 }) {
     trussCross.position.set(0, height + 3.2, 0);
     group.add(trussCross);
 
-    // 7. GIANT 3D FROSTED DONUT WITH COLORFUL SPRINKLES
+    // 7. GIANT 3D FROSTED DONUT WITH COLORFUL SPRINKLES (SHOOTABLE EASTER EGG)
+    const donutAssembly = new THREE.Group();
+    donutAssembly.name = 'donut_sign_assembly';
+    donutAssembly.position.set(0, height + 5.6, 0);
+
     const donutDoughMat = new THREE.MeshStandardMaterial({ color: 0xdfa064, roughness: 0.82 });
     const donutFrostingMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.32 });
 
     const donut = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.95, 16, 32), donutDoughMat);
-    donut.position.set(0, height + 5.6, 0);
     donut.castShadow = true;
-    group.add(donut);
+    donutAssembly.add(donut);
 
     const frosting = new THREE.Mesh(new THREE.TorusGeometry(2.42, 0.98, 16, 32, Math.PI * 1.85), donutFrostingMat);
-    frosting.position.set(0, height + 5.6, 0.05);
+    frosting.position.set(0, 0, 0.05);
     frosting.rotation.z = 0.1;
-    group.add(frosting);
+    donutAssembly.add(frosting);
 
     // Colorful Rainbow Sprinkles
     const sprinkleColors = [0xff3344, 0xf1c40f, 0x0984e3, 0x2ecc71, 0x9b59b6, 0xe67e22];
@@ -566,10 +569,28 @@ function createGiantDonutDiner({ x, z, rotY = 0 }) {
         const sprinkle = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.32, 0.08), sMat);
         const ang = (i / 48) * Math.PI * 2;
         const rad = 2.4 + (Math.sin(i * 3) * 0.45);
-        sprinkle.position.set(Math.cos(ang) * rad, height + 5.6 + Math.sin(ang) * rad, 0.98);
+        sprinkle.position.set(Math.cos(ang) * rad, Math.sin(ang) * rad, 0.98);
         sprinkle.rotation.z = Math.sin(i * 7) * Math.PI;
-        group.add(sprinkle);
+        donutAssembly.add(sprinkle);
     }
+
+    donutAssembly.userData = {
+        isDonut: true,
+        parentGroup: group,
+        exploded: false,
+        x,
+        z,
+        y: height + 5.6
+    };
+    donut.userData = { isDonut: true, assembly: donutAssembly };
+    frosting.userData = { isDonut: true, assembly: donutAssembly };
+
+    if (typeof window !== 'undefined') {
+        window.donutTargets = window.donutTargets || [];
+        window.donutTargets.push(donutAssembly, donut, frosting);
+    }
+
+    group.add(donutAssembly);
 
     // Rooftop HVAC Unit
     const hvac = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 1.8), darkTrimMat);

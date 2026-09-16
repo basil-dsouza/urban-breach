@@ -145,6 +145,9 @@ export class TestModeManager {
                 const entered = authInput.value;
                 if (verifyTestModePassword(entered)) {
                     testModeState.isUnlocked = true;
+                    if (typeof window !== 'undefined') {
+                        window.testModeUsed = true;
+                    }
                     try { sessionStorage.setItem('ub_test_mode_unlocked', '1'); } catch (err) {}
                     achievementManager.unlock('SECRET_AUTH');
                     authFeedback.textContent = 'ACCESS GRANTED // INITIALIZING TEST CONSOLE...';

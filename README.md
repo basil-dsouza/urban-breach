@@ -179,8 +179,7 @@ Play cooperatively with friends online or over restricted local networks via pee
 
 A hidden developer console built directly into the game for testing and balance tuning:
 
-* **Location**: Secret anomaly hotspot located near the police station perimeter (or bottom-right corner / F2 key).
-* **Authentication**: Secured with developer password (`raphael_tester123`), automatically revealed to players who survive past Wave 100.
+* **Status**: Highly classified developer console protected by secure authorization protocols.
 * **Game Pause**: Opening the test console freezes the entire game world so you can adjust parameters safely without taking damage.
 * **Capabilities**:
   * **Wave Jump**: Instantly jump to any wave (Wave 1 to 50+).

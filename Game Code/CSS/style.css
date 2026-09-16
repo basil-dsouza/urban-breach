@@ -2740,3 +2740,273 @@ body {
     }
 }
 
+/* =========================================================
+   WEAPONS ARSENAL SHOP & GOLD ECONOMY STYLES
+   ========================================================= */
+
+.shop-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(4, 7, 12, 0.88);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100000;
+    animation: shopFadeIn 0.25s ease-out;
+}
+
+@keyframes shopFadeIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.shop-modal-card {
+    width: 92%;
+    max-width: 980px;
+    max-height: 90vh;
+    background: linear-gradient(180deg, #0f172a 0%, #090d16 100%);
+    border: 2px solid rgba(234, 179, 8, 0.4);
+    box-shadow: 0 0 45px rgba(234, 179, 8, 0.2), 0 20px 50px rgba(0, 0, 0, 0.85);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.shop-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 28px;
+    background: rgba(15, 23, 42, 0.9);
+    border-bottom: 1px solid rgba(234, 179, 8, 0.25);
+}
+
+.shop-modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.shop-modal-title {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #ffd700;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.shop-gold-badge {
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.25), rgba(202, 138, 4, 0.15));
+    border: 1.5px solid #eab308;
+    color: #fef08a;
+    padding: 8px 18px;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    box-shadow: 0 0 16px rgba(234, 179, 8, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.shop-modal-close {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #94a3b8;
+    font-size: 20px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.shop-modal-close:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+    transform: scale(1.08);
+}
+
+.shop-subheader {
+    padding: 14px 28px;
+    background: rgba(234, 179, 8, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 13px;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+.shop-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 24px 28px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.shop-card {
+    background: rgba(18, 26, 43, 0.85);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.shop-card:hover {
+    border-color: rgba(234, 179, 8, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(234, 179, 8, 0.15);
+}
+
+.shop-card.owned {
+    border-color: rgba(0, 229, 255, 0.4);
+}
+
+.shop-card.equipped {
+    border-color: #00e5ff;
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.35);
+    background: linear-gradient(180deg, rgba(0, 229, 255, 0.1) 0%, rgba(18, 26, 43, 0.9) 100%);
+}
+
+.shop-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.shop-card-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: 0.8px;
+}
+
+.shop-card-price {
+    font-size: 14px;
+    font-weight: 800;
+    color: #ffd700;
+    background: rgba(234, 179, 8, 0.15);
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.shop-card-desc {
+    font-size: 12.5px;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.shop-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.shop-stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.shop-stat-label {
+    font-size: 10.5px;
+    color: #64748b;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.shop-stat-val {
+    font-size: 13px;
+    color: #e2e8f0;
+    font-weight: 800;
+}
+
+.shop-card-actions {
+    margin-top: auto;
+}
+
+.shop-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.shop-btn-buy {
+    background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+    border: none;
+    color: #0f172a;
+    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.3);
+}
+
+.shop-btn-buy:hover:not(:disabled) {
+    background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(234, 179, 8, 0.5);
+}
+
+.shop-btn-buy:disabled {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #64748b;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.shop-btn-equip {
+    background: rgba(0, 229, 255, 0.12);
+    border: 1.5px solid rgba(0, 229, 255, 0.5);
+    color: #00e5ff;
+}
+
+.shop-btn-equip:hover {
+    background: #00e5ff;
+    color: #090d16;
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+}
+
+.shop-btn-equipped {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1.5px solid #10b981;
+    color: #34d399;
+    cursor: default;
+}
+
+.shop-modal-footer {
+    padding: 16px 28px;
+    background: rgba(15, 23, 42, 0.9);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+

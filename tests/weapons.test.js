@@ -1,14 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { WEAPON_CONFIGS } from '../Game Code/JavaScript/systems/ui.js';
 
-describe('Weapon Arsenal Configuration (AK-47, Barrett .50 Cal, M590 Shotgun, & M134 Minigun)', () => {
-    it('should have all weapons defined including unlockable M134 Minigun', () => {
+describe('Weapon Arsenal Configuration (Primaries & Armory Handguns)', () => {
+    it('should have all 7 weapons defined including M134 Minigun and the 3 Armory pistols', () => {
         const keys = Object.keys(WEAPON_CONFIGS);
         expect(keys).toContain('AK47');
         expect(keys).toContain('SNIPER');
         expect(keys).toContain('SHOTGUN');
         expect(keys).toContain('MINIGUN');
-        expect(keys.length).toBe(4);
+        expect(keys).toContain('SW_MODEL29');
+        expect(keys).toContain('M1911');
+        expect(keys).toContain('LUGER_P08');
+        expect(keys.length).toBe(7);
     });
 
     it('should configure AK-47 for tactical rapid assault rifle combat', () => {
@@ -56,4 +59,40 @@ describe('Weapon Arsenal Configuration (AK-47, Barrett .50 Cal, M590 Shotgun, & 
         expect(minigun.aimFOV).toBe(70); // no scope (near normal 75 FOV)
         expect(minigun.spread).toBeDefined();
     });
+
+    it('should configure Smith & Wesson Model 29 based on real characteristics at exactly 200 Gold', () => {
+        const sw = WEAPON_CONFIGS.SW_MODEL29;
+        expect(sw.id).toBe('SW_MODEL29');
+        expect(sw.price).toBe(200); // Exactly 200 Gold as required
+        expect(sw.ammo).toBe(6); // 6-shot cylinder
+        expect(sw.maxAmmo).toBe(6);
+        expect(sw.damage).toBe(115); // High kinetic .44 Magnum punch
+        expect(sw.isPistol).toBe(true);
+        expect(sw.reloadTime).toBe(2.6);
+    });
+
+    it('should configure M1911 Pistol based on real characteristics at exactly 400 Gold', () => {
+        const colt = WEAPON_CONFIGS.M1911;
+        expect(colt.id).toBe('M1911');
+        expect(colt.price).toBe(400); // Exactly 400 Gold as required
+        expect(colt.ammo).toBe(7); // 7-round single-stack magazine
+        expect(colt.maxAmmo).toBe(7);
+        expect(colt.damage).toBe(60);
+        expect(colt.fireRate).toBe(0.18);
+        expect(colt.isPistol).toBe(true);
+        expect(colt.reloadTime).toBe(1.8);
+    });
+
+    it('should configure Luger P08 based on real characteristics at exactly 600 Gold', () => {
+        const luger = WEAPON_CONFIGS.LUGER_P08;
+        expect(luger.id).toBe('LUGER_P08');
+        expect(luger.price).toBe(600); // Exactly 600 Gold as required
+        expect(luger.ammo).toBe(8); // 8-round magazine
+        expect(luger.maxAmmo).toBe(8);
+        expect(luger.damage).toBe(48);
+        expect(luger.fireRate).toBe(0.14);
+        expect(luger.isPistol).toBe(true);
+        expect(luger.reloadTime).toBe(2.0);
+    });
 });
+
