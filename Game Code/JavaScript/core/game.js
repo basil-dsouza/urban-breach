@@ -815,7 +815,7 @@ function applyWeaponModel(weaponKey = 'AK47') {
 
         muzzleFlashLight.position.set(0, 0.054, -0.85);
 
-    } else if (weaponKey !== 'MINIGUN') {
+    } else if (weaponKey === 'AK47') {
         // =========================================================
         // AK-47 SOVIET TACTICAL ASSAULT RIFLE
         // =========================================================
@@ -898,7 +898,7 @@ function applyWeaponModel(weaponKey = 'AK47') {
         gunGroup.add(pistolGrip);
 
         muzzleFlashLight.position.set(0, 0.026, -1.02);
-    } else {
+    } else if (weaponKey === 'MINIGUN') {
         // =========================================================
         // M134 VULCAN 6-BARREL ROTARY MINIGUN (MATCHING REFERENCE IMAGE)
         // =========================================================
