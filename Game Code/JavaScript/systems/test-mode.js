@@ -6,12 +6,14 @@
  */
 
 import { achievementManager } from './achievements.js';
+import { goldManager } from './gold.js';
 
 export const TEST_MODE_PASSWORD = 'raphael_tester123';
 
 export const testModeState = {
     isUnlocked: false,
     isOpen: false,
+    hasUsedHacks: false,
     // Cheats
     godMode: false,
     infiniteAmmo: false,
@@ -30,6 +32,13 @@ export const testModeState = {
     spawnLocation: 'front', // 'front', 'around', 'random'
     bossLevel: 1
 };
+
+export function markHackUsed(action = '') {
+    testModeState.hasUsedHacks = true;
+    if (typeof window !== 'undefined') {
+        window.testModeHacksUsed = true;
+    }
+}
 
 // Check if previously unlocked in this browser session
 if (typeof sessionStorage !== 'undefined') {
@@ -145,9 +154,6 @@ export class TestModeManager {
                 const entered = authInput.value;
                 if (verifyTestModePassword(entered)) {
                     testModeState.isUnlocked = true;
-                    if (typeof window !== 'undefined') {
-                        window.testModeUsed = true;
-                    }
                     try { sessionStorage.setItem('ub_test_mode_unlocked', '1'); } catch (err) {}
                     achievementManager.unlock('SECRET_AUTH');
                     authFeedback.textContent = 'ACCESS GRANTED // INITIALIZING TEST CONSOLE...';
@@ -363,12 +369,37 @@ export class TestModeManager {
                         <button id="btn-cheat-reset-progress" class="test-btn-action red">🗑️ RESET ACHIEVEMENTS & MINIGUN</button>
                     </div>
 
+                    <div class="test-divider"></div>
+                    <div class="test-section-title">🪙 GOLD ECONOMY CHEAT (SESSION ONLY)</div>
+                    <div class="test-row-form">
+                        <label>Grant Gold (Ephemeral — Discarded on leaving tab):</label>
+                        <div class="test-input-inline">
+                            <input type="number" id="test-gold-cheat-input" min="1" max="999999" value="500" />
+                            <button id="btn-cheat-add-gold" class="test-btn-action amber">➕ GRANT GOLD</button>
+                            <button id="btn-cheat-clear-gold" class="test-btn-action red">RESET CHEAT GOLD</button>
+                        </div>
+                    </div>
+                    <div class="test-button-grid" style="margin-top: 8px;">
+                        <button class="test-btn-action amber test-btn-quick-gold" data-amount="100">+100 🪙</button>
+                        <button class="test-btn-action amber test-btn-quick-gold" data-amount="200">+200 🪙 (Model 29)</button>
+                        <button class="test-btn-action amber test-btn-quick-gold" data-amount="400">+400 🪙 (M1911)</button>
+                        <button class="test-btn-action amber test-btn-quick-gold" data-amount="600">+600 🪙 (Luger P08)</button>
+                        <button class="test-btn-action amber test-btn-quick-gold" data-amount="1000">+1,000 🪙</button>
+                    </div>
+                    <div id="test-gold-status-banner" style="margin-top: 8px; font-size: 11px; padding: 6px 10px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 4px; color: #fbbf24; line-height: 1.4;">
+                        ℹ️ <strong>Session Cheat Gold:</strong> <span id="test-cheat-gold-val">0</span> 🪙 | <strong>Persistent Gold:</strong> <span id="test-persistent-gold-val">0</span> 🪙<br/>
+                        <span style="opacity: 0.85;">Cheat gold is temporary for testing weapons in the shop and is discarded when you leave/refresh the tab. Legitimate combat gold awards are paused while cheats are active.</span>
+                    </div>
+
                     <div class="test-section-title" style="margin-top:10px;">WEAPON SWITCHER</div>
                     <div class="test-weapon-switch-row">
                         <button class="test-btn-pill weapon active" data-weapon="AK47">🔫 AK-47 RIFLE</button>
                         <button class="test-btn-pill weapon" data-weapon="SNIPER">🎯 BARRETT .50 SNIPER</button>
                         <button class="test-btn-pill weapon" data-weapon="SHOTGUN">💥 M590 SHOTGUN</button>
                         <button class="test-btn-pill weapon" data-weapon="MINIGUN" style="border-color: rgba(16, 185, 129, 0.6); color: #10b981;">⚙️ M134 MINIGUN</button>
+                        <button class="test-btn-pill weapon" data-weapon="SW_MODEL29" style="border-color: rgba(220, 229, 237, 0.6); color: #dde5ed;">🤠 S&W MODEL 29</button>
+                        <button class="test-btn-pill weapon" data-weapon="M1911" style="border-color: rgba(156, 163, 175, 0.6); color: #cbd5e1;">🎯 M1911 PISTOL</button>
+                        <button class="test-btn-pill weapon" data-weapon="LUGER_P08" style="border-color: rgba(180, 160, 120, 0.6); color: #e2d9c8;">⚡ LUGER P08</button>
                     </div>
 
                     <div class="test-section-title" style="margin-top:10px;">TACTICAL TELEPORTATION</div>
@@ -440,6 +471,9 @@ export class TestModeManager {
                 if (this.activeTab === 'telemetry') {
                     this.updateTelemetry();
                 }
+                if (this.activeTab === 'cheats') {
+                    this.updateGoldCheatDisplay();
+                }
             });
         });
 
@@ -450,6 +484,7 @@ export class TestModeManager {
         // Quick Wave Pills
         panel.querySelectorAll('.test-quick-waves-group .test-btn-pill').forEach(btn => {
             btn.addEventListener('click', () => {
+                markHackUsed('jumpWave');
                 const w = parseInt(btn.dataset.wave, 10);
                 if (this.api.setWave) this.api.setWave(w);
                 panel.querySelector('#test-wave-input').value = w;
@@ -461,6 +496,7 @@ export class TestModeManager {
         panel.querySelector('#btn-test-jump-wave').addEventListener('click', () => {
             const w = parseInt(waveInput.value, 10);
             if (!isNaN(w) && w >= 1 && this.api.setWave) {
+                markHackUsed('jumpWave');
                 this.api.setWave(w);
             }
         });
@@ -468,20 +504,24 @@ export class TestModeManager {
             let w = parseInt(waveInput.value, 10) || 1;
             w = Math.max(1, w - 1);
             waveInput.value = w;
+            markHackUsed('jumpWave');
             if (this.api.setWave) this.api.setWave(w);
         });
         panel.querySelector('#btn-test-next-wave').addEventListener('click', () => {
             let w = parseInt(waveInput.value, 10) || 1;
             w = w + 1;
             waveInput.value = w;
+            markHackUsed('jumpWave');
             if (this.api.setWave) this.api.setWave(w);
         });
 
         // Wave Flow Controls
         panel.querySelector('#btn-test-spawn-wave').addEventListener('click', () => {
+            markHackUsed('spawnWave');
             if (this.api.spawnWaveNow) this.api.spawnWaveNow();
         });
         panel.querySelector('#btn-test-clear-wave').addEventListener('click', () => {
+            markHackUsed('clearWave');
             if (this.api.clearAllEnemies) this.api.clearAllEnemies();
         });
 
@@ -489,6 +529,7 @@ export class TestModeManager {
         const btnFreezeTimer = panel.querySelector('#btn-test-freeze-timer');
         btnFreezeTimer.addEventListener('click', () => {
             testModeState.freezeWaveTimer = !testModeState.freezeWaveTimer;
+            if (testModeState.freezeWaveTimer) markHackUsed('freezeWaveTimer');
             btnFreezeTimer.textContent = testModeState.freezeWaveTimer ? '▶ FREEZE WAVE TIMER: ON (FROZEN)' : '⏸ FREEZE WAVE TIMER: OFF';
             btnFreezeTimer.classList.toggle('active', testModeState.freezeWaveTimer);
             if (this.api.setWaveTimerFrozen) this.api.setWaveTimerFrozen(testModeState.freezeWaveTimer);
@@ -523,15 +564,19 @@ export class TestModeManager {
 
         // Spawn Buttons
         panel.querySelector('#btn-spawn-gunner').addEventListener('click', () => {
+            markHackUsed('spawnEnemy');
             if (this.api.spawnEnemy) this.api.spawnEnemy('gunner', testModeState.spawnCount, testModeState.spawnLocation);
         });
         panel.querySelector('#btn-spawn-knifer').addEventListener('click', () => {
+            markHackUsed('spawnEnemy');
             if (this.api.spawnEnemy) this.api.spawnEnemy('knife', testModeState.spawnCount, testModeState.spawnLocation);
         });
         panel.querySelector('#btn-spawn-boss').addEventListener('click', () => {
+            markHackUsed('spawnBoss');
             if (this.api.spawnBoss) this.api.spawnBoss(testModeState.bossLevel, testModeState.spawnLocation);
         });
         panel.querySelector('#btn-spawn-car').addEventListener('click', () => {
+            markHackUsed('spawnCar');
             if (this.api.spawnVehicle) this.api.spawnVehicle(testModeState.spawnCount, testModeState.spawnLocation);
         });
 
@@ -541,6 +586,7 @@ export class TestModeManager {
                 panel.querySelectorAll('#group-mod-health .test-pill').forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
                 testModeState.enemyHealthMult = parseFloat(pill.dataset.val);
+                if (testModeState.enemyHealthMult !== 1.0) markHackUsed('modHealth');
                 if (this.api.applyModifiers) this.api.applyModifiers(testModeState);
             });
         });
@@ -551,6 +597,7 @@ export class TestModeManager {
                 panel.querySelectorAll('#group-mod-speed .test-pill').forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
                 testModeState.enemySpeedMult = parseFloat(pill.dataset.val);
+                if (testModeState.enemySpeedMult !== 1.0) markHackUsed('modSpeed');
                 if (this.api.applyModifiers) this.api.applyModifiers(testModeState);
             });
         });
@@ -561,6 +608,7 @@ export class TestModeManager {
                 panel.querySelectorAll('#group-mod-damage .test-pill').forEach(p => p.classList.remove('active'));
                 pill.classList.add('active');
                 testModeState.enemyDamageMult = parseFloat(pill.dataset.val);
+                if (testModeState.enemyDamageMult !== 1.0) markHackUsed('modDamage');
                 if (this.api.applyModifiers) this.api.applyModifiers(testModeState);
             });
         });
@@ -569,6 +617,7 @@ export class TestModeManager {
         const btnFreezeAI = panel.querySelector('#btn-toggle-freeze-ai');
         btnFreezeAI.addEventListener('click', () => {
             testModeState.freezeEnemies = !testModeState.freezeEnemies;
+            if (testModeState.freezeEnemies) markHackUsed('freezeAI');
             btnFreezeAI.textContent = testModeState.freezeEnemies ? '⏸ FREEZE AI LOCOMOTION: ON' : '⏸ FREEZE AI LOCOMOTION: OFF';
             btnFreezeAI.classList.toggle('active', testModeState.freezeEnemies);
         });
@@ -576,11 +625,13 @@ export class TestModeManager {
         const btnPassiveAI = panel.querySelector('#btn-toggle-passive-ai');
         btnPassiveAI.addEventListener('click', () => {
             testModeState.passiveAI = !testModeState.passiveAI;
+            if (testModeState.passiveAI) markHackUsed('passiveAI');
             btnPassiveAI.textContent = testModeState.passiveAI ? '🕊 PASSIVE / BLIND AI: ON' : '🕊 PASSIVE / BLIND AI: OFF';
             btnPassiveAI.classList.toggle('active', testModeState.passiveAI);
         });
 
         panel.querySelector('#btn-alert-all-ai').addEventListener('click', () => {
+            markHackUsed('alertAI');
             if (this.api.alertAllEnemies) this.api.alertAllEnemies();
         });
 
@@ -588,6 +639,7 @@ export class TestModeManager {
         const btnGodMode = panel.querySelector('#btn-cheat-godmode');
         btnGodMode.addEventListener('click', () => {
             testModeState.godMode = !testModeState.godMode;
+            if (testModeState.godMode) markHackUsed('godMode');
             btnGodMode.textContent = testModeState.godMode ? '🛡 GOD MODE (INVULNERABLE): ON' : '🛡 GOD MODE (INVULNERABLE): OFF';
             btnGodMode.classList.toggle('active', testModeState.godMode);
             if (this.api.setGodMode) this.api.setGodMode(testModeState.godMode);
@@ -597,6 +649,7 @@ export class TestModeManager {
         const btnInfAmmo = panel.querySelector('#btn-cheat-infinite-ammo');
         btnInfAmmo.addEventListener('click', () => {
             testModeState.infiniteAmmo = !testModeState.infiniteAmmo;
+            if (testModeState.infiniteAmmo) markHackUsed('infiniteAmmo');
             btnInfAmmo.textContent = testModeState.infiniteAmmo ? '♾ INFINITE AMMO: ON' : '♾ INFINITE AMMO: OFF';
             btnInfAmmo.classList.toggle('active', testModeState.infiniteAmmo);
             if (this.api.setInfiniteAmmo) this.api.setInfiniteAmmo(testModeState.infiniteAmmo);
@@ -606,6 +659,7 @@ export class TestModeManager {
         const btnSpeed = panel.querySelector('#btn-cheat-super-speed');
         btnSpeed.addEventListener('click', () => {
             testModeState.superSpeed = !testModeState.superSpeed;
+            if (testModeState.superSpeed) markHackUsed('superSpeed');
             btnSpeed.textContent = testModeState.superSpeed ? '🏃 SUPER SPEED (2.5x): ON' : '🏃 SUPER SPEED (2.5x): OFF';
             btnSpeed.classList.toggle('active', testModeState.superSpeed);
             if (this.api.setSuperSpeed) this.api.setSuperSpeed(testModeState.superSpeed);
@@ -615,6 +669,7 @@ export class TestModeManager {
         const btnJump = panel.querySelector('#btn-cheat-super-jump');
         btnJump.addEventListener('click', () => {
             testModeState.superJump = !testModeState.superJump;
+            if (testModeState.superJump) markHackUsed('superJump');
             btnJump.textContent = testModeState.superJump ? '🦘 SUPER JUMP (3x): ON' : '🦘 SUPER JUMP (3x): OFF';
             btnJump.classList.toggle('active', testModeState.superJump);
             if (this.api.setSuperJump) this.api.setSuperJump(testModeState.superJump);
@@ -622,14 +677,17 @@ export class TestModeManager {
 
         // Actions: Heal & Grenades
         panel.querySelector('#btn-cheat-heal').addEventListener('click', () => {
+            markHackUsed('heal');
             if (this.api.healPlayer) this.api.healPlayer();
         });
         panel.querySelector('#btn-cheat-grenades').addEventListener('click', () => {
+            markHackUsed('refillGrenades');
             if (this.api.refillGrenades) this.api.refillGrenades();
         });
         const btnUnlockMinigun = panel.querySelector('#btn-cheat-unlock-minigun');
         if (btnUnlockMinigun) {
             btnUnlockMinigun.addEventListener('click', () => {
+                markHackUsed('unlockMinigun');
                 if (typeof localStorage !== 'undefined') {
                     localStorage.setItem('urban_breach_minigun_unlocked', 'true');
                 }
@@ -657,9 +715,43 @@ export class TestModeManager {
             });
         }
 
+        // Gold Economy Cheat Actions
+        const goldInput = panel.querySelector('#test-gold-cheat-input');
+        const btnAddGold = panel.querySelector('#btn-cheat-add-gold');
+        if (btnAddGold) {
+            btnAddGold.addEventListener('click', () => {
+                const val = parseInt(goldInput?.value, 10);
+                if (!isNaN(val) && val > 0) {
+                    goldManager.addDevCheatGold(val);
+                    markHackUsed('goldCheat');
+                    this.updateGoldCheatDisplay();
+                }
+            });
+        }
+
+        panel.querySelectorAll('.test-btn-quick-gold').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const amt = parseInt(btn.dataset.amount, 10);
+                if (amt > 0) {
+                    goldManager.addDevCheatGold(amt);
+                    markHackUsed('goldCheat');
+                    this.updateGoldCheatDisplay();
+                }
+            });
+        });
+
+        const btnClearGold = panel.querySelector('#btn-cheat-clear-gold');
+        if (btnClearGold) {
+            btnClearGold.addEventListener('click', () => {
+                goldManager.resetDevCheatGold();
+                this.updateGoldCheatDisplay();
+            });
+        }
+
         // Weapon Switch
         panel.querySelectorAll('.test-weapon-switch-row .test-btn-pill').forEach(btn => {
             btn.addEventListener('click', () => {
+                markHackUsed('weaponSwitch');
                 panel.querySelectorAll('.test-weapon-switch-row .test-btn-pill').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 if (this.api.switchWeapon) this.api.switchWeapon(btn.dataset.weapon);
@@ -669,9 +761,18 @@ export class TestModeManager {
         // Teleport
         panel.querySelectorAll('[data-teleport]').forEach(btn => {
             btn.addEventListener('click', () => {
+                markHackUsed('teleport');
                 if (this.api.teleport) this.api.teleport(btn.dataset.teleport);
             });
         });
+    }
+
+    updateGoldCheatDisplay() {
+        if (!this.panel) return;
+        const cheatValEl = this.panel.querySelector('#test-cheat-gold-val');
+        const persValEl = this.panel.querySelector('#test-persistent-gold-val');
+        if (cheatValEl && goldManager) cheatValEl.textContent = goldManager.getDevCheatGold().toLocaleString();
+        if (persValEl && goldManager) persValEl.textContent = goldManager.getPersistentGold().toLocaleString();
     }
 
     setupKeyboard() {
@@ -776,6 +877,7 @@ export class TestModeManager {
         }
 
         this.updateTelemetry();
+        this.updateGoldCheatDisplay();
         if (!this.telemetryInterval) {
             this.telemetryInterval = setInterval(() => {
                 if (testModeState.isOpen && this.activeTab === 'telemetry') {

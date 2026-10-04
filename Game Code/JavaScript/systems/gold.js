@@ -20,18 +20,23 @@ class GoldManager {
         this.storageKey = 'urban_breach_gold';
         this.weaponsKey = 'urban_breach_owned_weapons';
         this.equippedPistolKey = 'urban_breach_equipped_pistol';
+        // Ephemeral in-memory dev cheat gold: Never saved to localStorage!
+        this.sessionCheatGold = 0;
     }
 
     /**
-     * Check if dev console or any cheat is or was active in this session/run
+     * Check if hacks or cheats are active or have been used in this session.
+     * Opening or unlocking the dev console alone is NOT cheating — only using hacks/cheats is.
      */
     isCheating() {
-        if (typeof window !== 'undefined' && window.testModeUsed) {
+        if (typeof window !== 'undefined' && (window.testModeHacksUsed || window.testModeUsed)) {
+            return true;
+        }
+        if (this.sessionCheatGold > 0) {
             return true;
         }
         if (testModeState && (
-            testModeState.isUnlocked ||
-            testModeState.isOpen ||
+            testModeState.hasUsedHacks ||
             testModeState.godMode ||
             testModeState.infiniteAmmo ||
             testModeState.superSpeed ||
@@ -48,7 +53,10 @@ class GoldManager {
         return false;
     }
 
-    getGold() {
+    /**
+     * Legitimate persistent gold stored in localStorage
+     */
+    getPersistentGold() {
         if (typeof localStorage === 'undefined') return 0;
         try {
             const val = parseInt(localStorage.getItem(this.storageKey), 10);
@@ -58,28 +66,77 @@ class GoldManager {
         }
     }
 
+    /**
+     * Temporary dev cheat gold (ephemeral to current session/tab)
+     */
+    getDevCheatGold() {
+        return this.sessionCheatGold;
+    }
+
+    /**
+     * Total available gold (persistent + session cheat gold)
+     */
+    getGold() {
+        return this.getPersistentGold() + this.sessionCheatGold;
+    }
+
+    /**
+     * Legitimate combat gold reward (saved to localStorage).
+     * Forfeited if developer console hacks/cheats have been used.
+     */
     addGold(amount, reason = '') {
         if (amount <= 0) return false;
 
-        // Anti-cheat verification: Dev console usage forfeits all credits/gold
+        // Anti-cheat verification: Using hacks or cheat gold forfeits legitimate combat gold
         if (this.isCheating()) {
             if (typeof window !== 'undefined' && window.uiManager && typeof window.uiManager.showToast === 'function') {
                 if (!window._cheatNoticeShown) {
                     window._cheatNoticeShown = true;
-                    window.uiManager.showToast('⚠️ DEV CONSOLE DETECTED — CREDITS DISABLED (CHEATING)', 3500);
+                    window.uiManager.showToast('⚠️ DEV HACKS DETECTED — CREDITS DISABLED (CHEATING)', 3500);
                 }
             }
             return false;
         }
 
-        const current = this.getGold();
-        const next = current + Math.round(amount);
+        const persistent = this.getPersistentGold();
+        const next = persistent + Math.round(amount);
         try {
             localStorage.setItem(this.storageKey, String(next));
         } catch (e) {}
 
-        this.notifyUpdate(next);
+        this.notifyUpdate(this.getGold());
         return true;
+    }
+
+    /**
+     * Grant temporary cheat gold via developer console.
+     * CRITICAL: This is strictly session-only and NEVER saved to localStorage.
+     */
+    addDevCheatGold(amount) {
+        if (amount <= 0) return false;
+        this.sessionCheatGold += Math.round(amount);
+
+        // Mark hacks used
+        if (typeof window !== 'undefined') {
+            window.testModeHacksUsed = true;
+        }
+        if (testModeState) {
+            testModeState.hasUsedHacks = true;
+        }
+
+        this.notifyUpdate(this.getGold());
+        if (typeof window !== 'undefined' && window.uiManager && typeof window.uiManager.showToast === 'function') {
+            window.uiManager.showToast(`🪙 +${amount} DEV CHEAT GOLD (SESSION ONLY)`, 2500);
+        }
+        return true;
+    }
+
+    /**
+     * Reset ephemeral session cheat gold back to 0
+     */
+    resetDevCheatGold() {
+        this.sessionCheatGold = 0;
+        this.notifyUpdate(this.getGold());
     }
 
     canAfford(amount) {
@@ -88,17 +145,30 @@ class GoldManager {
 
     spendGold(amount) {
         if (amount <= 0) return false;
-        const current = this.getGold();
-        if (current < amount) return false;
+        const total = this.getGold();
+        if (total < amount) return false;
 
-        const next = current - amount;
-        try {
-            localStorage.setItem(this.storageKey, String(next));
-        } catch (e) {
-            return false;
+        let remainingToDeduct = amount;
+
+        // Spend session cheat gold first so persistent gold remains untouched where possible
+        if (this.sessionCheatGold > 0) {
+            const deductCheat = Math.min(this.sessionCheatGold, remainingToDeduct);
+            this.sessionCheatGold -= deductCheat;
+            remainingToDeduct -= deductCheat;
         }
 
-        this.notifyUpdate(next);
+        // Deduct any remaining amount from persistent storage
+        if (remainingToDeduct > 0) {
+            const persistent = this.getPersistentGold();
+            const next = Math.max(0, persistent - remainingToDeduct);
+            try {
+                localStorage.setItem(this.storageKey, String(next));
+            } catch (e) {
+                return false;
+            }
+        }
+
+        this.notifyUpdate(this.getGold());
         return true;
     }
 
@@ -170,3 +240,7 @@ class GoldManager {
 }
 
 export const goldManager = new GoldManager();
+
+if (typeof window !== 'undefined') {
+    window.goldManager = goldManager;
+}

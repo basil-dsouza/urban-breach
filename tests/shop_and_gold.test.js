@@ -18,11 +18,14 @@ describe('Gold Economy & Weapons Shop System', () => {
             globalThis.window = {};
         }
         globalThis.window.testModeUsed = false;
+        globalThis.window.testModeHacksUsed = false;
         globalThis.window.dispatchEvent = () => true;
         testModeState.godMode = false;
         testModeState.infiniteAmmo = false;
         testModeState.isOpen = false;
         testModeState.isUnlocked = false;
+        testModeState.hasUsedHacks = false;
+        goldManager.resetDevCheatGold();
     });
 
     describe('Gold Kill Awards & Accrual', () => {
@@ -70,6 +73,26 @@ describe('Gold Economy & Weapons Shop System', () => {
             expect(goldManager.getGold()).toBe(0);
         });
 
+        it('should block all gold awards when testModeState.hasUsedHacks is true', () => {
+            testModeState.hasUsedHacks = true;
+            expect(goldManager.isCheating()).toBe(true);
+
+            const added = goldManager.addGold(50, 'Boss Defeated');
+            expect(added).toBe(false);
+            expect(goldManager.getGold()).toBe(0);
+        });
+
+        it('should NOT block gold awards when simply unlocking or opening dev console without hacks', () => {
+            testModeState.isUnlocked = true;
+            testModeState.isOpen = true;
+            testModeState.hasUsedHacks = false;
+            expect(goldManager.isCheating()).toBe(false);
+
+            const added = goldManager.addGold(5, 'Enemy Eliminated');
+            expect(added).toBe(true);
+            expect(goldManager.getGold()).toBe(5);
+        });
+
         it('should allow legitimate gold earning when no cheats or dev console was used', () => {
             expect(goldManager.isCheating()).toBe(false);
 
@@ -77,6 +100,70 @@ describe('Gold Economy & Weapons Shop System', () => {
             goldManager.addGold(10);
             goldManager.addGold(50);
             expect(goldManager.getGold()).toBe(65);
+        });
+    });
+
+    describe('Dev Console Gold Cheat (Session Ephemeral)', () => {
+        it('should grant temporary cheat gold without saving to localStorage', () => {
+            goldManager.addDevCheatGold(500);
+            expect(goldManager.getGold()).toBe(500);
+            expect(goldManager.getDevCheatGold()).toBe(500);
+            // Must NOT write to localStorage!
+            expect(mockStorage['urban_breach_gold']).toBeUndefined();
+            expect(goldManager.getPersistentGold()).toBe(0);
+        });
+
+        it('should discard cheat gold when leaving the tab (resetting session cheat gold)', () => {
+            goldManager.addGold(50); // legitimate persistent gold
+            expect(mockStorage['urban_breach_gold']).toBe('50');
+
+            goldManager.addDevCheatGold(1000); // dev console cheat
+            expect(goldManager.getGold()).toBe(1050);
+            expect(mockStorage['urban_breach_gold']).toBe('50');
+
+            // Leaving tab discards session cheat gold
+            goldManager.resetDevCheatGold();
+            expect(goldManager.getGold()).toBe(50);
+            expect(goldManager.getDevCheatGold()).toBe(0);
+            expect(mockStorage['urban_breach_gold']).toBe('50');
+        });
+
+        it('should spend session cheat gold first before touching persistent gold', () => {
+            goldManager.addGold(100); // 100 legitimate
+            goldManager.addDevCheatGold(300); // 300 cheat gold -> 400 total
+            expect(goldManager.getGold()).toBe(400);
+
+            // Buy S&W Model 29 (200g)
+            const spent = goldManager.spendGold(200);
+            expect(spent).toBe(true);
+            // 200 deducted from cheat gold
+            expect(goldManager.getDevCheatGold()).toBe(100);
+            // Persistent gold in localStorage untouched
+            expect(goldManager.getPersistentGold()).toBe(100);
+            expect(mockStorage['urban_breach_gold']).toBe('100');
+            expect(goldManager.getGold()).toBe(200);
+        });
+
+        it('should deduct remaining amount from persistent gold if cheat gold is partially depleted', () => {
+            goldManager.addGold(100); // 100 legitimate
+            goldManager.addDevCheatGold(50); // 50 cheat gold -> 150 total
+            const spent = goldManager.spendGold(120);
+            expect(spent).toBe(true);
+            // 50 cheat gold spent
+            expect(goldManager.getDevCheatGold()).toBe(0);
+            // 70 deducted from persistent gold (100 - 70 = 30)
+            expect(goldManager.getPersistentGold()).toBe(30);
+            expect(mockStorage['urban_breach_gold']).toBe('30');
+            expect(goldManager.getGold()).toBe(30);
+        });
+
+        it('should flag cheating and block combat kill gold when dev cheat gold is granted', () => {
+            goldManager.addDevCheatGold(500);
+            expect(goldManager.isCheating()).toBe(true);
+
+            const added = goldManager.addGold(5, 'Enemy Eliminated');
+            expect(added).toBe(false);
+            expect(goldManager.getPersistentGold()).toBe(0);
         });
     });
 
